@@ -1,3 +1,10 @@
+# Check if running as administrator
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "This script requires administrative privileges. Restarting as administrator..."
+    Start-Process pwsh -Verb RunAs -ArgumentList "-File `"$PSCommandPath`""
+    exit
+}
+
 $Action = New-ScheduledTaskAction `
     -Execute "pwsh.exe" `
     -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSScriptRoot\security_updates.ps1`""
