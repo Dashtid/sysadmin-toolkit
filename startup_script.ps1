@@ -107,9 +107,3 @@ if ($oldLogs) {
         Write-LogMessage "Removed old log: $($_.Name)" -Color Gray
     }
 }
-
-# If running in terminal, wait for key press
-if ([Environment]::UserInteractive) {
-    Write-LogMessage "Press any key to exit..."
-    $null = [Console]::ReadKey($true)
-}

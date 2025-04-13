@@ -1,6 +1,6 @@
 $Action = New-ScheduledTaskAction `
     -Execute "pwsh.exe" `
-    -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$PSScriptRoot\security_updates.ps1`""
+    -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSScriptRoot\security_updates.ps1`""
 
 $Trigger = New-ScheduledTaskTrigger -AtLogOn
 $Principal = New-ScheduledTaskPrincipal `
