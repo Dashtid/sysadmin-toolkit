@@ -7,7 +7,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 
 $Action = New-ScheduledTaskAction `
     -Execute "pwsh.exe" `
-    -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSScriptRoot\security_updates.ps1`""
+    -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSScriptRoot\startup_script.ps1`""
 
 $Trigger = New-ScheduledTaskTrigger -AtLogOn
 $Principal = New-ScheduledTaskPrincipal `
@@ -20,9 +20,9 @@ $Settings = New-ScheduledTaskSettingsSet `
     -StartWhenAvailable
 
 Register-ScheduledTask `
-    -TaskName "SecurityUpdates" `
+    -TaskName "Startup Script" `
     -Action $Action `
     -Trigger $Trigger `
     -Principal $Principal `
     -Settings $Settings `
-    -Description "Run security updates script at logon (Chocolatey and Windows Updates)"
+    -Description "Run Chocolatey and Windows Updates silently on logon"
