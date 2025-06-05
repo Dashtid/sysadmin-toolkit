@@ -60,7 +60,8 @@ try {
     $chocoOutput = & choco upgrade all -y
     Write-LogMessage ($chocoOutput | Out-String)
     Write-LogMessage "Chocolatey updates completed successfully" -Color Green
-} catch {
+}
+catch {
     Write-LogMessage "Error updating Chocolatey packages: $($_.Exception.Message)" -Color Red
 }
 
@@ -87,10 +88,12 @@ try {
         Write-LogMessage "Installing Windows Updates..." -Color Yellow
         $updateResults = Install-WindowsUpdate -AcceptAll -AutoReboot:$false
         Write-LogMessage ($updateResults | Out-String)
-    } else {
+    }
+    else {
         Write-LogMessage "No Windows Updates available" -Color Green
     }
-} catch {
+}
+catch {
     Write-LogMessage "Error checking Windows Updates: $($_.Exception.Message)" -Color Red
 }
 
@@ -99,7 +102,7 @@ Write-LogMessage "=== Script Completed ===" -Color Green
 
 # Cleanup old logs (keep last 30 days)
 $oldLogs = Get-ChildItem -Path $logFolder -Filter "*.log" | 
-    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) }
+Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) }
 if ($oldLogs) {
     Write-LogMessage "Cleaning up logs older than 30 days..." -Color Gray
     $oldLogs | ForEach-Object {
