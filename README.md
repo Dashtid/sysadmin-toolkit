@@ -1,67 +1,266 @@
-# Windows Automated Update Scripts
+# System Administration & Development Scripts
 
-This repository contains PowerShell scripts for automating system maintenance tasks on Windows, including package updates via Chocolatey and Windows Updates. The scripts are designed to be run at startup or on demand, with logging and administrative privilege escalation.
+A comprehensive collection of system administration and setup scripts for both Linux (Ubuntu) and Windows 11 environments. This repository is designed for developers and system administrators who need to quickly set up and maintain development environments across multiple platforms.
 
-## Contents
+## 🎯 Target Environments
 
-- **startup_script.ps1**  
-  Main script that:
+- **Windows 11 Work Laptop**: Development workstation with corporate-friendly tools
+- **Ubuntu Server**: Headless lab environment with Docker for development and testing
+- **Ubuntu Desktop**: Home coding station with full GUI development environment
 
-  - Checks for and requests administrative privileges if needed.
-  - Logs all actions and output to a dated log file in a `logs` directory.
-  - Upgrades all installed Chocolatey packages.
-  - Checks for and installs available Windows Updates using the `PSWindowsUpdate` module.
-  - Cleans up log files older than 30 days.
+## 📁 Repository Structure
 
-- **schedule_task.ps1**  
-  Script to register `startup_script.ps1` as a scheduled task that runs at user logon with highest privileges and a hidden window.
-
-## Usage
-
-### 1. Running the Startup Script Manually
-
-Open PowerShell 7+ as Administrator and run:
-
-```powershell
-pwsh -File .\startup_script.ps1
+```
+Scripts/
+├── Linux/
+│   ├── server/                    # Ubuntu Server (Headless)
+│   │   ├── headless-server-setup.sh
+│   │   ├── docker-lab-environment.sh
+│   │   └── ubuntu-server-maintenance.sh
+│   ├── desktop/                   # Ubuntu Desktop (GUI)
+│   │   └── fresh-desktop-setup.sh
+│   ├── maintenance/               # System maintenance (ready for expansion)
+│   ├── development/               # Development tools (ready for expansion)
+│   └── utilities/                 # System utilities (ready for expansion)
+├── Windows/
+│   ├── first-time-setup/          # Initial system setup
+│   │   └── work-laptop-setup.ps1
+│   ├── maintenance/               # System maintenance
+│   │   └── startup_script.ps1
+│   ├── development/               # Development tools
+│   │   └── remote-development-setup.ps1
+│   ├── utilities/                 # System utilities
+│   │   └── schedule_task.ps1
+│   └── package-lists/             # Package definitions
+│       ├── chocolatey-packages.txt
+│       └── winget-packages.txt
+└── logs/                          # Script execution logs
 ```
 
-### 2. Scheduling the Script to Run at Logon
+## 🚀 Quick Start
 
-Run the following command as Administrator to register the scheduled task:
+### Ubuntu Server (Headless Lab Environment)
 
-```powershell
-pwsh -File .\schedule_task.ps1
+```bash
+# Initial server setup with Docker lab environment
+sudo bash Linux/server/headless-server-setup.sh
+
+# Setup comprehensive Docker development environment
+bash Linux/server/docker-lab-environment.sh
+
+# Regular maintenance
+sudo bash Linux/server/ubuntu-server-maintenance.sh
 ```
 
-This will ensure `startup_script.ps1` runs automatically at every user logon.
+### Ubuntu Desktop (Home Coding Station)
 
-## Requirements
+```bash
+# Fresh desktop installation setup
+bash Linux/desktop/fresh-desktop-setup.sh
 
-- PowerShell 7 or later (`pwsh`)
-- Chocolatey package manager installed
-- PSWindowsUpdate PowerShell module (installed automatically if missing)
-- Administrative privileges to install updates and manage scheduled tasks
+# Additional coding station configuration (script ready for creation)
+# bash Linux/desktop/coding-station-setup.sh
+```
 
-## Features
+### Windows 11 (Work Laptop)
 
-- **Automatic Privilege Elevation:** Prompts for admin rights if not already running as administrator.
-- **Comprehensive Logging:** All actions and outputs are logged to timestamped files in a `logs` directory.
-- **Chocolatey Updates:** Automatically upgrades all Chocolatey packages.
-- **Windows Updates:** Checks for and installs available Windows Updates.
-- **Log Maintenance:** Deletes log files older than 30 days to save disk space.
+```powershell
+# Run as Administrator in PowerShell 7+
+# Comprehensive work laptop setup
+.\Windows\first-time-setup\work-laptop-setup.ps1
 
-## Notes
+# Regular maintenance (can be scheduled)
+.\Windows\maintenance\startup_script.ps1
+```
 
-- The script will not proceed if run in PowerShell versions older than 7.
-- If Chocolatey is not installed, the script will prompt you to install it first.
-- Windows Updates are installed non-interactively and will not automatically reboot the system.
-- All logs are stored in a `logs` folder next to the script.
+## 🔧 Key Features
 
-## License
+### Cross-Platform Development Support
 
-MIT License
+- **Consistent tooling** across Ubuntu and Windows environments
+- **Remote development** setup for SSH access to Ubuntu server
+- **Container-based** development with Docker
+- **Multi-language** support (Python, Node.js, Go, Rust, etc.)
+
+### Automated Environment Setup
+
+- **First-time installation** scripts for fresh systems
+- **Development environment** configuration
+- **Security hardening** and best practices
+- **Package management** via apt, Chocolatey, and Winget
+
+### Maintenance & Monitoring
+
+- **Automated updates** and system maintenance
+- **Docker container** management and cleanup
+- **System monitoring** and health checks
+- **Backup solutions** and data protection
+
+### Remote Development Workflow
+
+- **SSH key management** across all systems
+- **VS Code Remote Development** configuration
+- **Port forwarding** for accessing services
+- **Synchronized development** environments
+
+## 📋 Prerequisites
+
+### Ubuntu Systems
+
+- Ubuntu 20.04 LTS or newer
+- Sudo access for system modifications
+- Internet connection for package downloads
+
+### Windows 11 Systems
+
+- Windows 11 with latest updates
+- PowerShell 7+ installed
+- Administrator privileges
+- Internet connection for package downloads
+
+## 🛠️ Script Categories
+
+### First-Time Setup Scripts
+
+Perfect for new system installations or major environment changes:
+
+- Install essential development tools
+- Configure security settings
+- Set up development directories
+- Install and configure package managers
+
+### Maintenance Scripts
+
+Regular system upkeep and optimization:
+
+- System updates and cleanup
+- Docker container management
+- Log rotation and monitoring
+- Performance optimization
+
+### Development Scripts
+
+Tools for setting up and managing development environments:
+
+- Programming language installations
+- IDE and editor configuration
+- Version control setup
+- Remote development tools
+
+### Utility Scripts
+
+Helper scripts for common administrative tasks:
+
+- Network diagnostics
+- System information gathering
+- User and permission management
+- Backup and restore operations
+
+## 🔒 Security Features
+
+- **SSH hardening** with key-based authentication
+- **Firewall configuration** with development-friendly rules
+- **Fail2ban setup** for intrusion prevention
+- **Automatic security updates** configuration
+- **No hardcoded credentials** - all scripts prompt for sensitive information
+
+## 📊 Logging & Monitoring
+
+All scripts include comprehensive logging:
+
+- **Timestamped logs** for all operations
+- **Color-coded output** for easy reading
+- **Error handling** with rollback capabilities
+- **Progress tracking** for long-running operations
+
+## 🌐 Multi-Environment Workflow
+
+This repository is designed for a specific multi-environment development workflow:
+
+1. **Windows 11 Laptop**: Primary development machine with VS Code, remote SSH capabilities
+2. **Ubuntu Server**: Headless lab environment running Docker containers for testing
+3. **Ubuntu Desktop**: Home coding station with full GUI development environment
+
+Scripts are optimized for this workflow, including:
+
+- Remote development setup from Windows to Ubuntu server
+- Consistent development environments across all platforms
+- Easy synchronization of configurations and projects
+
+## 📖 Usage Examples
+
+### Setting up a new Ubuntu server for development:
+
+```bash
+# Run the comprehensive server setup
+sudo bash Linux/server/headless-server-setup.sh
+
+# Setup Docker lab environment
+bash Linux/server/docker-lab-environment.sh
+
+# Access the lab environment
+lab-start  # Starts all development containers
+```
+
+### Configuring Windows 11 for remote development:
+
+```powershell
+# Install development tools and configure remote access
+.\Windows\first-time-setup\work-laptop-setup.ps1
+
+# Setup remote development tools
+.\Windows\development\remote-development-setup.ps1
+```
+
+### Regular maintenance across all systems:
+
+```bash
+# Ubuntu systems
+sudo bash Linux/maintenance/system-updates.sh
+
+# Windows systems (as Administrator)
+.\Windows\maintenance\startup_script.ps1
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/new-script`)
+3. Follow the existing script structure and conventions
+4. Test scripts in appropriate environments
+5. Commit changes (`git commit -am 'Add new script'`)
+6. Push to branch (`git push origin feature/new-script`)
+7. Create a Pull Request
+
+## 📝 Script Conventions
+
+- **Bash scripts**: Use `#!/usr/bin/env bash` shebang
+- **PowerShell scripts**: Require PowerShell 7+ and appropriate execution policy
+- **Error handling**: Include proper error checking and rollback capabilities
+- **Logging**: Use consistent logging format with timestamps
+- **Documentation**: Include clear comments and usage instructions
+- **Security**: Never hardcode credentials or sensitive information
+
+## ⚠️ Important Notes
+
+- **Test scripts** in non-production environments first
+- **Review scripts** before execution to understand what they do
+- **Backup important data** before running system modification scripts
+- **Check prerequisites** before running any script
+- **Run with appropriate privileges** (sudo for Linux, Administrator for Windows)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- Built for multi-environment development workflows
+- Optimized for Ubuntu and Windows 11 compatibility
+- Designed with security and best practices in mind
+- Inspired by the need for consistent development environments
 
 ---
 
-_Maintained by David Dashti. For questions or suggestions, please open an issue or contact me._
+**Maintained by David Dashti**  
+_For questions, suggestions, or issues, please open a GitHub issue or contact me directly._
