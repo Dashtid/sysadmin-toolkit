@@ -1,0 +1,9 @@
+Proton.ProtonVPN
+Proton.ProtonMail
+Microsoft.Edge
+Microsoft.VisualStudioCode
+Git.Git
+Ollama.Ollama
+OpenVPNTechnologies.OpenVPN
+geeksoftwareGmbH.PDF24Creator
+RevoUninstaller.RevoUninstaller
