@@ -1,9 +1,11 @@
 # Check if running as administrator
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host "This script requires administrative privileges. Restarting as administrator..."
+    Write-Host "This script requires administrative privileges. Restarting as administrator..." -ForegroundColor Yellow
     Start-Process pwsh -Verb RunAs -ArgumentList "-File `"$PSCommandPath`""
     exit
 }
+
+Write-Host "Creating scheduled task for automated updates..." -ForegroundColor Cyan
 
 $Action = New-ScheduledTaskAction `
     -Execute "pwsh.exe" `
@@ -17,12 +19,23 @@ $Principal = New-ScheduledTaskPrincipal `
 $Settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `
     -DontStopIfGoingOnBatteries `
-    -StartWhenAvailable
+    -StartWhenAvailable `
+    -RunOnlyIfNetworkAvailable
+
+# Remove existing task if it exists
+$existingTask = Get-ScheduledTask -TaskName "System Updates" -ErrorAction SilentlyContinue
+if ($existingTask) {
+    Write-Host "Removing existing task..." -ForegroundColor Gray
+    Unregister-ScheduledTask -TaskName "System Updates" -Confirm:$false
+}
 
 Register-ScheduledTask `
-    -TaskName "Startup Script" `
+    -TaskName "System Updates" `
     -Action $Action `
     -Trigger $Trigger `
     -Principal $Principal `
     -Settings $Settings `
-    -Description "Run Chocolatey and Windows Updates silently on logon"
+    -Description "Automated WinGet, Chocolatey, and Windows Updates"
+
+Write-Host "✓ Scheduled task created successfully" -ForegroundColor Green
+Write-Host "Task will run on user logon and update both WinGet and Chocolatey packages" -ForegroundColor Gray
