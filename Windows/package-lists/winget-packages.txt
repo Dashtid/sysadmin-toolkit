@@ -7,3 +7,4 @@ Ollama.Ollama
 OpenVPNTechnologies.OpenVPN
 geeksoftwareGmbH.PDF24Creator
 RevoUninstaller.RevoUninstaller
+Brave.Brave
