@@ -1,3 +1,5 @@
 /logs
 
 settings.local.json
+# Claude Code configuration
+.claude/
