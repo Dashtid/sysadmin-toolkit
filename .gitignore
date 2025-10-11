@@ -36,6 +36,12 @@ known_hosts
 credentials.json
 auth.json
 
+# EXCEPTIONS: Allow documentation and workflow files with these names
+!.github/workflows/*secret*.yml
+!.github/workflows/*token*.yml
+!docs/*SECRET*.md
+!docs/*SECURITY*.md
+
 # Private IP addresses and hostnames (example patterns)
 # Uncomment if you have files with these patterns
 # *10.*.*.*.conf
