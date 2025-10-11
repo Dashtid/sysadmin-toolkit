@@ -1,0 +1,29 @@
+{
+  // Hide chat from sidebar on startup
+  "workbench.secondarySideBar.defaultVisibility": "hidden",
+
+  // Additional workspace settings for clean development
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+
+  // PowerShell settings
+  "powershell.codeFormatting.preset": "OTBS",
+  "powershell.scriptAnalysis.enable": true,
+
+  // Shell script settings
+  "shellcheck.enable": true,
+  "shellformat.flag": "-i 4 -bn -ci",
+
+  // Exclude unnecessary directories from search
+  "search.exclude": {
+    "**/logs": true,
+    "**/*.log": true
+  },
+
+  // File associations
+  "files.associations": {
+    "*.ps1": "powershell",
+    "*.sh": "shellscript"
+  }
+}

@@ -1,0 +1,73 @@
+# Pre-commit framework configuration
+# Install: pip install pre-commit
+# Setup: pre-commit install
+# Run manually: pre-commit run --all-files
+#
+# This provides more advanced scanning than the basic .githooks/pre-commit script
+
+repos:
+  # Gitleaks - Secret detection
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2
+    hooks:
+      - id: gitleaks
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+      - id: detect-private-key
+
+  # PowerShell validation
+  - repo: local
+    hooks:
+      - id: powershell-syntax
+        name: PowerShell Syntax Check
+        entry: pwsh -NoProfile -Command
+        args:
+          - |
+            $errors = 0
+            Get-ChildItem -Filter *.ps1 -Recurse | ForEach-Object {
+              try {
+                $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $_.FullName -Raw), [ref]$null)
+              } catch {
+                Write-Host "[-] Syntax error in $($_.Name): $_"
+                $errors++
+              }
+            }
+            exit $errors
+        language: system
+        files: \.ps1$
+        pass_filenames: false
+
+  # Bash validation with shellcheck
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        args: ['-S', 'warning']
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        args: ['--fix']
+
+# Exclude patterns
+exclude: |
+  (?x)^(
+    \.claude/.*|
+    \.vscode/.*|
+    logs/.*|
+    .*\.log
+  )$

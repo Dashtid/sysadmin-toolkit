@@ -1,0 +1,148 @@
+name: Syntax Validation
+
+# Validates PowerShell and Bash syntax on every push and pull request
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  powershell-syntax:
+    name: PowerShell Script Validation
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+          Write-Host "[+] PSScriptAnalyzer installed"
+
+      - name: Run syntax check on PowerShell scripts
+        shell: pwsh
+        run: |
+          Write-Host "[i] Checking PowerShell syntax..."
+          $errors = 0
+          Get-ChildItem -Path . -Filter *.ps1 -Recurse | ForEach-Object {
+            Write-Host "  [*] Checking $($_.Name)..."
+            $null = [System.Management.Automation.PSParser]::Tokenize(
+              (Get-Content $_.FullName -Raw), [ref]$null
+            )
+            if ($?) {
+              Write-Host "    [+] PASS: $($_.Name)" -ForegroundColor Green
+            } else {
+              Write-Host "    [-] FAIL: $($_.Name)" -ForegroundColor Red
+              $errors++
+            }
+          }
+
+          if ($errors -gt 0) {
+            Write-Host "[-] $errors script(s) failed syntax check" -ForegroundColor Red
+            exit 1
+          } else {
+            Write-Host "[+] All PowerShell scripts passed syntax check" -ForegroundColor Green
+          }
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Write-Host "[i] Running PSScriptAnalyzer..."
+          $results = @()
+          Get-ChildItem -Path . -Filter *.ps1 -Recurse | ForEach-Object {
+            Write-Host "  [*] Analyzing $($_.Name)..."
+            $analysis = Invoke-ScriptAnalyzer -Path $_.FullName -Severity Warning,Error
+            if ($analysis) {
+              $results += $analysis
+              Write-Host "    [!] Issues found in $($_.Name)" -ForegroundColor Yellow
+              $analysis | Format-Table -AutoSize
+            } else {
+              Write-Host "    [+] Clean: $($_.Name)" -ForegroundColor Green
+            }
+          }
+
+          if ($results.Count -gt 0) {
+            Write-Host "[!] Found $($results.Count) warning(s)/error(s)" -ForegroundColor Yellow
+            Write-Host "[i] Review recommended but not blocking" -ForegroundColor Cyan
+          } else {
+            Write-Host "[+] PSScriptAnalyzer: All clear" -ForegroundColor Green
+          }
+
+  bash-syntax:
+    name: Bash Script Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          echo "[+] ShellCheck installed"
+
+      - name: Run syntax check on Bash scripts
+        run: |
+          echo "[i] Checking Bash syntax..."
+          errors=0
+
+          # Find all .sh files
+          while IFS= read -r -d '' script; do
+            echo "  [*] Checking $(basename "$script")..."
+            if bash -n "$script"; then
+              echo "    [+] PASS: $(basename "$script")"
+            else
+              echo "    [-] FAIL: $(basename "$script")"
+              ((errors++))
+            fi
+          done < <(find . -name "*.sh" -type f -print0)
+
+          if [ $errors -gt 0 ]; then
+            echo "[-] $errors script(s) failed syntax check"
+            exit 1
+          else
+            echo "[+] All Bash scripts passed syntax check"
+          fi
+
+      - name: Run ShellCheck
+        run: |
+          echo "[i] Running ShellCheck..."
+          issues=0
+
+          while IFS= read -r -d '' script; do
+            echo "  [*] Analyzing $(basename "$script")..."
+            if shellcheck -S warning "$script"; then
+              echo "    [+] Clean: $(basename "$script")"
+            else
+              echo "    [!] Issues found in $(basename "$script")"
+              ((issues++))
+            fi
+          done < <(find . -name "*.sh" -type f -print0)
+
+          if [ $issues -gt 0 ]; then
+            echo "[!] ShellCheck found issues in $issues script(s)"
+            echo "[i] Review recommended but not blocking"
+          else
+            echo "[+] ShellCheck: All clear"
+          fi
+
+  validation-summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [powershell-syntax, bash-syntax]
+    if: always()
+
+    steps:
+      - name: Check validation results
+        run: |
+          echo "[i] Syntax validation completed"
+          if [ "${{ needs.powershell-syntax.result }}" == "failure" ] || [ "${{ needs.bash-syntax.result }}" == "failure" ]; then
+            echo "[-] FAIL: Syntax errors detected"
+            exit 1
+          else
+            echo "[+] PASS: All scripts valid"
+          fi

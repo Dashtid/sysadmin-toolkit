@@ -1,5 +1,108 @@
-/logs
+# ============================================================================
+# Comprehensive .gitignore for System Administration Toolkit
+# Prevents accidental commit of secrets, credentials, and sensitive data
+# ============================================================================
 
+# Logs and runtime files
+/logs
+*.log
+*.log.*
+
+# Environment and configuration files
+.env
+.env.local
+.env.*.local
 settings.local.json
-# Claude Code configuration
+config.local.json
+*.local.conf
+
+# SSH keys and certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+id_ecdsa*
+known_hosts
+
+# Credentials and secrets
+*password*
+*secret*
+*token*
+*apikey*
+credentials.json
+auth.json
+
+# Private IP addresses and hostnames (example patterns)
+# Uncomment if you have files with these patterns
+# *10.*.*.*.conf
+# *192.168.*.*.conf
+
+# Database files
+*.db
+*.sqlite
+*.sql
+
+# Backup files
+*.bak
+*.backup
+*.old
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS-specific files
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+# IDE and editor files
+.vscode/launch.json
+.vscode/tasks.json
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Claude Code configuration (contains user-specific settings)
 .claude/
+
+# PowerShell profiles and local scripts
+Microsoft.PowerShell_profile.ps1
+profile.ps1
+
+# Git Bash local configuration
+.bashrc.local
+.bash_profile.local
+
+# Test results and coverage
+TestResults/
+coverage/
+*.trx
+*.coverage
+
+# Package manager directories
+node_modules/
+vendor/
+venv/
+env/
