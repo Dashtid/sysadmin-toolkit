@@ -3,7 +3,7 @@
 # System Health Check Script for Ubuntu Lab Server
 # Monitors: CPU, RAM, GPU, Disk, K3s cluster, running services
 # Can be run manually or via cron for monitoring
-# Based on k8s-platform repo health checks
+# Generic server monitoring tool
 
 set -euo pipefail
 
@@ -11,6 +11,7 @@ set -euo pipefail
 # Configuration
 # ========================================
 K8S_PLATFORM_REPO="${K8S_PLATFORM_REPO:-/opt/k8s-platform}"
+K8S_NAMESPACE="${K8S_NAMESPACE:-default}"
 LOG_DIR="${LOG_DIR:-~/logs}"
 SAVE_LOG="${SAVE_LOG:-false}"
 VERBOSE="${VERBOSE:-false}"
@@ -85,13 +86,12 @@ print_header() {
     echo -e "${MAGENTA}"
     echo "╔════════════════════════════════════════════════════════════════╗"
     echo "║        Ubuntu Lab Server - System Health Check                ║"
-    echo "║        Hermes Medical Solutions AB                            ║"
     echo "╚════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-    echo -e "${CYAN}📅 Timestamp:${NC} $(date '+%Y-%m-%d %H:%M:%S %Z')"
-    echo -e "${CYAN}🖥️  Hostname:${NC} $(hostname)"
-    echo -e "${CYAN}👤 User:${NC} $(whoami)"
-    echo -e "${CYAN}📂 k8s-platform Repo:${NC} $K8S_PLATFORM_REPO"
+    echo -e "${CYAN}[i] Timestamp:${NC} $(date '+%Y-%m-%d %H:%M:%S %Z')"
+    echo -e "${CYAN}[*]  Hostname:${NC} $(hostname)"
+    echo -e "${CYAN}[*] User:${NC} $(whoami)"
+    echo -e "${CYAN}[*] k8s-platform Repo:${NC} $K8S_PLATFORM_REPO"
 }
 
 # ========================================
@@ -189,18 +189,18 @@ check_k3s_cluster() {
         local ns_count=$(kubectl get namespaces --no-headers 2>/dev/null | wc -l)
         info "Namespaces: $ns_count"
 
-        # Check pods in docker-services namespace
-        if kubectl get namespace docker-services &>/dev/null; then
-            local total_pods=$(kubectl get pods -n docker-services --no-headers 2>/dev/null | wc -l)
-            local running_pods=$(kubectl get pods -n docker-services --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
-            local failed_pods=$(kubectl get pods -n docker-services --field-selector=status.phase=Failed --no-headers 2>/dev/null | wc -l)
+        # Check pods in ${K8S_NAMESPACE:-default} namespace
+        if kubectl get namespace ${K8S_NAMESPACE:-default} &>/dev/null; then
+            local total_pods=$(kubectl get pods -n ${K8S_NAMESPACE:-default} --no-headers 2>/dev/null | wc -l)
+            local running_pods=$(kubectl get pods -n ${K8S_NAMESPACE:-default} --field-selector=status.phase=Running --no-headers 2>/dev/null | wc -l)
+            local failed_pods=$(kubectl get pods -n ${K8S_NAMESPACE:-default} --field-selector=status.phase=Failed --no-headers 2>/dev/null | wc -l)
 
-            info "Pods in docker-services: $total_pods total, $running_pods running"
+            info "Pods in ${K8S_NAMESPACE:-default}: $total_pods total, $running_pods running"
 
             if [[ $failed_pods -gt 0 ]]; then
                 warning "Failed pods: $failed_pods"
                 if [[ "$VERBOSE" == "true" ]]; then
-                    kubectl get pods -n docker-services --field-selector=status.phase=Failed
+                    kubectl get pods -n ${K8S_NAMESPACE:-default} --field-selector=status.phase=Failed
                 fi
             fi
 
@@ -208,12 +208,12 @@ check_k3s_cluster() {
             if [[ "$VERBOSE" == "true" ]]; then
                 echo ""
                 info "Running deployments:"
-                kubectl get deployments -n docker-services --no-headers 2>/dev/null | while read name ready uptodate available age; do
+                kubectl get deployments -n ${K8S_NAMESPACE:-default} --no-headers 2>/dev/null | while read name ready uptodate available age; do
                     echo "  → $name: $ready"
                 done
             fi
         else
-            warning "Namespace docker-services not found"
+            warning "Namespace ${K8S_NAMESPACE:-default} not found"
         fi
     else
         error "Cluster: not accessible (kubectl failed)"
@@ -228,9 +228,9 @@ check_services() {
     section "Service Health"
 
     local services=(
-        "http://localhost:31869:DefectDojo"
-        "http://localhost:32213:Ollama"
-        "http://localhost:32574:Open-WebUI"
+        "http://localhost:8080:Service-1"
+        "http://localhost:8081:Service-2"
+        "http://localhost:8082:Service-3"
     )
 
     for service_info in "${services[@]}"; do
@@ -337,16 +337,16 @@ print_summary() {
 
     if [[ $issues -eq 0 ]]; then
         echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
-        printf "${GREEN}║${NC} %-40s ${GREEN}%-21s║${NC}\n" "Overall Status:" "HEALTHY ✓"
+        printf "${GREEN}║${NC} %-40s ${GREEN}%-21s║${NC}\n" "Overall Status:" "HEALTHY [+]"
         echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
     elif [[ $issues -le 2 ]]; then
         echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
-        printf "${YELLOW}║${NC} %-40s ${YELLOW}%-21s║${NC}\n" "Overall Status:" "DEGRADED ⚠"
+        printf "${YELLOW}║${NC} %-40s ${YELLOW}%-21s║${NC}\n" "Overall Status:" "DEGRADED [!]"
         echo -e "${YELLOW}╚════════════════════════════════════════════════════════════════╝${NC}"
         warning "Detected $issues potential issues - review details above"
     else
         echo -e "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
-        printf "${RED}║${NC} %-40s ${RED}%-21s║${NC}\n" "Overall Status:" "UNHEALTHY ✗"
+        printf "${RED}║${NC} %-40s ${RED}%-21s║${NC}\n" "Overall Status:" "UNHEALTHY [-]"
         echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
         error "Detected $issues critical issues - immediate attention required"
     fi
@@ -375,7 +375,7 @@ main() {
     print_summary
 
     echo ""
-    info "💡 Tips:"
+    info "[i] Tips:"
     echo "   • Run with --verbose for detailed output"
     echo "   • Run with --save-log to save results"
     echo "   • Check K8s pods: kubectl get pods -A"
