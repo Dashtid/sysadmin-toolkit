@@ -27,10 +27,10 @@ function Write-Log {
     Add-Content -Path $LogFile -Value $LogMessage
 }
 
-function Write-Success { param([string]$Message) Write-Log "✅ $Message" -Color $Colors.Green }
-function Write-Info { param([string]$Message) Write-Log "ℹ️ $Message" -Color $Colors.Blue }
-function Write-Warning { param([string]$Message) Write-Log "⚠️ $Message" -Color $Colors.Yellow }
-function Write-Error { param([string]$Message) Write-Log "❌ $Message" -Color $Colors.Red }
+function Write-Success { param([string]$Message) Write-Log "[+] $Message" -Color $Colors.Green }
+function Write-Info { param([string]$Message) Write-Log "[i] $Message" -Color $Colors.Blue }
+function Write-Warning { param([string]$Message) Write-Log "[!] $Message" -Color $Colors.Yellow }
+function Write-Error { param([string]$Message) Write-Log "[-] $Message" -Color $Colors.Red }
 
 # Check if running as Administrator
 function Test-Administrator {
@@ -166,8 +166,8 @@ function Invoke-SystemCleanup {
 
 # Main execution
 function Main {
-    Write-Log "🚀 Starting Windows Automated Update Script..." -Color $Colors.Cyan
-    Write-Log "📋 Log file: $LogFile" -Color $Colors.Blue
+    Write-Log "[*] Starting Windows Automated Update Script..." -Color $Colors.Cyan
+    Write-Log "[*] Log file: $LogFile" -Color $Colors.Blue
     
     # Verify prerequisites
     if (!(Test-Administrator)) {
@@ -184,11 +184,11 @@ function Main {
     Clear-OldLogs
     
     Write-Success "Windows automated update script completed successfully!"
-    Write-Info "📊 Check log file for details: $LogFile"
+    Write-Info "[*] Check log file for details: $LogFile"
     
     # Display summary
     $EndTime = Get-Date
-    Write-Log "⏱️ Script completed at: $EndTime" -Color $Colors.Green
+    Write-Log "[*] Script completed at: $EndTime" -Color $Colors.Green
 }
 
 # Run main function

@@ -105,7 +105,7 @@ try {
     if (-not $SkipVersionCheck) {
         Write-Host "`n=== Version Comparison ===" -ForegroundColor Cyan
         if ($finalStatus.AntivirusSignatureVersion -gt $initialStatus.AntivirusSignatureVersion) {
-            Write-Host "✓ Update successful!" -ForegroundColor Green
+            Write-Host "[+] Update successful!" -ForegroundColor Green
             Write-Host "  Version increased from $($initialStatus.AntivirusSignatureVersion) to $($finalStatus.AntivirusSignatureVersion)" -ForegroundColor Green
         }
         elseif ($finalStatus.AntivirusSignatureVersion -eq $initialStatus.AntivirusSignatureVersion) {
@@ -113,7 +113,7 @@ try {
             Write-Host "  Current version: $($finalStatus.AntivirusSignatureVersion)" -ForegroundColor Yellow
         }
         else {
-            Write-Host "✗ Warning: Version appears to have decreased" -ForegroundColor Red
+            Write-Host "[-] Warning: Version appears to have decreased" -ForegroundColor Red
             Write-Host "  This is unusual and may indicate an issue" -ForegroundColor Red
         }
     }
