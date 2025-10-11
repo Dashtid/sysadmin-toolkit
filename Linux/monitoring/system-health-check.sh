@@ -34,10 +34,10 @@ section() {
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
 }
 
-info() { echo -e "${BLUE}ℹ${NC} $1"; }
-success() { echo -e "${GREEN}✓${NC} $1"; }
-warning() { echo -e "${YELLOW}⚠${NC} $1"; }
-error() { echo -e "${RED}✗${NC} $1"; }
+info() { echo -e "${BLUE}[i]${NC} $1"; }
+success() { echo -e "${GREEN}[+]${NC} $1"; }
+warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+error() { echo -e "${RED}[-]${NC} $1"; }
 
 check_status() {
     if [ $? -eq 0 ]; then
