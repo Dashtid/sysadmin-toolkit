@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # Ubuntu Desktop Fresh Installation Setup Script
 # Sets up a new Ubuntu desktop for development and daily use
 # Run as regular user (will prompt for sudo when needed)
@@ -39,21 +39,21 @@ check_user() {
         error "This script should NOT be run as root. Run as regular user."
         exit 1
     fi
-    log "✅ Running as regular user: $USER"
+    log "[+] Running as regular user: $USER"
 }
 
 # Update system packages
 update_system() {
-    log "🔄 Updating system packages..."
+    log "[*] Updating system packages..."
     sudo apt update && sudo apt -y upgrade
     sudo apt -y autoremove --purge
     sudo apt -y autoclean
-    log "✅ System updated"
+    log "[+] System updated"
 }
 
 # Install essential packages
 install_essentials() {
-    log "📦 Installing essential packages..."
+    log "[*] Installing essential packages..."
     
     sudo apt install -y \
         curl \
@@ -86,12 +86,12 @@ install_essentials() {
         flatpak \
         gnome-software-plugin-flatpak
     
-    log "✅ Essential packages installed"
+    log "[+] Essential packages installed"
 }
 
 # Install multimedia codecs and drivers
 install_multimedia() {
-    log "🎵 Installing multimedia codecs and drivers..."
+    log "[*] Installing multimedia codecs and drivers..."
     
     # Enable partner repository for additional codecs
     sudo add-apt-repository -y "deb http://archive.canonical.com/ubuntu $(lsb_release -sc) partner"
@@ -111,22 +111,22 @@ install_multimedia() {
         gstreamer1.0-plugins-ugly \
         gstreamer1.0-libav
     
-    log "✅ Multimedia support installed"
+    log "[+] Multimedia support installed"
 }
 
 # Setup Flatpak
 setup_flatpak() {
-    log "📱 Setting up Flatpak..."
+    log "[*] Setting up Flatpak..."
     
     # Add Flathub repository
     sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
     
-    log "✅ Flatpak configured with Flathub"
+    log "[+] Flatpak configured with Flathub"
 }
 
 # Install development tools
 install_dev_tools() {
-    log "🛠️ Installing development tools..."
+    log "[*] Installing development tools..."
     
     # Install Visual Studio Code
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
@@ -162,12 +162,12 @@ install_dev_tools() {
         rm -rf bin exa.zip
     fi
     
-    log "✅ Development tools installed"
+    log "[+] Development tools installed"
 }
 
 # Install Docker Desktop
 install_docker() {
-    log "🐋 Installing Docker Desktop..."
+    log "[*] Installing Docker Desktop..."
     
     # Remove old versions
     sudo apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
@@ -192,13 +192,13 @@ install_docker() {
     # Download Docker Desktop (user will need to install manually)
     wget -O ~/Downloads/docker-desktop.deb "https://desktop.docker.com/linux/main/amd64/docker-desktop-4.25.0-amd64.deb"
     
-    log "✅ Docker Engine installed, Docker Desktop downloaded to ~/Downloads/"
+    log "[+] Docker Engine installed, Docker Desktop downloaded to ~/Downloads/"
     warning "Install Docker Desktop manually: sudo dpkg -i ~/Downloads/docker-desktop.deb"
 }
 
 # Install browsers
 install_browsers() {
-    log "🌐 Installing web browsers..."
+    log "[*] Installing web browsers..."
     
     # Install Firefox (usually pre-installed)
     sudo apt install -y firefox
@@ -215,12 +215,12 @@ install_browsers() {
     sudo apt update
     sudo apt install -y brave-browser
     
-    log "✅ Web browsers installed"
+    log "[+] Web browsers installed"
 }
 
 # Install communication tools
 install_communication() {
-    log "💬 Installing communication tools..."
+    log "[*] Installing communication tools..."
     
     # Install via Snap
     sudo snap install discord
@@ -231,12 +231,12 @@ install_communication() {
     # Install Thunderbird email client
     sudo apt install -y thunderbird
     
-    log "✅ Communication tools installed"
+    log "[+] Communication tools installed"
 }
 
 # Install productivity tools
 install_productivity() {
-    log "📊 Installing productivity tools..."
+    log "[*] Installing productivity tools..."
     
     # Install LibreOffice (usually pre-installed)
     sudo apt install -y libreoffice
@@ -257,12 +257,12 @@ install_productivity() {
     sudo snap install notion-snap
     sudo snap install obsidian --classic
     
-    log "✅ Productivity tools installed"
+    log "[+] Productivity tools installed"
 }
 
 # Setup programming languages
 setup_programming_languages() {
-    log "🐍 Setting up programming languages..."
+    log "[*] Setting up programming languages..."
     
     # Python setup
     python3 -m pip install --user --upgrade pip
@@ -286,12 +286,12 @@ setup_programming_languages() {
     sudo tar -C /usr/local -xzf "go${GO_VERSION}.linux-amd64.tar.gz"
     rm "go${GO_VERSION}.linux-amd64.tar.gz"
     
-    log "✅ Programming languages configured"
+    log "[+] Programming languages configured"
 }
 
 # Configure Git
 configure_git() {
-    log "🔧 Configuring Git..."
+    log "[*] Configuring Git..."
     
     # Check if Git is already configured
     if ! git config --global user.name &>/dev/null; then
@@ -304,15 +304,15 @@ configure_git() {
         git config --global pull.rebase false
         git config --global core.editor "code --wait"
         
-        log "✅ Git configured for $git_username"
+        log "[+] Git configured for $git_username"
     else
-        log "✅ Git already configured"
+        log "[+] Git already configured"
     fi
 }
 
 # Setup shell improvements
 setup_shell() {
-    log "🐚 Setting up shell improvements..."
+    log "[*] Setting up shell improvements..."
     
     # Install Oh My Zsh
     if [ ! -d "$HOME/.oh-my-zsh" ]; then
@@ -365,12 +365,12 @@ alias meminfo='free -m -l -t'
 alias diskusage='df -H'
 EOF
     
-    log "✅ Shell improvements configured"
+    log "[+] Shell improvements configured"
 }
 
 # Configure firewall
 configure_firewall() {
-    log "🛡️ Configuring firewall..."
+    log "[*] Configuring firewall..."
     
     sudo ufw enable
     sudo ufw default deny incoming
@@ -382,12 +382,12 @@ configure_firewall() {
     sudo ufw allow 8080/tcp  # Alternative HTTP
     sudo ufw allow 5000/tcp  # Flask default
     
-    log "✅ Firewall configured"
+    log "[+] Firewall configured"
 }
 
 # Setup development directories
 setup_dev_directories() {
-    log "📁 Setting up development directories..."
+    log "[*] Setting up development directories..."
     
     mkdir -p ~/Development/{Projects,Learning,Tools,Scripts}
     mkdir -p ~/Development/Projects/{Web,Mobile,Desktop,Scripts}
@@ -415,12 +415,12 @@ setup_dev_directories() {
 - Personal automation scripts
 EOF
     
-    log "✅ Development directories created"
+    log "[+] Development directories created"
 }
 
 # Install VS Code extensions
 install_vscode_extensions() {
-    log "🔌 Installing VS Code extensions..."
+    log "[*] Installing VS Code extensions..."
     
     # Wait for VS Code to be available
     sleep 2
@@ -442,12 +442,12 @@ install_vscode_extensions() {
     code --install-extension ms-vscode.vscode-thunder-client
     code --install-extension ms-vscode.vscode-markdown-preview-enhanced
     
-    log "✅ VS Code extensions installed"
+    log "[+] VS Code extensions installed"
 }
 
 # Final system optimization
 optimize_system() {
-    log "⚡ Optimizing system..."
+    log "[*] Optimizing system..."
     
     # Enable firewall
     sudo systemctl enable ufw
@@ -461,12 +461,12 @@ optimize_system() {
     # Apply changes
     sudo sysctl -p
     
-    log "✅ System optimized"
+    log "[+] System optimized"
 }
 
 # Create desktop shortcuts
 create_shortcuts() {
-    log "🖥️ Creating desktop shortcuts..."
+    log "[*] Creating desktop shortcuts..."
     
     # Create desktop directory if it doesn't exist
     mkdir -p ~/Desktop
@@ -499,12 +499,12 @@ Categories=System;TerminalEmulator;
 EOF
     chmod +x ~/Desktop/Terminal.desktop
     
-    log "✅ Desktop shortcuts created"
+    log "[+] Desktop shortcuts created"
 }
 
 # Main execution function
 main() {
-    log "🚀 Starting Ubuntu Desktop Fresh Setup..."
+    log "[*] Starting Ubuntu Desktop Fresh Setup..."
     
     check_user
     update_system
@@ -525,18 +525,20 @@ main() {
     optimize_system
     create_shortcuts
     
-    log "✅ Ubuntu Desktop setup completed successfully!"
-    log "📋 Setup log saved to: $LOG_FILE"
+    log "[+] Ubuntu Desktop setup completed successfully!"
+    log "[i] Setup log saved to: $LOG_FILE"
     
-    info "🔄 Please reboot the system to ensure all changes take effect"
-    info "🐋 After reboot, install Docker Desktop: sudo dpkg -i ~/Downloads/docker-desktop.deb"
-    info "🐚 Switch to Zsh: chsh -s $(which zsh)"
-    info "🔑 Setup SSH keys for Git: ssh-keygen -t ed25519 -C 'your_email@example.com'"
-    info "📁 Development directory: ~/Development/"
-    info "🎯 VS Code is ready with essential extensions"
+    info "[*] Please reboot the system to ensure all changes take effect"
+    info "[*] After reboot, install Docker Desktop: sudo dpkg -i ~/Downloads/docker-desktop.deb"
+    info "[*] Switch to Zsh: chsh -s $(which zsh)"
+    info "[*] Setup SSH keys for Git: ssh-keygen -t ed25519 -C 'your_email@example.com'"
+    info "[*] Development directory: ~/Development/"
+    info "[*] VS Code is ready with essential extensions"
     
     warning "You may need to log out and back in for all group memberships to take effect"
 }
 
 # Run main function
 main "$@"
+
+

@@ -1,4 +1,4 @@
-# Windows 11 Work Laptop Setup Script
+﻿# Windows 11 Work Laptop Setup Script
 # Comprehensive setup for development and work environment
 # Run as Administrator in PowerShell 7+
 
@@ -34,10 +34,10 @@ function Write-Log {
     Add-Content -Path $LogFile -Value $LogMessage
 }
 
-function Write-Success { param([string]$Message) Write-Log "✅ $Message" -Color $Colors.Green }
-function Write-Info { param([string]$Message) Write-Log "ℹ️ $Message" -Color $Colors.Blue }
-function Write-Warning { param([string]$Message) Write-Log "⚠️ $Message" -Color $Colors.Yellow }
-function Write-Error { param([string]$Message) Write-Log "❌ $Message" -Color $Colors.Red }
+function Write-Success { param([string]$Message) Write-Log "[+] $Message" -Color $Colors.Green }
+function Write-Info { param([string]$Message) Write-Log "[i] $Message" -Color $Colors.Blue }
+function Write-Warning { param([string]$Message) Write-Log "[\!] $Message" -Color $Colors.Yellow }
+function Write-Error { param([string]$Message) Write-Log "[-] $Message" -Color $Colors.Red }
 
 # Check PowerShell version
 function Test-PowerShellVersion {
@@ -339,7 +339,7 @@ function Get-SystemInfo {
 Set-Alias -Name sysinfo -Value Get-SystemInfo
 
 # Welcome message
-Write-Host "🚀 PowerShell Profile Loaded!" -ForegroundColor Green
+Write-Host "[*] PowerShell Profile Loaded!" -ForegroundColor Green
 Write-Host "Type 'sysinfo' for system information" -ForegroundColor Cyan
 '@
 
@@ -500,7 +500,7 @@ function Create-DesktopShortcuts {
 
 # Main execution function
 function Main {
-    Write-Log "🚀 Starting Windows 11 Work Laptop Setup..." -Color $Colors.Cyan
+    Write-Log "[*] Starting Windows 11 Work Laptop Setup..." -Color $Colors.Cyan
     
     Test-PowerShellVersion
     Install-Chocolatey
@@ -516,17 +516,18 @@ function Main {
     Create-DesktopShortcuts
     
     Write-Success "Windows 11 Work Laptop setup completed successfully!"
-    Write-Log "📋 Setup log saved to: $LogFile" -Color $Colors.Blue
+    Write-Log "[i] Setup log saved to: $LogFile" -Color $Colors.Blue
     
-    Write-Info "🔄 Please reboot the system to ensure all changes take effect"
-    Write-Info "🐋 After reboot, start Docker Desktop and complete setup"
-    Write-Info "🐧 Complete WSL2 Ubuntu setup after reboot"
-    Write-Info "🔑 Setup SSH keys for Git: ssh-keygen -t ed25519 -C 'your_email@example.com'"
-    Write-Info "📁 Development directory: $env:USERPROFILE\Development"
-    Write-Info "🎯 VS Code and development tools are ready"
+    Write-Info "[*] Please reboot the system to ensure all changes take effect"
+    Write-Info "[*] After reboot, start Docker Desktop and complete setup"
+    Write-Info "[*] Complete WSL2 Ubuntu setup after reboot"
+    Write-Info "[*] Setup SSH keys for Git: ssh-keygen -t ed25519 -C 'your_email@example.com'"
+    Write-Info "[*] Development directory: $env:USERPROFILE\Development"
+    Write-Info "[*] VS Code and development tools are ready"
     
     Write-Warning "Some applications may require manual configuration after installation"
 }
 
 # Run main function
 Main
+
