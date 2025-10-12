@@ -1,0 +1,170 @@
+{
+	"$schema" : "https://aka.ms/winget-packages.schema.2.0.json",
+	"CreationDate" : "2025-10-12T03:48:30.041-00:00",
+	"Sources" : 
+	[
+		{
+			"Packages" : 
+			[
+				{
+					"PackageIdentifier" : "CoreyButler.NVMforWindows"
+				},
+				{
+					"PackageIdentifier" : "Docker.DockerDesktop"
+				},
+				{
+					"PackageIdentifier" : "Git.Git"
+				},
+				{
+					"PackageIdentifier" : "Notepad++.Notepad++"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.OneDrive"
+				},
+				{
+					"PackageIdentifier" : "Proton.ProtonVPN"
+				},
+				{
+					"PackageIdentifier" : "Obsidian.Obsidian"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VCRedist.2010.x64"
+				},
+				{
+					"PackageIdentifier" : "GitHub.cli"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.AzureCLI"
+				},
+				{
+					"PackageIdentifier" : "Google.Chrome"
+				},
+				{
+					"PackageIdentifier" : "geeksoftwareGmbH.PDF24Creator"
+				},
+				{
+					"PackageIdentifier" : "Logitech.OptionsPlus"
+				},
+				{
+					"PackageIdentifier" : "RevoUninstaller.RevoUninstaller"
+				},
+				{
+					"PackageIdentifier" : "OpenVPNTechnologies.OpenVPN"
+				},
+				{
+					"PackageIdentifier" : "Apple.AppleMobileDeviceSupport"
+				},
+				{
+					"PackageIdentifier" : "Nvidia.CUDA"
+				},
+				{
+					"PackageIdentifier" : "Nvidia.PhysX"
+				},
+				{
+					"PackageIdentifier" : "JohnMacFarlane.Pandoc"
+				},
+				{
+					"PackageIdentifier" : "PuTTY.PuTTY"
+				},
+				{
+					"PackageIdentifier" : "MicroDicom.DICOMViewer"
+				},
+				{
+					"PackageIdentifier" : "WatchGuard.MobileVPNWithSSLClient"
+				},
+				{
+					"PackageIdentifier" : "WinSCP.WinSCP"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VCRedist.2013.x64"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.DotNet.DesktopRuntime.6"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VCRedist.2015+.x86"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.DotNet.DesktopRuntime.3_1"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.PowerShell"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VCRedist.2012.x86"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.DotNet.DesktopRuntime.8"
+				},
+				{
+					"PackageIdentifier" : "Python.Launcher"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.Edge"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VCRedist.2013.x86"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VCRedist.2010.x86"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.DotNet.SDK.9"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VCRedist.2012.x64"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VCRedist.2015+.x64"
+				},
+				{
+					"PackageIdentifier" : "Brave.Brave"
+				},
+				{
+					"PackageIdentifier" : "Spotify.Spotify"
+				},
+				{
+					"PackageIdentifier" : "Zoom.Zoom.EXE"
+				},
+				{
+					"PackageIdentifier" : "Proton.ProtonMail"
+				},
+				{
+					"PackageIdentifier" : "Ollama.Ollama"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VisualStudioCode"
+				},
+				{
+					"PackageIdentifier" : "Python.Python.3.14"
+				},
+				{
+					"PackageIdentifier" : "Python.Python.3.13"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.Teams"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.AppInstaller"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.UI.Xaml.2.7"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.UI.Xaml.2.8"
+				},
+				{
+					"PackageIdentifier" : "Microsoft.VCLibs.Desktop.14"
+				}
+			],
+			"SourceDetails" : 
+			{
+				"Argument" : "https://cdn.winget.microsoft.com/cache",
+				"Identifier" : "Microsoft.Winget.Source_8wekyb3d8bbwe",
+				"Name" : "winget",
+				"Type" : "Microsoft.PreIndexed.Package"
+			}
+		}
+	],
+	"WinGetVersion" : "1.11.510"
+}
