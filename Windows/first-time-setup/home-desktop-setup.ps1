@@ -1,6 +1,7 @@
-# Windows 11 Work Laptop Setup Script
-# Professional work environment setup (NO PERSONAL/GAMING SOFTWARE)
+# Windows 11 Home Desktop Setup Script
+# Personal desktop setup for home use (development, gaming, personal productivity)
 # Run as Administrator in PowerShell 7+
+# NO WORK/CORPORATE TOOLS - This is for personal home desktop only
 
 #Requires -Version 7.0
 #Requires -RunAsAdministrator
@@ -8,7 +9,7 @@
 param(
     [switch]$SkipChocolatey,
     [switch]$SkipWinget,
-    [switch]$SkipWSL,
+    [switch]$SkipGaming,
     [switch]$Minimal
 )
 
@@ -23,7 +24,7 @@ $Colors = @{
 
 # Logging setup
 $LogDir = "$env:USERPROFILE\.setup-logs"
-$LogFile = "$LogDir\work-laptop-setup-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+$LogFile = "$LogDir\home-desktop-setup-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 
 function Write-Log {
@@ -45,8 +46,8 @@ function Show-Banner {
 
     ╔══════════════════════════════════════════════════════════╗
     ║                                                          ║
-    ║        Windows 11 Work Laptop Setup                     ║
-    ║        Professional Development Environment             ║
+    ║        Windows 11 Home Desktop Setup                    ║
+    ║        Personal Development & Gaming Environment        ║
     ║                                                          ║
     ╚══════════════════════════════════════════════════════════╝
 
@@ -103,33 +104,45 @@ function Install-ChocolateyPackages {
         return
     }
 
-    Write-Info "Installing work packages via Chocolatey..."
+    Write-Info "Installing packages via Chocolatey..."
 
-    # Core development tools
+    # Core development tools - Python focused
     $DevelopmentPackages = @(
         'git',
         'python',
         'python3',
         'uv',                          # Modern Python package manager
         'pandoc',                      # Document converter
-        'bind-toolsonly',              # DNS tools
+        'tesseract',                   # OCR engine
+        'bind-toolsonly',              # DNS tools (dig, nslookup)
         'grype',                       # Security scanner
         'syft'                         # SBOM generator
     )
 
-    # Work-specific CLI tools
-    $WorkTools = @(
-        'azure-cli',                   # Azure CLI
+    # CLI tools
+    $CLIPackages = @(
+        'azure-cli',                   # Azure command line
         'powershell-core'              # PowerShell 7
     )
 
-    # Productivity (work only)
+    # Personal productivity
     $ProductivityPackages = @(
         'obsidian',                    # Note-taking
-        'notepadplusplus'              # Text editor
+        'notepadplusplus',             # Text editor
+        'spotify',                     # Music
+        'discord'                      # Communication
     )
 
-    $AllPackages = $DevelopmentPackages + $WorkTools + $ProductivityPackages
+    # Gaming (skip if -SkipGaming)
+    $GamingPackages = @(
+        'steam'                        # Gaming platform
+    )
+
+    $AllPackages = $DevelopmentPackages + $CLIPackages + $ProductivityPackages
+
+    if (-not $SkipGaming) {
+        $AllPackages += $GamingPackages
+    }
 
     foreach ($Package in $AllPackages) {
         try {
@@ -165,7 +178,7 @@ function Install-WingetPackages {
         'Microsoft.VisualStudioCode',  # Code editor
         'Git.Git',                      # Version control
         'Docker.DockerDesktop',         # Containers
-        'OpenJS.NodeJS',                # JavaScript runtime
+        'OpenJS.NodeJS',                # JavaScript runtime (for VS Code extensions)
         'CoreyButler.NVMforWindows',   # Node version manager
         'GitHub.cli',                   # GitHub CLI
         'Microsoft.PowerShell',         # PowerShell 7
@@ -175,25 +188,35 @@ function Install-WingetPackages {
         'WinSCP.WinSCP'                 # SFTP/SCP client
     )
 
-    # Browsers (work appropriate)
+    # Browsers
     $BrowserPackages = @(
         'Google.Chrome',
         'Microsoft.Edge',
         'Brave.Brave'
     )
 
-    # Work productivity & communication
+    # Personal productivity & communication
     $ProductivityPackages = @(
         'Obsidian.Obsidian',            # Note-taking
         'Notepad++.Notepad++',          # Text editor
         'geeksoftwareGmbH.PDF24Creator',# PDF tools
+        'Ollama.Ollama',                # Local LLM
+        'Proton.ProtonVPN',             # VPN
+        'Proton.ProtonMail',            # Email client
         'RevoUninstaller.RevoUninstaller', # Uninstaller
-        'WatchGuard.MobileVPNWithSSLClient', # Corporate VPN
-        'Microsoft.Teams',              # Work communication
-        'Zoom.Zoom.EXE'                 # Video conferencing
+        'OpenVPNTechnologies.OpenVPN',  # VPN client
+        'Logitech.OptionsPlus',         # Mouse/keyboard
+        'Zoom.Zoom.EXE',                # Video conferencing
+        'Discord.Discord',              # Communication
+        'Spotify.Spotify'               # Music
     )
 
-    $AllPackages = $DevPackages + $BrowserPackages + $ProductivityPackages
+    # Utilities
+    $UtilityPackages = @(
+        'MicroDicom.DICOMViewer'       # Medical imaging
+    )
+
+    $AllPackages = $DevPackages + $BrowserPackages + $ProductivityPackages + $UtilityPackages
 
     foreach ($Package in $AllPackages) {
         try {
@@ -204,36 +227,6 @@ function Install-WingetPackages {
         catch {
             Write-Warning "Failed to install ${Package}: $($_.Exception.Message)"
         }
-    }
-}
-
-# Setup WSL2
-function Setup-WSL2 {
-    if ($SkipWSL) {
-        Write-Info "Skipping WSL2 setup"
-        return
-    }
-
-    Write-Info "Setting up WSL2..."
-
-    try {
-        # Enable WSL feature
-        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction SilentlyContinue
-        Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart -ErrorAction SilentlyContinue
-
-        # Set WSL2 as default
-        wsl --set-default-version 2
-
-        # Install Ubuntu (most common distribution)
-        Write-Info "Installing Ubuntu for WSL2..."
-        wsl --install -d Ubuntu
-
-        Write-Success "WSL2 setup completed"
-        Write-Warning "Reboot required for WSL2 to work properly"
-    }
-    catch {
-        Write-Warning "WSL2 setup failed: $($_.Exception.Message)"
-        Write-Info "You may need to enable virtualization in BIOS"
     }
 }
 
@@ -251,38 +244,34 @@ function Configure-Git {
     $GitEmail = git config --global user.email 2>$null
 
     if (-not $GitUser) {
-        $GitUser = Read-Host "Enter your Git username (work)"
-        git config --global user.name $GitUser
+        Write-Info "Git user not configured. You can configure it later with:"
+        Write-Info "  git config --global user.name 'Your Name'"
     }
 
     if (-not $GitEmail) {
-        $GitEmail = Read-Host "Enter your Git email (work)"
-        git config --global user.email $GitEmail
+        Write-Info "Git email not configured. You can configure it later with:"
+        Write-Info "  git config --global user.email 'your@email.com'"
     }
 
-    # Configure Git settings for work
+    # Configure Git settings
     git config --global init.defaultBranch main
     git config --global pull.rebase false
     git config --global core.autocrlf true
     git config --global core.editor "code --wait"
-    git config --global merge.tool vscode
-    git config --global mergetool.vscode.cmd "code --wait `$MERGED"
-    git config --global diff.tool vscode
-    git config --global difftool.vscode.cmd "code --wait --diff `$LOCAL `$REMOTE"
 
-    Write-Success "Git configured for ${GitUser} (${GitEmail})"
+    Write-Success "Git configured with VS Code as default editor"
 }
 
 # Setup development directories
 function Setup-DevelopmentDirectories {
     Write-Info "Setting up development directories..."
 
-    $DevDir = "$env:USERPROFILE\Development"
+    $CodeDir = "C:\Code"
     $Directories = @(
-        "$DevDir\Projects",
-        "$DevDir\Scripts",
-        "$DevDir\Tools",
-        "$DevDir\Documentation"
+        "$CodeDir",
+        "$CodeDir\personal",
+        "$CodeDir\learning",
+        "$CodeDir\projects"
     )
 
     foreach ($Dir in $Directories) {
@@ -291,12 +280,12 @@ function Setup-DevelopmentDirectories {
         }
     }
 
-    Write-Success "Development directories created at: $DevDir"
+    Write-Success "Development directories created at: $CodeDir"
 }
 
 # Configure Windows settings
 function Configure-WindowsSettings {
-    Write-Info "Configuring Windows settings for work..."
+    Write-Info "Configuring Windows settings..."
 
     try {
         # Show file extensions
@@ -322,14 +311,14 @@ function Configure-WindowsSettings {
 
 # Install Python packages
 function Install-PythonPackages {
-    Write-Info "Installing work Python packages via uv..."
+    Write-Info "Installing common Python packages via uv..."
 
     if (!(Get-Command uv -ErrorAction SilentlyContinue)) {
         Write-Warning "uv not found. Skipping Python package installation"
         return
     }
 
-    # Work-relevant Python tools
+    # Common Python tools
     $PythonTools = @(
         'pipx',            # Install Python apps
         'black',           # Code formatter
@@ -338,9 +327,7 @@ function Install-PythonPackages {
         'ipython',         # Better REPL
         'requests',        # HTTP library
         'pandas',          # Data analysis
-        'numpy',           # Numerical computing
-        'jupyter',         # Notebooks
-        'ansible'          # Automation (if DevOps work)
+        'numpy'            # Numerical computing
     )
 
     foreach ($Tool in $PythonTools) {
@@ -358,7 +345,7 @@ function Install-PythonPackages {
 
 # Show post-installation tasks
 function Show-PostInstallation {
-    Write-Success "`n[*] Work Laptop Setup Complete!"
+    Write-Success "`n[*] Home Desktop Setup Complete!"
     Write-Info ""
     Write-Info "Log file: $LogFile"
     Write-Info ""
@@ -368,24 +355,27 @@ function Show-PostInstallation {
     Write-Info ""
     Write-Info "2. Configure Git (if not done):"
     Write-Info "   git config --global user.name 'Your Name'"
-    Write-Info "   git config --global user.email 'work@company.com'"
+    Write-Info "   git config --global user.email 'your@email.com'"
     Write-Info ""
-    Write-Info "3. Generate SSH keys for work repositories:"
-    Write-Info "   ssh-keygen -t ed25519 -C 'work@company.com'"
+    Write-Info "3. Generate SSH keys for GitHub:"
+    Write-Info "   ssh-keygen -t ed25519 -C 'your_email@example.com'"
     Write-Info ""
-    Write-Info "4. Sign in to work applications:"
-    Write-Info "   - Browsers (Chrome, Edge)"
+    Write-Info "4. Sign in to applications:"
+    Write-Info "   - Browsers (Chrome, Brave, Edge)"
     Write-Info "   - VS Code (Settings Sync)"
-    Write-Info "   - Microsoft Teams"
-    Write-Info "   - OneDrive (if required)"
-    Write-Info "   - WatchGuard VPN"
+    Write-Info "   - Discord"
+    Write-Info "   - Spotify"
+    Write-Info "   - ProtonVPN"
+    Write-Info "   - ProtonMail"
     Write-Info ""
-    Write-Info "5. Complete WSL2 Ubuntu setup after reboot:"
-    Write-Info "   wsl --install -d Ubuntu"
+    Write-Info "5. Start Docker Desktop and complete setup"
     Write-Info ""
-    Write-Info "6. Start Docker Desktop and complete setup"
+    Write-Info "6. Python development ready at: C:\Code"
     Write-Info ""
-    Write-Info "7. Development directory: $env:USERPROFILE\Development"
+    Write-Info "SECURITY REMINDER:"
+    Write-Info "   This is a PERSONAL HOME desktop"
+    Write-Info "   DO NOT connect to work VPNs or corporate networks"
+    Write-Info "   DO NOT install work-related software"
     Write-Info ""
     Write-Warning "REBOOT REQUIRED - Restart to complete setup"
 }
@@ -394,7 +384,7 @@ function Show-PostInstallation {
 function Main {
     Show-Banner
 
-    Write-Info "Starting Windows 11 Work Laptop Setup..."
+    Write-Info "Starting Windows 11 Home Desktop Setup..."
     Write-Info "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
     Write-Info ""
 
@@ -404,7 +394,6 @@ function Main {
     Install-Chocolatey
     Install-ChocolateyPackages
     Install-WingetPackages
-    Setup-WSL2
     Configure-Git
     Setup-DevelopmentDirectories
     Configure-WindowsSettings
