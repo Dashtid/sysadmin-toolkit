@@ -303,10 +303,14 @@ Comprehensive guides available in the [`docs/`](docs/) directory:
 
 - **[SSH Tunnel Setup Guide](docs/SSH-TUNNEL-SETUP.md)**: Detailed Gitea tunnel configuration
 - **[Security Best Practices](docs/SECURITY.md)**: Guidelines for secure script usage
+- **[Script Template](docs/SCRIPT_TEMPLATE.md)**: PowerShell and Bash script templates with best practices
 
-Additional documentation in script directories:
+Additional documentation:
 - **[First-Time Setup README](Windows/first-time-setup/README.md)**: Windows 11 desktop setup guide
 - **[First-Time Setup QUICKSTART](Windows/first-time-setup/QUICKSTART.md)**: TL;DR setup guide
+- **[Example Scripts](examples/README.md)**: Reference implementations and templates
+- **[Contributing Guidelines](CONTRIBUTING.md)**: How to contribute to this project
+- **[Changelog](CHANGELOG.md)**: Version history and release notes
 
 ## [*] Contributing
 
@@ -358,4 +362,4 @@ _For questions, suggestions, or issues, please open a GitHub issue._
 ---
 
 **Last Updated**: 2025-10-12
-**Version**: 2.1 (Added first-time setup automation and security hardening framework)
+**Version**: 2.2 (Enhanced documentation, templates, and testing infrastructure)
