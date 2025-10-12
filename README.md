@@ -1,5 +1,12 @@
 # System Administration & Development Toolkit
 
+[![Syntax Check](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/syntax-check.yml/badge.svg)](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/syntax-check.yml)
+[![Test Scripts](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/test-scripts.yml/badge.svg)](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/test-scripts.yml)
+[![Secret Scan](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/secret-scan.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Maintained](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/graphs/commit-activity)
+[![PowerShell](https://img.shields.io/badge/PowerShell-7.0+-blue.svg)](https://github.com/PowerShell/PowerShell)
+
 A comprehensive collection of system administration scripts and tools for Windows and Linux environments. This repository provides ready-to-use scripts for SSH configuration, system maintenance, security hardening, and remote development workflows.
 
 **Public Repository**: [https://github.com/dashtid/windows-linux-sysadmin-toolkit](https://github.com/dashtid/windows-linux-sysadmin-toolkit)
