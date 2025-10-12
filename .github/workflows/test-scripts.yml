@@ -1,0 +1,209 @@
+name: Test Scripts
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  test-windows-scripts:
+    name: Test Windows PowerShell Scripts
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -Force -SkipPublisherCheck -Scope CurrentUser
+          Import-Module Pester
+
+      - name: Run Pester tests
+        shell: pwsh
+        run: |
+          $Config = New-PesterConfiguration
+          $Config.Run.Path = ".\tests\Windows"
+          $Config.Output.Verbosity = "Detailed"
+          $Config.TestResult.Enabled = $true
+          $Config.TestResult.OutputPath = "test-results-windows.xml"
+          $Config.TestResult.OutputFormat = "NUnitXml"
+
+          Invoke-Pester -Configuration $Config
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-test-results
+          path: test-results-windows.xml
+
+  test-linux-scripts:
+    name: Test Linux Bash Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Run BATS tests
+        run: |
+          bats tests/Linux/maintenance.bats
+
+      - name: Check script syntax (shellcheck)
+        run: |
+          sudo apt-get install -y shellcheck
+          find Linux -name "*.sh" -type f -exec shellcheck -x {} \; || true
+
+      - name: Verify no emojis in scripts
+        run: |
+          echo "[i] Checking for emojis in Linux scripts..."
+          if grep -rP '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' Linux/ --include="*.sh"; then
+            echo "[-] ERROR: Found emojis in Linux scripts!"
+            exit 1
+          else
+            echo "[+] No emojis found - scripts comply with CLAUDE.md rules"
+          fi
+
+  security-scan:
+    name: Security Scan for Secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better detection
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "[i] Scanning for hardcoded credentials..."
+
+          # Check for potential passwords
+          if grep -rE 'password\s*=\s*["\x27].*["\x27]' . --exclude-dir=.git --exclude-dir=tests --exclude="*.md"; then
+            echo "[-] ERROR: Found hardcoded passwords!"
+            exit 1
+          fi
+
+          # Check for API keys
+          if grep -rE 'api[_-]?key\s*=\s*["\x27].*["\x27]' . --exclude-dir=.git --exclude-dir=tests --exclude="*.md"; then
+            echo "[-] ERROR: Found hardcoded API keys!"
+            exit 1
+          fi
+
+          # Check for private IPs (should use examples only)
+          if grep -rE '10\.143\.31\.' . --exclude-dir=.git --exclude="*.md" --exclude="CLAUDE.md"; then
+            echo "[-] ERROR: Found hardcoded private IPs!"
+            exit 1
+          fi
+
+          echo "[+] No hardcoded secrets found"
+
+      - name: Check for SSH private keys
+        run: |
+          echo "[i] Scanning for SSH private keys..."
+
+          if grep -r "BEGIN.*PRIVATE KEY" . --exclude-dir=.git --exclude-dir=tests; then
+            echo "[-] ERROR: Found SSH private keys in repository!"
+            exit 1
+          fi
+
+          echo "[+] No SSH private keys found"
+
+  validate-structure:
+    name: Validate Repository Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required files exist
+        run: |
+          echo "[i] Validating repository structure..."
+
+          # Required documentation
+          test -f README.md || (echo "[-] Missing README.md" && exit 1)
+          test -f .gitignore || (echo "[-] Missing .gitignore" && exit 1)
+          test -f docs/SECURITY.md || (echo "[-] Missing docs/SECURITY.md" && exit 1)
+
+          # Required directories
+          test -d Windows/first-time-setup || (echo "[-] Missing Windows/first-time-setup" && exit 1)
+          test -d Windows/ssh || (echo "[-] Missing Windows/ssh" && exit 1)
+          test -d Linux/maintenance || (echo "[-] Missing Linux/maintenance" && exit 1)
+          test -d tests || (echo "[-] Missing tests directory" && exit 1)
+
+          echo "[+] Repository structure is valid"
+
+      - name: Check Windows package exports
+        run: |
+          echo "[i] Validating Windows package exports..."
+
+          test -f Windows/first-time-setup/winget-packages.json || (echo "[-] Missing winget-packages.json" && exit 1)
+          test -f Windows/first-time-setup/chocolatey-packages.config || (echo "[-] Missing chocolatey-packages.config" && exit 1)
+
+          # Validate JSON syntax
+          python3 -m json.tool Windows/first-time-setup/winget-packages.json > /dev/null || (echo "[-] Invalid JSON in winget-packages.json" && exit 1)
+
+          # Validate XML syntax
+          xmllint --noout Windows/first-time-setup/chocolatey-packages.config || (echo "[-] Invalid XML in chocolatey-packages.config" && exit 1)
+
+          echo "[+] Package exports are valid"
+
+  markdown-lint:
+    name: Lint Markdown Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install markdownlint
+        run: |
+          sudo npm install -g markdownlint-cli
+
+      - name: Run markdownlint
+        run: |
+          markdownlint '**/*.md' --ignore node_modules --ignore .git || true
+
+      - name: Check for broken links (basic)
+        run: |
+          echo "[i] Checking for obviously broken markdown links..."
+          if grep -r '\[.*\](.*/\s\|.*\s/.*\|\s.*\s)' . --include="*.md" --exclude-dir=.git; then
+            echo "[!] WARNING: Found potentially malformed markdown links"
+          else
+            echo "[+] No obviously broken links found"
+          fi
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [test-windows-scripts, test-linux-scripts, security-scan, validate-structure]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          echo "[*] Test Summary:"
+          echo "  - Windows Scripts: ${{ needs.test-windows-scripts.result }}"
+          echo "  - Linux Scripts: ${{ needs.test-linux-scripts.result }}"
+          echo "  - Security Scan: ${{ needs.security-scan.result }}"
+          echo "  - Structure Validation: ${{ needs.validate-structure.result }}"
+
+          if [ "${{ needs.test-windows-scripts.result }}" != "success" ] || \
+             [ "${{ needs.test-linux-scripts.result }}" != "success" ] || \
+             [ "${{ needs.security-scan.result }}" != "success" ] || \
+             [ "${{ needs.validate-structure.result }}" != "success" ]; then
+            echo "[-] Some tests failed!"
+            exit 1
+          fi
+
+          echo "[+] All tests passed!"
