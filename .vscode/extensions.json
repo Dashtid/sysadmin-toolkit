@@ -1,0 +1,34 @@
+{
+  "recommendations": [
+    // PowerShell
+    "ms-vscode.powershell",
+    "ms-vscode.powershell-preview",
+
+    // Shell scripting
+    "timonwong.shellcheck",
+    "foxundermoon.shell-format",
+    "mads-hartmann.bash-ide-vscode",
+
+    // Git
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+
+    // Markdown
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+
+    // Testing
+    "pspester.pester-test",
+
+    // Code quality
+    "editorconfig.editorconfig",
+    "streetsidesoftware.code-spell-checker",
+
+    // YAML (for GitHub Actions workflows)
+    "redhat.vscode-yaml",
+
+    // JSON
+    "zainchen.json"
+  ],
+  "unwantedRecommendations": []
+}

@@ -6,24 +6,100 @@
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
+  "files.encoding": "utf8",
+  "files.eol": "\n",
 
   // PowerShell settings
   "powershell.codeFormatting.preset": "OTBS",
+  "powershell.codeFormatting.alignPropertyValuePairs": true,
+  "powershell.codeFormatting.ignoreOneLineBlock": false,
   "powershell.scriptAnalysis.enable": true,
+  "powershell.scriptAnalysis.settingsPath": ".vscode/PSScriptAnalyzerSettings.psd1",
+  "powershell.integratedConsole.showOnStartup": false,
 
   // Shell script settings
   "shellcheck.enable": true,
+  "shellcheck.run": "onSave",
   "shellformat.flag": "-i 4 -bn -ci",
+
+  // Markdown settings
+  "markdown.extension.toc.levels": "2..6",
+  "markdown.extension.toc.updateOnSave": false,
+  "[markdown]": {
+    "editor.defaultFormatter": "yzhang.markdown-all-in-one",
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
+  },
 
   // Exclude unnecessary directories from search
   "search.exclude": {
     "**/logs": true,
-    "**/*.log": true
+    "**/*.log": true,
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/coverage": true,
+    "**/test-results-*.xml": true,
+    "**/coverage.xml": true
   },
 
   // File associations
   "files.associations": {
     "*.ps1": "powershell",
-    "*.sh": "shellscript"
-  }
+    "*.psm1": "powershell",
+    "*.psd1": "powershell",
+    "*.sh": "shellscript",
+    ".env.example": "properties",
+    "CLAUDE.md": "markdown"
+  },
+
+  // Git settings
+  "git.ignoreLimitWarning": true,
+  "git.autofetch": true,
+
+  // Editor settings
+  "editor.formatOnSave": false,
+  "editor.rulers": [80, 120],
+  "editor.renderWhitespace": "boundary",
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+
+  // Terminal settings
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell 7": {
+      "path": "pwsh.exe",
+      "icon": "terminal-powershell"
+    },
+    "Git Bash": {
+      "path": "C:\\Program Files\\Git\\bin\\bash.exe",
+      "icon": "terminal-bash"
+    },
+    "Command Prompt": {
+      "path": "cmd.exe",
+      "icon": "terminal-cmd"
+    }
+  },
+
+  // Testing
+  "pester.useLegacyCodeLens": false,
+  "pester.outputVerbosity": "Detailed",
+
+  // Spell checker
+  "cSpell.words": [
+    "daviddashti",
+    "Dashtid",
+    "Gitea",
+    "kubectl",
+    "Pester",
+    "psscriptanalyzer",
+    "sysadmin",
+    "winget"
+  ],
+  "cSpell.enableFiletypes": [
+    "!markdown"
+  ]
 }
