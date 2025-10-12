@@ -22,8 +22,19 @@ windows-linux-sysadmin-toolkit/
 │   ├── ssh/                    # SSH configuration and tunnel management
 │   │   ├── setup-ssh-agent-access.ps1
 │   │   └── gitea-tunnel-manager.ps1
+│   ├── first-time-setup/       # Windows 11 desktop setup automation
+│   │   ├── export-current-packages.ps1
+│   │   ├── install-from-exported-packages.ps1
+│   │   ├── fresh-windows-setup.ps1
+│   │   └── work-laptop-setup.ps1
 │   ├── maintenance/            # System maintenance scripts
-│   ├── security/               # Security hardening scripts
+│   ├── security/               # Security hardening (audit, backup, restore, harden)
+│   │   ├── audit-security-posture.ps1
+│   │   ├── backup-security-settings.ps1
+│   │   ├── restore-security-settings.ps1
+│   │   ├── harden-level1-safe.ps1
+│   │   ├── harden-level2-balanced.ps1
+│   │   └── harden-level3-maximum.ps1
 │   └── utilities/              # Helper utilities
 ├── Linux/
 │   ├── server/                 # Ubuntu server scripts
@@ -87,7 +98,67 @@ $REMOTE_PORT = 2222                             # Remote port
 $VPN_CHECK_HOST = "gitea.example.com"           # Network check host
 ```
 
-### Linux: Server Maintenance (Coming Soon)
+### Windows: First-Time Desktop Setup
+
+Automate Windows 11 desktop setup by capturing and reinstalling packages:
+
+```powershell
+# Export current Winget and Chocolatey packages
+.\Windows\first-time-setup\export-current-packages.ps1
+
+# Install from exported package lists (with latest versions)
+.\Windows\first-time-setup\install-from-exported-packages.ps1 -UseLatestVersions
+
+# Full setup orchestration (packages + configuration)
+.\Windows\first-time-setup\fresh-windows-setup.ps1
+```
+
+**What it does:**
+- Exports current Winget and Chocolatey packages to JSON/XML
+- Reinstalls packages on fresh Windows installs
+- Gets you back to "tip-top shape" quickly
+- Supports selective installation (skip Winget or Chocolatey)
+
+### Windows: Security Hardening Framework
+
+Comprehensive security hardening based on CIS Benchmark v4.0.0, DISA STIG V2R2, and MS Security Baseline v25H2:
+
+```powershell
+# 1. Audit current security posture (18 checks)
+.\Windows\security\audit-security-posture.ps1
+
+# 2. Create backup before hardening
+.\Windows\security\backup-security-settings.ps1
+
+# 3. Preview changes without applying (RECOMMENDED)
+.\Windows\security\harden-level1-safe.ps1 -WhatIf
+
+# 4. Apply Level 1 hardening (20 safe, non-breaking controls)
+.\Windows\security\harden-level1-safe.ps1
+
+# 5. Apply Level 2 hardening (18 moderate-impact controls)
+.\Windows\security\harden-level2-balanced.ps1
+
+# 6. Apply Level 3 hardening (18 high-impact controls - TEST FIRST!)
+.\Windows\security\harden-level3-maximum.ps1
+
+# 7. Rollback if needed
+.\Windows\security\restore-security-settings.ps1 -BackupPath ".\backups\20250112_143000"
+```
+
+**Hardening Levels:**
+- **Level 1 (Safe)**: Developer-friendly, non-breaking changes (SMBv1 disable, Defender, Firewall, UAC, PowerShell logging)
+- **Level 2 (Balanced)**: Moderate security with potential app impact (Credential Guard, HVCI, ASR rules, TLS 1.2+)
+- **Level 3 (Maximum)**: High-security environments only (AppLocker, Constrained Language Mode, NTLM blocking, all ASR rules)
+
+**Features:**
+- Automatic backups with System Restore Points
+- WhatIf preview mode for all scripts
+- Rollback capability for all changes
+- Detailed impact warnings and compatibility notes
+- Change tracking with success/failure reporting
+
+### Linux: Server Maintenance
 
 Scripts for Ubuntu server administration:
 - System updates and cleanup
@@ -110,6 +181,9 @@ Scripts for Ubuntu server administration:
 - **Comprehensive .gitignore** - prevents accidental secret commits
 - **Example configurations** - uses RFC 5737 example IPs (192.0.2.x)
 - **Secure SSH key storage** - keys encrypted on disk, unlocked in memory
+- **Tiered security hardening** - 3 levels from safe to maximum security
+- **Automatic backups** - System Restore Points before any hardening
+- **Rollback capability** - Restore from backups if issues occur
 
 ### Automation & Monitoring
 
@@ -223,6 +297,10 @@ Comprehensive guides available in the [`docs/`](docs/) directory:
 - **[SSH Tunnel Setup Guide](docs/SSH-TUNNEL-SETUP.md)**: Detailed Gitea tunnel configuration
 - **[Security Best Practices](docs/SECURITY.md)**: Guidelines for secure script usage
 
+Additional documentation in script directories:
+- **[First-Time Setup README](Windows/first-time-setup/README.md)**: Windows 11 desktop setup guide
+- **[First-Time Setup QUICKSTART](Windows/first-time-setup/QUICKSTART.md)**: TL;DR setup guide
+
 ## [*] Contributing
 
 Contributions welcome! Please:
@@ -272,5 +350,5 @@ _For questions, suggestions, or issues, please open a GitHub issue._
 
 ---
 
-**Last Updated**: 2025-10-11
-**Version**: 2.0 (Restructured and sanitized for public use)
+**Last Updated**: 2025-10-12
+**Version**: 2.1 (Added first-time setup automation and security hardening framework)
