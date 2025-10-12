@@ -219,3 +219,115 @@ Describe "SSH Script Integration" {
         }
     }
 }
+
+Describe "SSH Script Functionality Tests" {
+
+    Context "setup-ssh-agent-access.ps1 Service Checks" {
+
+        It "Checks if SSH agent service exists on Windows" {
+            $service = Get-Service -Name "ssh-agent" -ErrorAction SilentlyContinue
+            if ($service) {
+                $service.Name | Should -Be "ssh-agent"
+            } else {
+                Set-ItResult -Skipped -Because "SSH agent service not installed"
+            }
+        }
+
+        It "Can query SSH agent service status" {
+            $service = Get-Service -Name "ssh-agent" -ErrorAction SilentlyContinue
+            if ($service) {
+                $service.Status | Should -BeIn @('Running', 'Stopped')
+            } else {
+                Set-ItResult -Skipped -Because "SSH agent service not installed"
+            }
+        }
+    }
+
+    Context "Environment Variable Handling" {
+
+        It "USERPROFILE environment variable exists" {
+            $env:USERPROFILE | Should -Not -BeNullOrEmpty
+        }
+
+        It "HOME environment variable can be set" {
+            $testHome = "C:\Users\TestUser"
+            $env:TEST_HOME = $testHome
+            $env:TEST_HOME | Should -Be $testHome
+            Remove-Item Env:\TEST_HOME
+        }
+    }
+
+    Context "SSH Directory Structure" {
+
+        It "User .ssh directory exists or can be created" {
+            $sshDir = Join-Path $env:USERPROFILE ".ssh"
+            if (-not (Test-Path $sshDir)) {
+                # Should be able to create it
+                $null = New-Item -ItemType Directory -Path $sshDir -Force
+                Test-Path $sshDir | Should -Be $true
+                Remove-Item $sshDir -Force
+            } else {
+                Test-Path $sshDir | Should -Be $true
+            }
+        }
+    }
+
+    Context "Tunnel Manager Validation" {
+
+        BeforeAll {
+            $ScriptPath = Join-Path $SSHScripts "gitea-tunnel-manager.ps1"
+            $ScriptContent = Get-Content $ScriptPath -Raw
+        }
+
+        It "Validates port numbers are configurable" {
+            $ScriptContent | Should -Match '\$LOCAL_PORT\s*=\s*\d+'
+            $ScriptContent | Should -Match '\$REMOTE_PORT\s*=\s*\d+'
+        }
+
+        It "Has health check functionality" {
+            $ScriptContent | Should -Match 'Test-NetConnection|Test-Connection|nc|netstat'
+        }
+
+        It "Can stop existing tunnels" {
+            $ScriptContent | Should -Match 'Stop-Process|Kill'
+        }
+
+        It "Supports cleanup on exit" {
+            $ScriptContent | Should -Match 'finally|trap'
+        }
+    }
+}
+
+Describe "SSH Script Output Format" {
+
+    Context "Consistent Logging" {
+
+        It "All SSH scripts use [+] for success" {
+            Get-ChildItem $SSHScripts -Filter "*.ps1" | ForEach-Object {
+                $Content = Get-Content $_.FullName -Raw
+                $Content | Should -Match '\[\+\]'
+            }
+        }
+
+        It "All SSH scripts use [-] for errors" {
+            Get-ChildItem $SSHScripts -Filter "*.ps1" | ForEach-Object {
+                $Content = Get-Content $_.FullName -Raw
+                $Content | Should -Match '\[-\]'
+            }
+        }
+
+        It "All SSH scripts use [i] for info" {
+            Get-ChildItem $SSHScripts -Filter "*.ps1" | ForEach-Object {
+                $Content = Get-Content $_.FullName -Raw
+                $Content | Should -Match '\[i\]'
+            }
+        }
+
+        It "All SSH scripts use [!] for warnings" {
+            Get-ChildItem $SSHScripts -Filter "*.ps1" | ForEach-Object {
+                $Content = Get-Content $_.FullName -Raw
+                $Content | Should -Match '\[!\]'
+            }
+        }
+    }
+}
