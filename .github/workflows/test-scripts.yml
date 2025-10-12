@@ -22,17 +22,37 @@ jobs:
           Install-Module -Name Pester -Force -SkipPublisherCheck -Scope CurrentUser
           Import-Module Pester
 
-      - name: Run Pester tests
+      - name: Run Pester tests with coverage
         shell: pwsh
         run: |
           $Config = New-PesterConfiguration
           $Config.Run.Path = ".\tests\Windows"
           $Config.Output.Verbosity = "Detailed"
+
+          # Test results
           $Config.TestResult.Enabled = $true
           $Config.TestResult.OutputPath = "test-results-windows.xml"
           $Config.TestResult.OutputFormat = "NUnitXml"
 
-          Invoke-Pester -Configuration $Config
+          # Code coverage
+          $Config.CodeCoverage.Enabled = $true
+          $Config.CodeCoverage.Path = @(".\Windows\**\*.ps1")
+          $Config.CodeCoverage.OutputPath = "coverage.xml"
+          $Config.CodeCoverage.OutputFormat = "JaCoCo"
+
+          $Result = Invoke-Pester -Configuration $Config -PassThru
+
+          # Display coverage summary
+          Write-Host ""
+          Write-Host "[i] Code Coverage Summary:" -ForegroundColor Blue
+          Write-Host "  Total Commands: $($Result.CodeCoverage.CommandsExecutedCount + $Result.CodeCoverage.CommandsMissedCount)"
+          Write-Host "  Commands Executed: $($Result.CodeCoverage.CommandsExecutedCount)" -ForegroundColor Green
+          Write-Host "  Commands Missed: $($Result.CodeCoverage.CommandsMissedCount)" -ForegroundColor Yellow
+
+          if ($Result.CodeCoverage.CommandsAnalyzedCount -gt 0) {
+              $coveragePercent = [math]::Round(($Result.CodeCoverage.CommandsExecutedCount / $Result.CodeCoverage.CommandsAnalyzedCount) * 100, 2)
+              Write-Host "  Coverage: $coveragePercent%" -ForegroundColor $(if ($coveragePercent -ge 70) { "Green" } elseif ($coveragePercent -ge 50) { "Yellow" } else { "Red" })
+          }
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -40,6 +60,32 @@ jobs:
         with:
           name: windows-test-results
           path: test-results-windows.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+      - name: Generate coverage badge
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          # Calculate coverage percentage
+          [xml]$coverage = Get-Content coverage.xml
+          $total = [int]$coverage.report.counter | Where-Object { $_.type -eq "INSTRUCTION" } | Select-Object -ExpandProperty covered
+          $missed = [int]$coverage.report.counter | Where-Object { $_.type -eq "INSTRUCTION" } | Select-Object -ExpandProperty missed
+          $percent = if (($total + $missed) -gt 0) { [math]::Round(($total / ($total + $missed)) * 100, 0) } else { 0 }
+
+          Write-Host "[i] Coverage: $percent%"
+
+          # Badge color
+          $color = if ($percent -ge 80) { "brightgreen" } elseif ($percent -ge 60) { "green" } elseif ($percent -ge 40) { "yellow" } else { "red" }
+
+          # Save for potential badge generation
+          "COVERAGE_PERCENT=$percent" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "COVERAGE_COLOR=$color" | Out-File -FilePath $env:GITHUB_ENV -Append
 
   test-linux-scripts:
     name: Test Linux Bash Scripts
