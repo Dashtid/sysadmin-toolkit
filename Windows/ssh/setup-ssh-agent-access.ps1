@@ -37,9 +37,9 @@ $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Pri
 $isAdmin = $currentPrincipal.IsInRole([Security.Principal.SecurityRole]::Administrator)
 
 if ($isAdmin) {
-    Write-Host "✓ Running with administrator privileges" -ForegroundColor Green
+    Write-Host "[+] Running with administrator privileges" -ForegroundColor Green
 } else {
-    Write-Host "ℹ Running as regular user (this is fine)" -ForegroundColor Yellow
+    Write-Host "[i] Running as regular user (this is fine)" -ForegroundColor Yellow
 }
 
 # Step 1: Check and configure SSH Agent service
@@ -50,23 +50,23 @@ if ($sshAgent) {
     if ($sshAgent.StartType -ne 'Automatic') {
         if ($isAdmin) {
             Set-Service ssh-agent -StartupType Automatic
-            Write-Host "  ✓ SSH Agent set to automatic startup" -ForegroundColor Green
+            Write-Host "  [+] SSH Agent set to automatic startup" -ForegroundColor Green
         } else {
-            Write-Host "  ⚠ Run as admin to set SSH Agent to automatic startup" -ForegroundColor Yellow
+            Write-Host "  [!] Run as admin to set SSH Agent to automatic startup" -ForegroundColor Yellow
             Write-Host "    Manual command: Set-Service ssh-agent -StartupType Automatic" -ForegroundColor DarkGray
         }
     } else {
-        Write-Host "  ✓ SSH Agent already set to automatic startup" -ForegroundColor Green
+        Write-Host "  [+] SSH Agent already set to automatic startup" -ForegroundColor Green
     }
 
     if ($sshAgent.Status -ne 'Running') {
         Start-Service ssh-agent
-        Write-Host "  ✓ SSH Agent service started" -ForegroundColor Green
+        Write-Host "  [+] SSH Agent service started" -ForegroundColor Green
     } else {
-        Write-Host "  ✓ SSH Agent service already running" -ForegroundColor Green
+        Write-Host "  [+] SSH Agent service already running" -ForegroundColor Green
     }
 } else {
-    Write-Host "  ✗ SSH Agent service not found. Please install OpenSSH Client." -ForegroundColor Red
+    Write-Host "  [-] SSH Agent service not found. Please install OpenSSH Client." -ForegroundColor Red
     Write-Host "    Go to: Settings > Apps > Optional Features > Add Feature > OpenSSH Client" -ForegroundColor DarkGray
     exit 1
 }
@@ -75,7 +75,7 @@ if ($sshAgent) {
 Write-Host "`n[2/8] Setting SSH_AUTH_SOCK environment variable..." -ForegroundColor Yellow
 [System.Environment]::SetEnvironmentVariable('SSH_AUTH_SOCK', '\\.\pipe\openssh-ssh-agent', 'User')
 $env:SSH_AUTH_SOCK = '\\.\pipe\openssh-ssh-agent'
-Write-Host "  ✓ SSH_AUTH_SOCK environment variable set" -ForegroundColor Green
+Write-Host "  [+] SSH_AUTH_SOCK environment variable set" -ForegroundColor Green
 
 # Step 3: Create PowerShell profile for SSH_AUTH_SOCK
 Write-Host "`n[3/8] Creating PowerShell profile..." -ForegroundColor Yellow
@@ -99,13 +99,13 @@ if (Test-Path $PROFILE) {
     $currentProfile = Get-Content $PROFILE -Raw
     if ($currentProfile -notmatch 'SSH_AUTH_SOCK') {
         Add-Content $PROFILE "`n$profileContent"
-        Write-Host "  ✓ PowerShell profile updated" -ForegroundColor Green
+        Write-Host "  [+] PowerShell profile updated" -ForegroundColor Green
     } else {
-        Write-Host "  ✓ PowerShell profile already configured" -ForegroundColor Green
+        Write-Host "  [+] PowerShell profile already configured" -ForegroundColor Green
     }
 } else {
     Set-Content $PROFILE $profileContent
-    Write-Host "  ✓ PowerShell profile created" -ForegroundColor Green
+    Write-Host "  [+] PowerShell profile created" -ForegroundColor Green
 }
 
 # Step 4: Create SSH wrapper script
@@ -130,7 +130,7 @@ fi
 "@
 
 $wrapperContent | Set-Content -Path $wrapperPath -NoNewline
-Write-Host "  ✓ SSH wrapper created at: $wrapperPath" -ForegroundColor Green
+Write-Host "  [+] SSH wrapper created at: $wrapperPath" -ForegroundColor Green
 
 # Step 5: Create .bashrc for Git Bash
 Write-Host "`n[5/8] Creating Git Bash configuration..." -ForegroundColor Yellow
@@ -194,7 +194,7 @@ alias sshserver='ssh_server'
 }
 
 $bashrcContent | Set-Content -Path $bashrcPath -NoNewline
-Write-Host "  ✓ Git Bash configuration created" -ForegroundColor Green
+Write-Host "  [+] Git Bash configuration created" -ForegroundColor Green
 
 # Step 6: Create .bash_profile if it doesn't exist
 Write-Host "`n[6/8] Creating .bash_profile..." -ForegroundColor Yellow
@@ -205,9 +205,9 @@ if (!(Test-Path $bashProfilePath)) {
 test -f ~/.bashrc && . ~/.bashrc
 '@
     $bashProfileContent | Set-Content -Path $bashProfilePath -NoNewline
-    Write-Host "  ✓ .bash_profile created" -ForegroundColor Green
+    Write-Host "  [+] .bash_profile created" -ForegroundColor Green
 } else {
-    Write-Host "  ✓ .bash_profile already exists" -ForegroundColor Green
+    Write-Host "  [+] .bash_profile already exists" -ForegroundColor Green
 }
 
 # Step 7: Create SSH key loader script
@@ -242,7 +242,7 @@ if (Test-Path `$KeyPath) {
 "@
 
 $keyLoaderContent | Set-Content -Path $keyLoaderPath
-Write-Host "  ✓ SSH key loader script created" -ForegroundColor Green
+Write-Host "  [+] SSH key loader script created" -ForegroundColor Green
 
 # Step 8: Create scheduled task for automatic key loading (optional)
 Write-Host "`n[8/8] Setting up automatic key loading at startup..." -ForegroundColor Yellow
@@ -256,13 +256,13 @@ if (!$existingTask) {
 
     try {
         Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -RunLevel Limited | Out-Null
-        Write-Host "  ✓ Scheduled task created for automatic key loading" -ForegroundColor Green
+        Write-Host "  [+] Scheduled task created for automatic key loading" -ForegroundColor Green
     } catch {
-        Write-Host "  ⚠ Could not create scheduled task (requires elevation)" -ForegroundColor Yellow
+        Write-Host "  [!] Could not create scheduled task (requires elevation)" -ForegroundColor Yellow
         Write-Host "    You can manually run: $keyLoaderPath" -ForegroundColor DarkGray
     }
 } else {
-    Write-Host "  ✓ Scheduled task already exists" -ForegroundColor Green
+    Write-Host "  [+] Scheduled task already exists" -ForegroundColor Green
 }
 
 # Final summary
