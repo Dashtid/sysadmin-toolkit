@@ -41,6 +41,35 @@ Comprehensive PowerShell script demonstrating:
 Get-Help .\example-powershell-script.ps1 -Full
 ```
 
+### [example-bash-script.sh](example-bash-script.sh)
+
+Comprehensive Bash script demonstrating:
+- Proper script header with complete documentation
+- Strict mode (set -euo pipefail) for error handling
+- Color-coded output functions
+- Getopts-style argument parsing with validation
+- Retry logic for resilient operations
+- Cleanup and error handlers (trap)
+- Prerequisite checking
+- Dry-run mode support
+- Logging to file and console
+- Professional help/usage output
+
+**Usage:**
+```bash
+# Basic usage
+./example-bash-script.sh -s "192.0.2.10" -o check
+
+# Preview mode (dry-run)
+./example-bash-script.sh -s "web.example.com" -p 8080 -o test --dry-run
+
+# With custom timeout and retries
+./example-bash-script.sh -s "192.0.2.20" -o connect -t 60 -r 5 --verbose
+
+# View help
+./example-bash-script.sh --help
+```
+
 ## Best Practices Demonstrated
 
 ### Documentation
