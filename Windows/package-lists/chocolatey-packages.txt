@@ -25,17 +25,14 @@ KB3033929
 KB3035131
 KB3063858
 KB3118401
-maven
 MSVisualCplusplus2013-redist
 netfx-4.7.2
-openjdk
 pandoc
 powershell-core
 python
 python3
 python313
 syft
-Temurin17
 tesseract
 uv
 vcredist140
