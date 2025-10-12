@@ -1,0 +1,31 @@
+# Claude Code - Security-sensitive files
+# NEVER commit these to version control
+
+# Credentials and authentication
+.credentials.json
+*.token
+*oauth*
+
+# History and conversation logs
+history.jsonl
+history.jsonl.*
+
+# Runtime and cache
+.update.lock
+debug/
+shell-snapshots/
+todos/
+file-history/
+ide/
+projects/
+statsig/
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.v*_*
+
+# Local overrides (optional - you may want to commit settings.local.json)
+# Uncomment if you want to keep local settings private
+# settings.local.json
