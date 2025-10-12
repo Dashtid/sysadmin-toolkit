@@ -16,6 +16,10 @@ settings.local.json
 config.local.json
 *.local.conf
 
+# EXCEPTIONS: Allow sharing sanitized configuration templates
+!dotfiles/**/settings.local.json
+!dotfiles/**/config.local.json
+
 # SSH keys and certificates
 *.pem
 *.key
