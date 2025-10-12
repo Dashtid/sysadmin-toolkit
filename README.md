@@ -1,15 +1,11 @@
-# System Administration & Development Toolkit
+# Windows & Linux Sysadmin Toolkit
 
-[![Syntax Check](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/syntax-check.yml/badge.svg)](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/syntax-check.yml)
-[![Test Scripts](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/test-scripts.yml/badge.svg)](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/test-scripts.yml)
-[![Secret Scan](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/actions/workflows/secret-scan.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Maintained](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Dashtid/windows-linux-sysadmin-toolkit/graphs/commit-activity)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.0+-blue.svg)](https://github.com/PowerShell/PowerShell)
 
-A comprehensive collection of system administration scripts and tools for Windows and Linux environments. This repository provides ready-to-use scripts for SSH configuration, system maintenance, security hardening, and remote development workflows.
+Personal collection of system administration scripts for Windows and Linux. Scripts for SSH configuration, system maintenance, security hardening, and remote development workflows.
 
-**Public Repository**: [https://github.com/dashtid/windows-linux-sysadmin-toolkit](https://github.com/dashtid/windows-linux-sysadmin-toolkit)
+**Note**: This is a personal toolkit - use at your own risk, customize for your environment.
 
 ## [i] Target Environments
 
@@ -306,60 +302,23 @@ Comprehensive guides available in the [`docs/`](docs/) directory:
 - **[Script Template](docs/SCRIPT_TEMPLATE.md)**: PowerShell and Bash script templates with best practices
 
 Additional documentation:
-- **[First-Time Setup README](Windows/first-time-setup/README.md)**: Windows 11 desktop setup guide
-- **[First-Time Setup QUICKSTART](Windows/first-time-setup/QUICKSTART.md)**: TL;DR setup guide
+- **[First-Time Setup](Windows/first-time-setup/README.md)**: Windows 11 desktop setup automation
 - **[Example Scripts](examples/README.md)**: Reference implementations and templates
-- **[Contributing Guidelines](CONTRIBUTING.md)**: How to contribute to this project
-- **[Changelog](CHANGELOG.md)**: Version history and release notes
-
-## [*] Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/awesome-script`)
-3. Follow existing code style and conventions
-4. Test thoroughly in appropriate environments
-5. Ensure no secrets in commits
-6. Submit a pull request
-
-### Script Conventions
-
-- **PowerShell**: Require PowerShell 7+, proper error handling
-- **Bash**: Use `#!/usr/bin/env bash` shebang, POSIX-compatible when possible
-- **Documentation**: Clear comments and usage instructions
-- **Security**: No hardcoded credentials, use parameters/environment variables
-- **Logging**: Consistent format with timestamps using [+] [-] [i] [!] markers
 
 ## [!] Important Notes
 
-- **Test scripts** in safe environments first
-- **Review before execution** to understand what they do
-- **Backup important data** before system modifications
-- **Check prerequisites** before running any script
-- **Run with appropriate privileges** (sudo for Linux, Administrator for Windows)
-- **Customize configuration** - example values won't work as-is
+- **Personal toolkit** - No support or warranty provided
+- **Test everything first** - These scripts can make system changes
+- **Review before running** - Understand what each script does
+- **Customize for your environment** - Examples use placeholder values
+- **Backup before hardening** - Security scripts can break applications
 
-## [*] License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## [+] Acknowledgments
-
-- Designed for multi-environment development workflows
-- Optimized for Windows 11 and Ubuntu 20.04+ compatibility
-- Built with security and best practices as top priorities
-- Created to solve real Windows + SSH + Git integration challenges
+MIT License - Use at your own risk. See [LICENSE](LICENSE) file.
 
 ---
 
 **Author**: David Dashti
-**GitHub**: [@dashtid](https://github.com/dashtid)
-**Purpose**: Making system administration easier and more secure
-
-_For questions, suggestions, or issues, please open a GitHub issue._
-
----
-
+**Purpose**: Personal sysadmin automation scripts
 **Last Updated**: 2025-10-12
-**Version**: 2.2 (Enhanced documentation, templates, and testing infrastructure)
