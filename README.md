@@ -22,6 +22,9 @@ windows-linux-sysadmin-toolkit/
 ├── .vscode/                    # VSCode workspace settings
 │   └── settings.json           # Hides chat sidebar, formatting rules
 ├── Windows/
+│   ├── lib/                    # Shared modules and functions
+│   │   ├── CommonFunctions.psm1  # Logging, admin checks, utilities
+│   │   └── CommonFunctions.psd1  # Module manifest
 │   ├── ssh/                    # SSH configuration and tunnel management
 │   │   ├── setup-ssh-agent-access.ps1
 │   │   └── gitea-tunnel-manager.ps1
@@ -29,8 +32,14 @@ windows-linux-sysadmin-toolkit/
 │   │   ├── export-current-packages.ps1
 │   │   ├── install-from-exported-packages.ps1
 │   │   ├── fresh-windows-setup.ps1
-│   │   └── work-laptop-setup.ps1
+│   │   ├── work-laptop-setup.ps1
+│   │   ├── winget-packages.json     # Exported package lists
+│   │   └── chocolatey-packages.config
 │   ├── maintenance/            # System maintenance scripts
+│   │   ├── security-updates.ps1
+│   │   ├── system-updates.ps1
+│   │   ├── update-defender.ps1
+│   │   └── startup_script.ps1
 │   ├── security/               # Security hardening (audit, backup, restore, harden)
 │   │   ├── audit-security-posture.ps1
 │   │   ├── backup-security-settings.ps1
@@ -38,18 +47,25 @@ windows-linux-sysadmin-toolkit/
 │   │   ├── harden-level1-safe.ps1
 │   │   ├── harden-level2-balanced.ps1
 │   │   └── harden-level3-maximum.ps1
+│   ├── development/            # Development environment setup
+│   │   └── remote-development-setup.ps1
 │   └── utilities/              # Helper utilities
+│       ├── add-winget-to-path.ps1
+│       └── Manage-ScheduledTask.ps1
 ├── Linux/
 │   ├── server/                 # Ubuntu server scripts
+│   ├── desktop/                # Desktop environment scripts
 │   ├── maintenance/            # System maintenance
-│   ├── monitoring/             # System monitoring tools
-│   └── security/               # Security hardening
+│   └── monitoring/             # System monitoring tools
 ├── docs/                       # Documentation
 │   ├── SSH-TUNNEL-SETUP.md    # SSH tunnel configuration guide
-│   └── SECURITY.md            # Security best practices
-├── tests/                      # Test scripts
-│   ├── Windows/
-│   └── Linux/
+│   ├── SECURITY.md            # Security best practices
+│   └── SCRIPT_TEMPLATE.md     # Script templates
+├── tests/                      # Automated test suite (475+ tests)
+│   ├── TestHelpers.psm1       # Shared test utilities
+│   ├── Windows/               # Windows script tests
+│   └── Linux/                 # Linux script tests
+├── examples/                   # Script templates and examples
 ├── .gitignore                  # Comprehensive secret protection
 ├── .env.example                # Configuration template
 └── README.md                   # This file
@@ -170,6 +186,30 @@ Scripts for Ubuntu server administration:
 - Backup automation
 
 ## [*] Key Features
+
+### Shared Module System
+
+All Windows PowerShell scripts can leverage the **CommonFunctions** module for:
+- **Consistent logging** with ASCII markers (`[+]`, `[-]`, `[!]`, `[i]`)
+- **Admin privilege checking** with `Test-IsAdministrator` and `Assert-Administrator`
+- **PowerShell 7 detection** with `Test-PowerShell7` and `Get-PowerShell7Path`
+- **Color-coded output** with standardized color scheme
+
+**Usage example:**
+```powershell
+Import-Module "$PSScriptRoot\..\lib\CommonFunctions.psm1"
+
+# Use consistent logging
+Write-InfoMessage "Starting operation..."
+Write-Success "Operation completed successfully"
+Write-WarningMessage "Proceeding with caution"
+Write-ErrorMessage "Operation failed"
+
+# Check admin privileges
+if (Test-IsAdministrator) {
+    Write-Success "Running with admin privileges"
+}
+```
 
 ### Cross-Platform Development Support
 
