@@ -20,10 +20,10 @@ function Write-Log {
     Write-Host "[$Timestamp] $Message" -ForegroundColor $Color
 }
 
-function Write-Success { param([string]$Message) Write-Log "✅ $Message" -Color $Colors.Green }
-function Write-Info { param([string]$Message) Write-Log "ℹ️ $Message" -Color $Colors.Blue }
-function Write-Warning { param([string]$Message) Write-Log "⚠️ $Message" -Color $Colors.Yellow }
-function Write-Error { param([string]$Message) Write-Log "❌ $Message" -Color $Colors.Red }
+function Write-Success { param([string]$Message) Write-Log "[+] $Message" -Color $Colors.Green }
+function Write-Info { param([string]$Message) Write-Log "[i] $Message" -Color $Colors.Blue }
+function Write-Warning { param([string]$Message) Write-Log "[!] $Message" -Color $Colors.Yellow }
+function Write-Error { param([string]$Message) Write-Log "[-] $Message" -Color $Colors.Red }
 
 # Check if running as Administrator
 function Test-Administrator {
@@ -169,7 +169,7 @@ function Main {
         [string]$Action = "create"
     )
     
-    Write-Log "🚀 Windows Scheduled Task Manager" -Color $Colors.Cyan
+    Write-Log "[*] Windows Scheduled Task Manager" -Color $Colors.Cyan
     
     # Verify prerequisites
     if (!(Test-Administrator)) {
