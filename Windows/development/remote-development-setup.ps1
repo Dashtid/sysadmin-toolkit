@@ -27,10 +27,10 @@ function Write-Log {
     Write-Host $LogMessage -ForegroundColor $Color
 }
 
-function Write-Success { param([string]$Message) Write-Log "✅ $Message" -Color $Colors.Green }
-function Write-Info { param([string]$Message) Write-Log "ℹ️ $Message" -Color $Colors.Blue }
-function Write-Warning { param([string]$Message) Write-Log "⚠️ $Message" -Color $Colors.Yellow }
-function Write-Error { param([string]$Message) Write-Log "❌ $Message" -Color $Colors.Red }
+function Write-Success { param([string]$Message) Write-Log "[+] $Message" -Color $Colors.Green }
+function Write-Info { param([string]$Message) Write-Log "[i] $Message" -Color $Colors.Blue }
+function Write-Warning { param([string]$Message) Write-Log "[!] $Message" -Color $Colors.Yellow }
+function Write-Error { param([string]$Message) Write-Log "[-] $Message" -Color $Colors.Red }
 
 # Setup SSH client and keys
 function Setup-SSHClient {
@@ -383,27 +383,27 @@ code --remote ssh-remote+server-name /path/to/project
 
 # Main execution function
 function Main {
-    Write-Log "🚀 Starting Remote Development Setup..." -Color $Colors.Cyan
-    
+    Write-Log "[*] Starting Remote Development Setup..." -Color $Colors.Cyan
+
     Setup-SSHClient
     Setup-VSCodeRemote
     Setup-PortForwarding
     Install-RemoteDevTools
     Configure-WindowsTerminal
     Setup-DevelopmentWorkspace
-    
+
     Write-Success "Remote development setup completed successfully!"
-    
-    Write-Info "🔑 Next steps:"
+
+    Write-Info "[*] Next steps:"
     Write-Info "  1. Copy your SSH public key to remote servers"
     Write-Info "  2. Edit ~/.ssh/config to add your server configurations"
     Write-Info "  3. Test SSH connection: ssh server-name"
     Write-Info "  4. Open VS Code and use Remote-SSH extension"
     Write-Info "  5. Use port forwarding scripts for accessing remote services"
-    
-    Write-Info "📁 Development workspace: $env:USERPROFILE\Development\Remote"
-    Write-Info "🔧 SSH config: $env:USERPROFILE\.ssh\config"
-    Write-Info "📜 Helper scripts: $env:USERPROFILE\Development\Scripts"
+
+    Write-Info "[*] Development workspace: $env:USERPROFILE\Development\Remote"
+    Write-Info "[*] SSH config: $env:USERPROFILE\.ssh\config"
+    Write-Info "[*] Helper scripts: $env:USERPROFILE\Development\Scripts"
 }
 
 # Run main function
