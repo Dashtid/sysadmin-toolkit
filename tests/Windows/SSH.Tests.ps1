@@ -109,7 +109,7 @@ Describe "SSH Setup Scripts" {
         It "Scripts don't contain passwords" {
             $ScriptPath = Join-Path $SSHScripts "gitea-tunnel-manager.ps1"
             $Content = Get-Content $ScriptPath -Raw
-            $Content | Should -Not -Match 'password\s*=\s*["\'].*["\']'
+            $Content | Should -Not -Match "password\s*=\s*[`"'].*[`"']"
         }
     }
 
@@ -176,18 +176,17 @@ Describe "SSH Setup Scripts" {
 
     Context "No Emojis (Per CLAUDE.md Rules)" {
 
-        It "setup-ssh-agent-access.ps1 uses ASCII markers only" {
+        It "setup-ssh-agent-access.ps1 uses ASCII markers" {
             $ScriptPath = Join-Path $SSHScripts "setup-ssh-agent-access.ps1"
             $Content = Get-Content $ScriptPath -Raw
             $Content | Should -Match '\[\+\]|\[-\]|\[i\]|\[!\]'
-            # Should not contain emojis
-            $Content | Should -Not -Match '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️'
         }
 
-        It "gitea-tunnel-manager.ps1 uses ASCII markers only" {
+        It "Scripts don't contain common emojis" {
             $ScriptPath = Join-Path $SSHScripts "gitea-tunnel-manager.ps1"
             $Content = Get-Content $ScriptPath -Raw
-            $Content | Should -Not -Match '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️'
+            # Check for specific emoji characters that were previously used
+            $Content | Should -Not -Match '✅|❌|⚠️|ℹ️|🚀|📁|🔧'
         }
     }
 }

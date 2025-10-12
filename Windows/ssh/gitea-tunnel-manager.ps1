@@ -2,6 +2,12 @@
 # Manages a persistent SSH tunnel for Gitea access through Claude Code and Git
 # Author: David Dashti
 # https://github.com/dashtid
+#
+# USAGE:
+#   Check status: .\gitea-tunnel-manager.ps1 -Status
+#   Install as scheduled task: .\gitea-tunnel-manager.ps1 -Install
+#   Stop tunnel: .\gitea-tunnel-manager.ps1 -Stop
+#   Uninstall task: .\gitea-tunnel-manager.ps1 -Uninstall
 
 param(
     [switch]$Install,
