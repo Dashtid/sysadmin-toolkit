@@ -45,10 +45,7 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [Parameter(Mandatory=$false)]
-    [switch]$SkipBackup,
-
-    [Parameter(Mandatory=$false)]
-    [switch]$WhatIf
+    [switch]$SkipBackup
 )
 
 #Requires -RunAsAdministrator
@@ -91,7 +88,7 @@ function Set-SecuritySetting {
 
     Write-Info "Applying: $Description"
 
-    if ($WhatIf) {
+    if ($WhatIfPreference) {
         Write-Warning "  [WhatIf] Would apply: $Name"
         $script:ChangesSkipped += @{Name=$Name; Description=$Description; Reference=$Reference}
         return
@@ -363,7 +360,7 @@ function Show-HardeningSummary {
     Write-Log "[*] Hardening Summary - Level 1" -Color $Colors.Cyan
     Write-Log "[*] ======================================`n" -Color $Colors.Cyan
 
-    if ($WhatIf) {
+    if ($WhatIfPreference) {
         Write-Info "WhatIf mode - No changes were applied"
         Write-Info "Changes that would be applied: $($script:ChangesSkipped.Count)"
     } else {
@@ -378,7 +375,7 @@ function Show-HardeningSummary {
         }
     }
 
-    if (-not $WhatIf) {
+    if (-not $WhatIfPreference) {
         Write-Log "`n[i] Next Steps:" -Color $Colors.Cyan
         Write-Log "  1. Restart your computer to apply all changes" -Color $Colors.Cyan
         Write-Log "  2. Run audit: .\audit-security-posture.ps1" -Color $Colors.Cyan
@@ -397,13 +394,13 @@ function Main {
     Write-Info "Level: 1 - Safe for developer workstations"
     Write-Info "Changes: Non-breaking, high-impact security improvements`n"
 
-    if ($WhatIf) {
+    if ($WhatIfPreference) {
         Write-Warning "WhatIf mode enabled - No changes will be applied`n"
     }
 
     try {
         # Create backup first
-        if (-not $WhatIf) {
+        if (-not $WhatIfPreference) {
             New-PreHardeningBackup
         }
 
