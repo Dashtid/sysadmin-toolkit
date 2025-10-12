@@ -150,11 +150,11 @@ Describe "First-Time Setup Scripts" {
 
     Context "No Emojis in Scripts (Per CLAUDE.md Rules)" {
 
-        It "export-current-packages.ps1 contains no emojis" {
+        It "Scripts don't contain common emojis" {
             $ScriptPath = Join-Path $WindowsScripts "export-current-packages.ps1"
             $Content = Get-Content $ScriptPath -Raw
-            # Check for common emoji patterns
-            $Content | Should -Not -Match '[\x{1F300}-\x{1F9FF}]'
+            # Check for specific emoji characters
+            $Content | Should -Not -Match '✅|❌|⚠️|ℹ️|🚀|📁|🔧'
         }
 
         It "Scripts use ASCII markers [+] [-] [i] [!]" {
@@ -169,13 +169,13 @@ Describe "First-Time Setup Scripts" {
         It "Scripts don't contain passwords" {
             $ScriptPath = Join-Path $WindowsScripts "install-from-exported-packages.ps1"
             $Content = Get-Content $ScriptPath -Raw
-            $Content | Should -Not -Match 'password\s*=\s*["\'].*["\']'
+            $Content | Should -Not -Match "password\s*=\s*[`"'].*[`"']"
         }
 
         It "Scripts don't contain API keys" {
             $ScriptPath = Join-Path $WindowsScripts "install-from-exported-packages.ps1"
             $Content = Get-Content $ScriptPath -Raw
-            $Content | Should -Not -Match 'api[_-]?key\s*=\s*["\'].*["\']'
+            $Content | Should -Not -Match "api[_-]?key\s*=\s*[`"'].*[`"']"
         }
     }
 }
@@ -250,9 +250,10 @@ Describe "Script Functions" {
 
         It "Scripts call Main function" {
             $ScriptPath = Join-Path $WindowsScripts "install-from-exported-packages.ps1"
-            $Content = Get-Content $ScriptPath -Raw
+            $Content = Get-Content $ScriptPath
 
-            $Content | Should -Match '^Main$'
+            # Check if "Main" is called at the end of the script
+            $Content | Where-Object { $_ -match '^\s*Main\s*$' } | Should -Not -BeNullOrEmpty
         }
     }
 }
