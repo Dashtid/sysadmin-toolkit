@@ -88,6 +88,49 @@ See [config.example.json](config.example.json) for a template with detailed comm
 
 ---
 
+### Restore-PreviousState.ps1
+**Version:** 1.0.0
+**Purpose:** Rollback tool to restore system to pre-update state
+
+**Features:**
+- Lists available backup states
+- Compares current vs. backup package versions
+- Downgrades upgraded packages (Chocolatey/Winget)
+- Reinstalls removed packages
+- WhatIf mode for safe preview
+- Detailed difference reporting
+
+**Usage:**
+```powershell
+# List all available backups
+.\Restore-PreviousState.ps1 -List
+
+# Show differences from latest backup (no changes)
+.\Restore-PreviousState.ps1 -Latest -ShowDiff
+
+# Restore from latest backup
+.\Restore-PreviousState.ps1 -Latest
+
+# Restore from specific backup file
+.\Restore-PreviousState.ps1 -BackupFile "C:\logs\pre-update-state_2025-10-15_10-30-00.json"
+
+# Preview what would be restored (dry-run)
+.\Restore-PreviousState.ps1 -Latest -WhatIf
+```
+
+**When to use:**
+- After problematic updates that break functionality
+- To revert packages to known-good versions
+- To diagnose update-related issues
+- Before attempting manual fixes
+
+**Limitations:**
+- Windows updates cannot be rolled back (use System Restore instead)
+- Some package downgrades may fail if dependencies conflict
+- Rollback does NOT undo system configuration changes
+
+---
+
 ### Other Maintenance Scripts
 
 #### setup-scheduled-tasks.ps1
