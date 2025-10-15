@@ -1,0 +1,283 @@
+name: CI - Automated Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  POWERSHELL_VERSION: '7.4.x'
+
+jobs:
+  # Job 1: PowerShell Script Analysis
+  powershell-analysis:
+    name: PowerShell Script Analysis
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell
+        uses: azure/powershell@v2
+        with:
+          azPSVersion: 'latest'
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+          Write-Host "[+] PSScriptAnalyzer installed successfully"
+
+      - name: Run PSScriptAnalyzer on Windows scripts
+        shell: pwsh
+        run: |
+          Write-Host "[i] Analyzing PowerShell scripts..."
+
+          $scriptFiles = Get-ChildItem -Path ./Windows -Include *.ps1,*.psm1 -Recurse
+          $totalIssues = 0
+          $criticalIssues = 0
+
+          foreach ($file in $scriptFiles) {
+            Write-Host "[*] Analyzing: $($file.FullName)"
+            $results = Invoke-ScriptAnalyzer -Path $file.FullName -Severity Warning,Error
+
+            if ($results) {
+              $totalIssues += $results.Count
+              $criticalIssues += ($results | Where-Object Severity -eq 'Error').Count
+
+              foreach ($result in $results) {
+                $icon = if ($result.Severity -eq 'Error') { '[-]' } else { '[!]' }
+                Write-Host "$icon $($result.Severity): $($result.Message) at line $($result.Line)"
+              }
+            }
+          }
+
+          Write-Host ""
+          Write-Host "[i] Analysis complete"
+          Write-Host "[i] Total issues found: $totalIssues"
+          Write-Host "[i] Critical issues: $criticalIssues"
+
+          if ($criticalIssues -gt 0) {
+            Write-Host "[-] Build failed due to critical issues"
+            exit 1
+          }
+
+          Write-Host "[+] PowerShell analysis passed"
+
+  # Job 2: Bash Script Validation
+  bash-validation:
+    name: Bash Script Validation (shellcheck)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          echo "[+] shellcheck installed: $(shellcheck --version | head -2)"
+
+      - name: Run shellcheck on Linux scripts
+        run: |
+          echo "[i] Running shellcheck on Bash scripts..."
+
+          # Find all .sh files
+          SCRIPT_FILES=$(find ./Linux -name "*.sh" -type f)
+          TOTAL_FILES=0
+          FAILED_FILES=0
+
+          for script in $SCRIPT_FILES; do
+            TOTAL_FILES=$((TOTAL_FILES + 1))
+            echo "[*] Checking: $script"
+
+            # Run shellcheck with specific exclusions
+            if ! shellcheck -S warning \
+              -e SC2034 \
+              -e SC2086 \
+              -e SC2181 \
+              "$script"; then
+              FAILED_FILES=$((FAILED_FILES + 1))
+              echo "[-] shellcheck failed for: $script"
+            fi
+          done
+
+          echo ""
+          echo "[i] Checked $TOTAL_FILES files"
+          echo "[i] Failed: $FAILED_FILES"
+
+          if [ $FAILED_FILES -gt 0 ]; then
+            echo "[-] shellcheck validation failed"
+            exit 1
+          fi
+
+          echo "[+] All Bash scripts passed shellcheck"
+
+  # Job 3: Windows PowerShell Tests
+  windows-tests:
+    name: Windows Pester Tests
+    runs-on: windows-latest
+    needs: [powershell-analysis]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell
+        shell: pwsh
+        run: |
+          $PSVersionTable
+          Write-Host "[+] PowerShell $($PSVersionTable.PSVersion) ready"
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module -Name Pester -MinimumVersion 5.7.0 -Force -Scope CurrentUser
+          Import-Module Pester -PassThru
+          Write-Host "[+] Pester installed successfully"
+
+      - name: Run Windows tests
+        shell: pwsh
+        run: |
+          Write-Host "[i] Running Windows Pester tests..."
+
+          $config = New-PesterConfiguration
+          $config.Run.Path = './tests/Windows'
+          $config.Run.Exit = $true
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = './test-results-windows.xml'
+          $config.TestResult.OutputFormat = 'NUnitXml'
+
+          Invoke-Pester -Configuration $config
+
+      - name: Upload Windows test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-results
+          path: test-results-windows.xml
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action/windows@v2
+        with:
+          files: test-results-windows.xml
+          check_name: Windows Test Results
+
+  # Job 4: Linux PowerShell Tests
+  linux-tests:
+    name: Linux Pester Tests
+    runs-on: ubuntu-latest
+    needs: [bash-validation]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install PowerShell
+        run: |
+          # Update package lists
+          sudo apt-get update
+
+          # Install prerequisites
+          sudo apt-get install -y wget apt-transport-https software-properties-common
+
+          # Download Microsoft repository GPG keys
+          wget -q "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb"
+
+          # Register repository
+          sudo dpkg -i packages-microsoft-prod.deb
+          rm packages-microsoft-prod.deb
+
+          # Update package lists
+          sudo apt-get update
+
+          # Install PowerShell
+          sudo apt-get install -y powershell
+
+          echo "[+] PowerShell installed"
+          pwsh --version
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module -Name Pester -MinimumVersion 5.7.0 -Force -Scope CurrentUser
+          Import-Module Pester -PassThru
+          Write-Host "[+] Pester installed successfully"
+
+      - name: Run Linux tests
+        shell: pwsh
+        run: |
+          Write-Host "[i] Running Linux Pester tests..."
+
+          $config = New-PesterConfiguration
+          $config.Run.Path = './tests/Linux'
+          $config.Run.Exit = $true
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = './test-results-linux.xml'
+          $config.TestResult.OutputFormat = 'NUnitXml'
+
+          Invoke-Pester -Configuration $config
+
+      - name: Upload Linux test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-test-results
+          path: test-results-linux.xml
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: test-results-linux.xml
+          check_name: Linux Test Results
+
+  # Job 5: Test Coverage Report
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [windows-tests, linux-tests]
+    if: always()
+
+    steps:
+      - name: Download Windows test results
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-test-results
+          path: ./results
+
+      - name: Download Linux test results
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-test-results
+          path: ./results
+
+      - name: Generate test summary
+        run: |
+          echo "# Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Execution Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows  | ${{ needs.windows-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux    | ${{ needs.linux-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f ./results/test-results-windows.xml ]; then
+            echo "Windows test artifacts found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f ./results/test-results-linux.xml ]; then
+            echo "Linux test artifacts found" >> $GITHUB_STEP_SUMMARY
+          fi
