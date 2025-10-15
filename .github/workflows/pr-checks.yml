@@ -1,0 +1,192 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Check for sensitive data
+  secret-scan:
+    name: Scan for Secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+      - name: Scan for common secrets patterns
+        run: |
+          echo "[i] Scanning for common secrets patterns..."
+
+          # Patterns to search for
+          PATTERNS=(
+            "password\s*=\s*['\"][^'\"]*['\"]"
+            "api[_-]?key\s*=\s*['\"][^'\"]*['\"]"
+            "secret\s*=\s*['\"][^'\"]*['\"]"
+            "token\s*=\s*['\"][^'\"]*['\"]"
+            "BEGIN RSA PRIVATE KEY"
+            "BEGIN OPENSSH PRIVATE KEY"
+          )
+
+          FOUND=0
+
+          for pattern in "${PATTERNS[@]}"; do
+            if grep -rniE "$pattern" . \
+              --exclude-dir=.git \
+              --exclude-dir=node_modules \
+              --exclude="*.md" \
+              --exclude="pr-checks.yml"; then
+              echo "[-] Found potential secret: $pattern"
+              FOUND=1
+            fi
+          done
+
+          if [ $FOUND -eq 1 ]; then
+            echo "[-] Potential secrets found - review required"
+            echo "[!] Note: Exclude false positives in workflow if needed"
+            exit 1
+          fi
+
+          echo "[+] No secrets detected"
+
+  # Check file sizes
+  file-size-check:
+    name: Check File Sizes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for large files
+        run: |
+          echo "[i] Checking for large files (>1MB)..."
+
+          LARGE_FILES=$(find . -type f -size +1M \
+            ! -path "./.git/*" \
+            ! -path "./node_modules/*" \
+            ! -name "*.zip" \
+            ! -name "*.tar.gz")
+
+          if [ -n "$LARGE_FILES" ]; then
+            echo "[-] Large files found:"
+            echo "$LARGE_FILES" | while read file; do
+              SIZE=$(du -h "$file" | cut -f1)
+              echo "  - $file ($SIZE)"
+            done
+            echo "[!] Consider using Git LFS for large files"
+            exit 1
+          fi
+
+          echo "[+] No large files detected"
+
+  # Validate YAML files
+  yaml-validation:
+    name: Validate YAML Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint
+          echo "[+] yamllint installed"
+
+      - name: Validate YAML files
+        run: |
+          echo "[i] Validating YAML files..."
+
+          YAML_FILES=$(find . -name "*.yml" -o -name "*.yaml" | grep -v ".git")
+
+          if [ -z "$YAML_FILES" ]; then
+            echo "[i] No YAML files found"
+            exit 0
+          fi
+
+          FAILED=0
+
+          for file in $YAML_FILES; do
+            echo "[*] Validating: $file"
+            if ! yamllint -d "{extends: relaxed, rules: {line-length: {max: 120}}}" "$file"; then
+              FAILED=1
+              echo "[-] Validation failed for: $file"
+            fi
+          done
+
+          if [ $FAILED -eq 1 ]; then
+            echo "[-] YAML validation failed"
+            exit 1
+          fi
+
+          echo "[+] All YAML files valid"
+
+  # Check for TODO/FIXME comments
+  todo-check:
+    name: Check for TODO/FIXME
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Scan for TODO/FIXME comments
+        run: |
+          echo "[i] Scanning for TODO/FIXME comments..."
+
+          TODO_COUNT=$(grep -rni "TODO\|FIXME" . \
+            --exclude-dir=.git \
+            --exclude-dir=node_modules \
+            --exclude="*.md" \
+            --exclude="pr-checks.yml" | wc -l)
+
+          if [ $TODO_COUNT -gt 0 ]; then
+            echo "[!] Found $TODO_COUNT TODO/FIXME comments:"
+            grep -rni "TODO\|FIXME" . \
+              --exclude-dir=.git \
+              --exclude-dir=node_modules \
+              --exclude="*.md" \
+              --exclude="pr-checks.yml" || true
+            echo ""
+            echo "[i] Review these items before merging"
+            # Don't fail the build, just informational
+          else
+            echo "[+] No TODO/FIXME comments found"
+          fi
+
+  # PR Description Check
+  pr-description-check:
+    name: Check PR Description
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check PR has description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            if (!pr.body || pr.body.length < 20) {
+              core.setFailed('PR description is missing or too short. Please add a meaningful description.');
+              return;
+            }
+
+            // Check for required sections
+            const requiredSections = ['## Summary', '## Changes', '## Testing'];
+            const missingSeconds = requiredSections.filter(section => !pr.body.includes(section));
+
+            if (missingSections.length > 0) {
+              core.warning(`PR description is missing recommended sections: ${missingSections.join(', ')}`);
+              // Don't fail, just warn
+            }
+
+            core.info('[+] PR description looks good');

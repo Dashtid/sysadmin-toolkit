@@ -1,0 +1,185 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly on Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  # CodeQL Analysis
+  codeql-analysis:
+    name: CodeQL Security Scan
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, python
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # Dependency Review (PRs only)
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+
+  # Trivy Security Scanner
+  trivy-scan:
+    name: Trivy Filesystem Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Display Trivy summary
+        if: always()
+        run: |
+          echo "[i] Trivy scan completed"
+          echo "[i] Results uploaded to Security tab"
+
+  # Check for outdated PowerShell modules
+  powershell-modules-check:
+    name: Check PowerShell Modules
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for module updates
+        shell: pwsh
+        run: |
+          Write-Host "[i] Checking for PowerShell module updates..."
+
+          # Common modules used in scripts
+          $modules = @('Pester', 'PSScriptAnalyzer')
+          $outdated = @()
+
+          foreach ($module in $modules) {
+            try {
+              $installed = Get-InstalledModule -Name $module -ErrorAction SilentlyContinue
+              $available = Find-Module -Name $module -ErrorAction Stop
+
+              if ($installed -and ($available.Version -gt $installed.Version)) {
+                Write-Host "[!] $module is outdated: $($installed.Version) -> $($available.Version)"
+                $outdated += $module
+              } else {
+                Write-Host "[+] $module is up to date"
+              }
+            } catch {
+              Write-Host "[!] Could not check $module : $_"
+            }
+          }
+
+          if ($outdated.Count -gt 0) {
+            Write-Host "[!] $($outdated.Count) module(s) have updates available"
+            Write-Host "[i] Consider updating: $($outdated -join ', ')"
+          } else {
+            Write-Host "[+] All modules are up to date"
+          }
+
+  # License Compliance Check
+  license-check:
+    name: License Compliance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for LICENSE file
+        run: |
+          if [ ! -f LICENSE ]; then
+            echo "[-] LICENSE file not found"
+            echo "[!] Add a LICENSE file to the repository"
+            exit 1
+          fi
+
+          echo "[+] LICENSE file exists"
+
+      - name: Verify LICENSE is MIT
+        run: |
+          if grep -q "MIT License" LICENSE; then
+            echo "[+] MIT License confirmed"
+          else
+            echo "[!] License type verification needed"
+          fi
+
+  # Markdown Link Checker
+  markdown-links:
+    name: Check Markdown Links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.github/markdown-link-check-config.json'
+
+  # Security Summary
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [codeql-analysis, trivy-scan, license-check]
+    if: always()
+
+    steps:
+      - name: Generate security summary
+        run: |
+          echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scanner | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| CodeQL  | ${{ needs.codeql-analysis.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trivy   | ${{ needs.trivy-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| License | ${{ needs.license-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View detailed results in the Security tab" >> $GITHUB_STEP_SUMMARY

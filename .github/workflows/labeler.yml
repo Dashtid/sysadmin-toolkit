@@ -1,0 +1,152 @@
+name: Auto Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main]
+
+jobs:
+  label-pr:
+    name: Auto Label Pull Request
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Auto label based on files changed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            // Get files changed in PR
+            const files = await github.rest.pulls.listFiles({
+              owner,
+              repo,
+              pull_number: prNumber
+            });
+
+            const changedFiles = files.data.map(f => f.filename);
+            const labels = new Set();
+
+            // Label logic based on file paths
+            if (changedFiles.some(f => f.startsWith('Windows/'))) {
+              labels.add('windows');
+            }
+
+            if (changedFiles.some(f => f.startsWith('Linux/'))) {
+              labels.add('linux');
+            }
+
+            if (changedFiles.some(f => f.startsWith('tests/'))) {
+              labels.add('tests');
+            }
+
+            if (changedFiles.some(f => f.startsWith('docs/') || f.endsWith('.md'))) {
+              labels.add('documentation');
+            }
+
+            if (changedFiles.some(f => f.includes('ssh'))) {
+              labels.add('ssh');
+            }
+
+            if (changedFiles.some(f => f.includes('security'))) {
+              labels.add('security');
+            }
+
+            if (changedFiles.some(f => f.includes('maintenance'))) {
+              labels.add('maintenance');
+            }
+
+            if (changedFiles.some(f => f.includes('monitoring'))) {
+              labels.add('monitoring');
+            }
+
+            if (changedFiles.some(f => f.includes('kubernetes') || f.includes('k8s'))) {
+              labels.add('kubernetes');
+            }
+
+            if (changedFiles.some(f => f.includes('docker'))) {
+              labels.add('docker');
+            }
+
+            if (changedFiles.some(f => f.startsWith('.github/workflows'))) {
+              labels.add('ci/cd');
+            }
+
+            // Apply labels
+            if (labels.size > 0) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: prNumber,
+                labels: Array.from(labels)
+              });
+
+              core.info(`Applied labels: ${Array.from(labels).join(', ')}`);
+            }
+
+  label-issue:
+    name: Auto Label Issue
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues'
+
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Auto label based on title/body
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const labels = new Set();
+
+            // Label logic based on keywords
+            if (title.includes('bug') || body.includes('bug')) {
+              labels.add('bug');
+            }
+
+            if (title.includes('feature') || title.includes('enhancement')) {
+              labels.add('enhancement');
+            }
+
+            if (title.includes('question') || title.includes('help')) {
+              labels.add('question');
+            }
+
+            if (title.includes('windows') || body.includes('windows')) {
+              labels.add('windows');
+            }
+
+            if (title.includes('linux') || body.includes('linux')) {
+              labels.add('linux');
+            }
+
+            if (title.includes('security') || body.includes('security')) {
+              labels.add('security');
+            }
+
+            // Apply labels
+            if (labels.size > 0) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: issue.number,
+                labels: Array.from(labels)
+              });
+
+              core.info(`Applied labels: ${Array.from(labels).join(', ')}`);
+            }
