@@ -8,11 +8,18 @@
     - Admin privilege checking
     - Path validation helpers
     - Common color schemes
+    - Centralized log directory management
 
 .NOTES
     Author: Windows & Linux Sysadmin Toolkit
-    Version: 1.0.0
+    Version: 1.1.0
     Requires: PowerShell 5.1+
+
+.CHANGELOG
+    1.1.0 - 2025-10-15
+        - Fixed hardcoded PowerShell 7 path to support multiple installation locations
+        - Added Get-LogDirectory function for centralized log management
+        - Added Get-ToolkitRootPath helper function
 #>
 
 # Color scheme for consistent output
@@ -212,13 +219,19 @@ function Test-PowerShell7 {
     [OutputType([bool])]
     param()
 
-    $pwsh7Path = "C:\Program Files\PowerShell\7\pwsh.exe"
-    return (Test-Path $pwsh7Path)
+    $pwshPath = Get-PowerShell7Path
+    return ($null -ne $pwshPath)
 }
 
 <#
 .SYNOPSIS
     Gets the full path to the PowerShell 7 executable.
+
+.DESCRIPTION
+    Searches for PowerShell 7+ in multiple locations:
+    1. Using Get-Command (if pwsh is in PATH)
+    2. Common installation directories (x64 and x86)
+    3. Cross-platform locations (for Linux/macOS compatibility)
 
 .OUTPUTS
     String - Full path to pwsh.exe if found, $null otherwise.
@@ -234,11 +247,107 @@ function Get-PowerShell7Path {
     [OutputType([string])]
     param()
 
-    $pwsh7Path = "C:\Program Files\PowerShell\7\pwsh.exe"
-    if (Test-Path $pwsh7Path) {
-        return $pwsh7Path
+    # First, try to find pwsh in PATH
+    $pwshCommand = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($pwshCommand) {
+        return $pwshCommand.Source
     }
+
+    # Common Windows installation paths
+    $commonPaths = @(
+        "$env:ProgramFiles\PowerShell\7\pwsh.exe",
+        "${env:ProgramFiles(x86)}\PowerShell\7\pwsh.exe",
+        "$env:LOCALAPPDATA\Microsoft\PowerShell\7\pwsh.exe"
+    )
+
+    # Check each path
+    foreach ($path in $commonPaths) {
+        if (Test-Path $path) {
+            return $path
+        }
+    }
+
+    # On Linux/macOS, pwsh is typically in /usr/bin or /usr/local/bin
+    if ($PSVersionTable.Platform -eq 'Unix') {
+        $unixPaths = @('/usr/bin/pwsh', '/usr/local/bin/pwsh')
+        foreach ($path in $unixPaths) {
+            if (Test-Path $path) {
+                return $path
+            }
+        }
+    }
+
     return $null
+}
+
+<#
+.SYNOPSIS
+    Gets the root path of the sysadmin toolkit repository.
+
+.DESCRIPTION
+    Determines the root directory of the toolkit by traversing up from the current module location.
+
+.OUTPUTS
+    String - Full path to the toolkit root directory.
+
+.EXAMPLE
+    $rootPath = Get-ToolkitRootPath
+    $configPath = Join-Path $rootPath "config.json"
+#>
+function Get-ToolkitRootPath {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+
+    # Get the directory containing this module (Windows/lib/)
+    $moduleDir = $PSScriptRoot
+
+    # Go up two levels to reach the toolkit root
+    $rootPath = Split-Path -Parent (Split-Path -Parent $moduleDir)
+
+    return $rootPath
+}
+
+<#
+.SYNOPSIS
+    Gets the centralized log directory for the toolkit.
+
+.DESCRIPTION
+    Returns the path to the centralized logs directory at the toolkit root.
+    Creates the directory if it doesn't exist.
+
+.PARAMETER CreateIfMissing
+    If $true (default), creates the log directory if it doesn't exist.
+
+.OUTPUTS
+    String - Full path to the logs directory.
+
+.EXAMPLE
+    $logDir = Get-LogDirectory
+    $logFile = Join-Path $logDir "script_$(Get-Date -Format 'yyyy-MM-dd').log"
+#>
+function Get-LogDirectory {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter()]
+        [bool]$CreateIfMissing = $true
+    )
+
+    $rootPath = Get-ToolkitRootPath
+    $logPath = Join-Path $rootPath "logs"
+
+    if ($CreateIfMissing -and -not (Test-Path $logPath)) {
+        try {
+            New-Item -ItemType Directory -Path $logPath -Force | Out-Null
+            Write-Verbose "Created log directory: $logPath"
+        }
+        catch {
+            Write-Warning "Failed to create log directory: $($_.Exception.Message)"
+        }
+    }
+
+    return $logPath
 }
 
 # Export public functions
@@ -251,7 +360,9 @@ Export-ModuleMember -Function @(
     'Test-IsAdministrator',
     'Assert-Administrator',
     'Test-PowerShell7',
-    'Get-PowerShell7Path'
+    'Get-PowerShell7Path',
+    'Get-ToolkitRootPath',
+    'Get-LogDirectory'
 )
 
 # Export color scheme for scripts that need custom colors

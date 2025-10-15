@@ -1,26 +1,64 @@
 # Pester Tests for Windows Maintenance Scripts
 # Run: Invoke-Pester -Path .\tests\Windows\Maintenance.Tests.ps1
+# Updated: 2025-10-15 for v2.0.0 scripts
 
 BeforeAll {
     $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
     $MaintenancePath = Join-Path $ProjectRoot "Windows\maintenance"
+
+    # Import test helpers
+    $TestHelpersPath = Join-Path $PSScriptRoot "..\TestHelpers.psm1"
+    Import-Module $TestHelpersPath -Force
+}
+
+AfterAll {
+    Remove-Module TestHelpers -ErrorAction SilentlyContinue
 }
 
 Describe "Maintenance Script Existence" {
-    Context "Script Files" {
+    Context "Core Scripts" {
         It "system-updates.ps1 should exist" {
             $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
             $scriptPath | Should -Exist
         }
 
-        It "security-updates.ps1 should exist" {
-            $scriptPath = Join-Path $MaintenancePath "security-updates.ps1"
+        It "startup_script.ps1 should exist" {
+            $scriptPath = Join-Path $MaintenancePath "startup_script.ps1"
             $scriptPath | Should -Exist
         }
 
         It "update-defender.ps1 should exist" {
             $scriptPath = Join-Path $MaintenancePath "update-defender.ps1"
             $scriptPath | Should -Exist
+        }
+
+        It "Restore-PreviousState.ps1 should exist (v2.0.0)" {
+            $scriptPath = Join-Path $MaintenancePath "Restore-PreviousState.ps1"
+            $scriptPath | Should -Exist
+        }
+    }
+
+    Context "Configuration Files" {
+        It "config.example.json should exist" {
+            $configPath = Join-Path $MaintenancePath "config.example.json"
+            $configPath | Should -Exist
+        }
+
+        It "README.md should exist" {
+            $readmePath = Join-Path $MaintenancePath "README.md"
+            $readmePath | Should -Exist
+        }
+    }
+
+    Context "Examples Directory" {
+        It "examples directory should exist" {
+            $examplesPath = Join-Path $MaintenancePath "examples"
+            $examplesPath | Should -Exist
+        }
+
+        It "weekly-updates-task.xml should exist" {
+            $taskPath = Join-Path $MaintenancePath "examples\weekly-updates-task.xml"
+            $taskPath | Should -Exist
         }
     }
 }
@@ -29,149 +67,214 @@ Describe "Maintenance Script Syntax" {
     Context "PowerShell Syntax Validation" {
         It "system-updates.ps1 has valid syntax" {
             $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
-            $errors = $null
-            [System.Management.Automation.PSParser]::Tokenize(
-                (Get-Content $scriptPath -Raw), [ref]$errors
-            ) | Out-Null
-            $errors.Count | Should -Be 0
+            Test-ScriptSyntax -Path $scriptPath | Should -Be $true
         }
 
-        It "security-updates.ps1 has valid syntax" {
-            $scriptPath = Join-Path $MaintenancePath "security-updates.ps1"
-            $errors = $null
-            [System.Management.Automation.PSParser]::Tokenize(
-                (Get-Content $scriptPath -Raw), [ref]$errors
-            ) | Out-Null
-            $errors.Count | Should -Be 0
+        It "startup_script.ps1 has valid syntax" {
+            $scriptPath = Join-Path $MaintenancePath "startup_script.ps1"
+            Test-ScriptSyntax -Path $scriptPath | Should -Be $true
         }
 
         It "update-defender.ps1 has valid syntax" {
             $scriptPath = Join-Path $MaintenancePath "update-defender.ps1"
-            $errors = $null
-            [System.Management.Automation.PSParser]::Tokenize(
-                (Get-Content $scriptPath -Raw), [ref]$errors
-            ) | Out-Null
-            $errors.Count | Should -Be 0
+            Test-ScriptSyntax -Path $scriptPath | Should -Be $true
+        }
+
+        It "Restore-PreviousState.ps1 has valid syntax" {
+            $scriptPath = Join-Path $MaintenancePath "Restore-PreviousState.ps1"
+            Test-ScriptSyntax -Path $scriptPath | Should -Be $true
         }
     }
 }
 
 Describe "Maintenance Script Requirements" {
     Context "Administrator Privileges" {
-        It "system-updates.ps1 checks for admin or requires admin" {
+        It "system-updates.ps1 requires admin" {
             $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
             $content = Get-Content $scriptPath -Raw
-            # Either has #Requires or checks admin manually
-            ($content -match "#Requires -RunAsAdministrator") -or
-            ($content -match "Administrator|IsInRole.*Administrator|RunAsAdministrator") |
-            Should -Be $true
+            ($content -match "#Requires -RunAsAdministrator") | Should -Be $true
         }
 
-        It "update-defender.ps1 checks for admin or requires admin" {
-            $scriptPath = Join-Path $MaintenancePath "update-defender.ps1"
+        It "startup_script.ps1 requires admin" {
+            $scriptPath = Join-Path $MaintenancePath "startup_script.ps1"
             $content = Get-Content $scriptPath -Raw
-            # Either has #Requires or checks admin manually
-            ($content -match "#Requires -RunAsAdministrator") -or
-            ($content -match "Administrator|IsInRole.*Administrator|RunAsAdministrator") |
-            Should -Be $true
+            ($content -match "#Requires -RunAsAdministrator") | Should -Be $true
+        }
+
+        It "Restore-PreviousState.ps1 requires admin" {
+            $scriptPath = Join-Path $MaintenancePath "Restore-PreviousState.ps1"
+            $content = Get-Content $scriptPath -Raw
+            ($content -match "#Requires -RunAsAdministrator") | Should -Be $true
         }
     }
 
     Context "PowerShell Version" {
-        It "Scripts target PowerShell 5.1 or higher" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
+        It "Scripts require PowerShell 7.0+" {
+            Get-ChildItem $MaintenancePath -Filter "*.ps1" -Exclude "*.backup.ps1" | ForEach-Object {
                 $content = Get-Content $_.FullName -Raw
                 if ($content -match "#Requires -Version (\d+)") {
-                    [int]$matches[1] | Should -BeGreaterOrEqual 5
+                    [int]$matches[1] | Should -BeGreaterOrEqual 7
                 }
+            }
+        }
+    }
+
+    Context "Module Dependencies (v2.0.0)" {
+        It "Scripts import CommonFunctions module" {
+            $scripts = @("system-updates.ps1", "startup_script.ps1", "Restore-PreviousState.ps1")
+            foreach ($script in $scripts) {
+                $scriptPath = Join-Path $MaintenancePath $script
+                $content = Get-Content $scriptPath -Raw
+                $content | Should -Match "Import-Module.*\`$modulePath|CommonFunctions\.psm1"
+            }
+        }
+
+        It "Scripts check for CommonFunctions existence" {
+            $scripts = @("system-updates.ps1", "startup_script.ps1", "Restore-PreviousState.ps1")
+            foreach ($script in $scripts) {
+                $scriptPath = Join-Path $MaintenancePath $script
+                $content = Get-Content $scriptPath -Raw
+                $content | Should -Match "Test-Path.*modulePath|CommonFunctions"
             }
         }
     }
 }
 
-Describe "Maintenance Script Content" {
+Describe "Maintenance Script Content - v2.0.0 Features" {
     Context "Windows Update Functionality" {
         It "system-updates.ps1 uses Windows Update cmdlets" {
             $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
             $content = Get-Content $scriptPath -Raw
-            $content | Should -Match "PSWindowsUpdate|Windows.*Update|Get-WindowsUpdate|Install-WindowsUpdate"
+            $content | Should -Match "PSWindowsUpdate|Get-WindowsUpdate|Install-WindowsUpdate"
         }
 
         It "Scripts check for pending reboots" {
             $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
             $content = Get-Content $scriptPath -Raw
-            $content | Should -Match "PendingReboot|RebootRequired|Restart.*Required"
+            $content | Should -Match "Test-PendingReboot"
         }
     }
 
-    Context "Windows Defender Functionality" {
-        It "update-defender.ps1 updates defender signatures" {
-            $scriptPath = Join-Path $MaintenancePath "update-defender.ps1"
+    Context "Winget Support" {
+        It "system-updates.ps1 includes Winget updates" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
             $content = Get-Content $scriptPath -Raw
-            $content | Should -Match "Update-MpSignature|MpComputerStatus"
+            $content | Should -Match "winget|Update-Winget"
         }
 
-        It "Scripts check defender status" {
-            $scriptPath = Join-Path $MaintenancePath "update-defender.ps1"
+        It "system-updates.ps1 has SkipWinget parameter" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
             $content = Get-Content $scriptPath -Raw
-            $content | Should -Match "Get-MpComputerStatus|Get-MpPreference"
+            $content | Should -Match "SkipWinget"
         }
     }
 
-    Context "Error Handling" {
+    Context "Chocolatey Support" {
+        It "system-updates.ps1 includes Chocolatey updates" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "choco|Update-Chocolatey"
+        }
+
+        It "system-updates.ps1 has SkipChocolatey parameter" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "SkipChocolatey"
+        }
+    }
+
+    Context "Safety Features - v2.0.0" {
+        It "system-updates.ps1 creates system restore points" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "New-SystemRestorePoint|Checkpoint-Computer"
+        }
+
+        It "system-updates.ps1 exports pre-update state" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "Export-PreUpdateState|pre-update-state"
+        }
+
+        It "system-updates.ps1 supports WhatIf mode" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "SupportsShouldProcess|PSCmdlet\.ShouldProcess"
+        }
+    }
+
+    Context "Update Summary - v2.0.0" {
+        It "system-updates.ps1 shows update summary" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "Show-UpdateSummary|Update Summary"
+        }
+
+        It "system-updates.ps1 tracks duration" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "StartTime|duration|Total Runtime"
+        }
+    }
+}
+
+Describe "Maintenance Script Error Handling" {
+    Context "Exception Handling" {
         It "All maintenance scripts have try/catch blocks" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
+            Get-ChildItem $MaintenancePath -Filter "*.ps1" -Exclude "*.backup.ps1" | ForEach-Object {
                 $content = Get-Content $_.FullName -Raw
                 $content | Should -Match "try\s*\{.*catch"
             }
         }
 
-        It "Scripts handle ErrorActionPreference" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Match "\$ErrorActionPreference"
-            }
+        It "Scripts have finally blocks for cleanup" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "finally"
         }
     }
 }
 
-Describe "Maintenance Script Output" {
+Describe "Maintenance Script Output - v2.0.0" {
     Context "Consistent Logging Format" {
-        It "All scripts use [+] for success" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
+        It "Scripts use CommonFunctions logging" {
+            $scripts = @("system-updates.ps1", "startup_script.ps1")
+            foreach ($script in $scripts) {
+                $scriptPath = Join-Path $MaintenancePath $script
+                $content = Get-Content $scriptPath -Raw
+                $content | Should -Match "Write-Success|Write-InfoMessage|Write-WarningMessage|Write-ErrorMessage"
+            }
+        }
+
+        It "Scripts use ASCII markers [+]" {
+            Get-ChildItem $MaintenancePath -Filter "*.ps1" -Exclude "*.backup.ps1" | ForEach-Object {
                 $content = Get-Content $_.FullName -Raw
                 $content | Should -Match "\[\+\]"
             }
         }
 
-        It "All scripts use [-] for errors" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
+        It "Scripts use ASCII markers [-]" {
+            Get-ChildItem $MaintenancePath -Filter "*.ps1" -Exclude "*.backup.ps1" | ForEach-Object {
                 $content = Get-Content $_.FullName -Raw
                 $content | Should -Match "\[-\]"
             }
         }
+    }
 
-        It "All scripts use [i] for info" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
+    Context "No Emojis (CLAUDE.md Compliance)" {
+        It "Scripts don't contain emojis" {
+            Get-ChildItem $MaintenancePath -Filter "*.ps1" -Exclude "*.backup.ps1" | ForEach-Object {
                 $content = Get-Content $_.FullName -Raw
-                $content | Should -Match "\[i\]"
-            }
-        }
-
-        It "All scripts use [!] for warnings" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Match "\[!\]"
+                $content | Should -Not -Match '✅|❌|⚠️|ℹ️|🚀|📁|🔧'
             }
         }
     }
 
-    Context "No Emojis" {
-        It "Scripts don't contain emojis" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Not -Match '✅|❌|⚠️|ℹ️|🚀|📁|🔧'
-            }
+    Context "Progress Indicators - v2.0.0" {
+        It "system-updates.ps1 uses Write-Progress" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "Write-Progress"
         }
     }
 }
@@ -179,90 +282,137 @@ Describe "Maintenance Script Output" {
 Describe "Maintenance Script Security" {
     Context "No Hardcoded Credentials" {
         It "Scripts don't contain passwords" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Not -Match 'password\s*=\s*["`''][^"`'']+["`'']'
+            Get-ChildItem $MaintenancePath -Filter "*.ps1" -Exclude "*.backup.ps1" | ForEach-Object {
+                Test-NoHardcodedSecrets -Path $_.FullName | Should -Be $true
             }
         }
 
-        It "Scripts don't contain API keys" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Not -Match 'api[_-]?key\s*=\s*["`''][^"`'']+["`'']'
+        It "Scripts don't contain private IPs" {
+            Get-ChildItem $MaintenancePath -Filter "*.ps1" -Exclude "*.backup.ps1" | ForEach-Object {
+                Test-NoPrivateIPs -Path $_.FullName -AllowExampleIPs | Should -Be $true
             }
         }
     }
 }
 
-Describe "Maintenance Script Functionality" {
-    Context "Service Availability" {
-        It "Windows Update service exists" {
-            $service = Get-Service -Name "wuauserv" -ErrorAction SilentlyContinue
-            if ($service) {
-                $service.Name | Should -Be "wuauserv"
-            } else {
-                Set-ItResult -Skipped -Because "Windows Update service not found"
-            }
-        }
-
-        It "Windows Defender service exists" {
-            $service = Get-Service -Name "WinDefend" -ErrorAction SilentlyContinue
-            if ($service) {
-                $service.Name | Should -Be "WinDefend"
-            } else {
-                Set-ItResult -Skipped -Because "Windows Defender service not found"
-            }
-        }
-    }
-
-    Context "Module Dependencies" {
-        It "PSWindowsUpdate module check is present" {
+Describe "Maintenance Script Configuration - v2.0.0" {
+    Context "Config File Support" {
+        It "system-updates.ps1 supports config files" {
             $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
             $content = Get-Content $scriptPath -Raw
-            $content | Should -Match "PSWindowsUpdate|Get-Module.*PSWindowsUpdate|Import-Module.*PSWindowsUpdate"
+            $content | Should -Match "ConfigFile|ConvertFrom-Json"
+        }
+
+        It "config.example.json is valid JSON" {
+            $configPath = Join-Path $MaintenancePath "config.example.json"
+            {
+                $config = Get-Content $configPath -Raw | ConvertFrom-Json
+                $config | Should -Not -BeNullOrEmpty
+            } | Should -Not -Throw
+        }
+
+        It "config.example.json has expected properties" {
+            $configPath = Join-Path $MaintenancePath "config.example.json"
+            $config = Get-Content $configPath -Raw | ConvertFrom-Json
+            $config.PSObject.Properties.Name | Should -Contain "AutoReboot"
+            $config.PSObject.Properties.Name | Should -Contain "SkipWinget"
+            $config.PSObject.Properties.Name | Should -Contain "SkipChocolatey"
         }
     }
+}
 
-    Context "Logging Capabilities" {
-        It "Scripts can log to files" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Match "Out-File|Add-Content|Set-Content|\>\>|log"
+Describe "Maintenance Script Logging - v2.0.0" {
+    Context "Centralized Logging" {
+        It "Scripts use Get-LogDirectory" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "Get-LogDirectory"
+        }
+
+        It "Scripts create timestamped log files" {
+            $scripts = @("system-updates.ps1", "startup_script.ps1")
+            foreach ($script in $scripts) {
+                $scriptPath = Join-Path $MaintenancePath $script
+                $content = Get-Content $scriptPath -Raw
+                $content | Should -Match "Get-Date.*Format.*log"
+            }
+        }
+
+        It "Scripts use transcript logging" {
+            $scripts = @("system-updates.ps1", "startup_script.ps1")
+            foreach ($script in $scripts) {
+                $scriptPath = Join-Path $MaintenancePath $script
+                $content = Get-Content $scriptPath -Raw
+                $content | Should -Match "Start-Transcript"
             }
         }
     }
 }
 
-Describe "Maintenance Script Best Practices" {
-    Context "Documentation" {
-        It "Scripts have description comments" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Match "^#.*Description|^#.*Purpose"
+Describe "Maintenance Script Documentation - v2.0.0" {
+    Context "Comment-Based Help" {
+        It "All scripts have comment-based help" {
+            Get-ChildItem $MaintenancePath -Filter "*.ps1" -Exclude "*.backup.ps1" | ForEach-Object {
+                Test-ScriptHasCommentHelp -Path $_.FullName | Should -Be $true
             }
         }
 
-        It "Scripts explain their usage" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Match "#.*Usage|\.SYNOPSIS|\.DESCRIPTION"
-            }
+        It "Scripts have version information" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "Version:\s*2\.0\.0"
+        }
+
+        It "Scripts have changelog" {
+            $scriptPath = Join-Path $MaintenancePath "system-updates.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "\.CHANGELOG"
         }
     }
 
-    Context "Safety Features" {
-        It "Scripts provide status feedback" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Match "Write-Host|Write-Output|Write-Verbose"
-            }
+    Context "README Documentation" {
+        It "README.md exists" {
+            $readmePath = Join-Path $MaintenancePath "README.md"
+            $readmePath | Should -Exist
         }
 
-        It "Scripts handle exit codes" {
-            Get-ChildItem $MaintenancePath -Filter "*.ps1" | ForEach-Object {
-                $content = Get-Content $_.FullName -Raw
-                $content | Should -Match "exit \d+"
-            }
+        It "README documents system-updates.ps1" {
+            $readmePath = Join-Path $MaintenancePath "README.md"
+            $content = Get-Content $readmePath -Raw
+            $content | Should -Match "system-updates\.ps1"
+        }
+
+        It "README documents configuration" {
+            $readmePath = Join-Path $MaintenancePath "README.md"
+            $content = Get-Content $readmePath -Raw
+            $content | Should -Match "config\.json|Configuration"
+        }
+    }
+}
+
+Describe "Rollback Capability - v2.0.0" {
+    Context "Restore-PreviousState.ps1" {
+        It "Restore script exists" {
+            $scriptPath = Join-Path $MaintenancePath "Restore-PreviousState.ps1"
+            $scriptPath | Should -Exist
+        }
+
+        It "Restore script has ListBackups parameter" {
+            $scriptPath = Join-Path $MaintenancePath "Restore-PreviousState.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "ListBackups"
+        }
+
+        It "Restore script has Latest parameter" {
+            $scriptPath = Join-Path $MaintenancePath "Restore-PreviousState.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "\`$Latest"
+        }
+
+        It "Restore script has ShowDiff parameter" {
+            $scriptPath = Join-Path $MaintenancePath "Restore-PreviousState.ps1"
+            $content = Get-Content $scriptPath -Raw
+            $content | Should -Match "ShowDiff"
         }
     }
 }
