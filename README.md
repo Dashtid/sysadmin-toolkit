@@ -55,13 +55,16 @@ windows-linux-sysadmin-toolkit/
 ├── Linux/
 │   ├── server/                 # Ubuntu server scripts
 │   ├── desktop/                # Desktop environment scripts
-│   ├── maintenance/            # System maintenance
-│   └── monitoring/             # System monitoring tools
+│   ├── maintenance/            # System maintenance (updates, log cleanup, rollback)
+│   ├── monitoring/             # System monitoring tools
+│   ├── kubernetes/             # Kubernetes pod/PVC monitoring
+│   ├── docker/                 # Docker image cleanup and management
+│   └── gpu/                    # NVIDIA GPU metrics export
 ├── docs/                       # Documentation
 │   ├── SSH-TUNNEL-SETUP.md    # SSH tunnel configuration guide
 │   ├── SECURITY.md            # Security best practices
 │   └── SCRIPT_TEMPLATE.md     # Script templates
-├── tests/                      # Automated test suite (475+ tests)
+├── tests/                      # Automated test suite (650+ tests)
 │   ├── TestHelpers.psm1       # Shared test utilities
 │   ├── Windows/               # Windows script tests
 │   └── Linux/                 # Linux script tests
@@ -177,13 +180,42 @@ Comprehensive security hardening based on CIS Benchmark v4.0.0, DISA STIG V2R2, 
 - Detailed impact warnings and compatibility notes
 - Change tracking with success/failure reporting
 
-### Linux: Server Maintenance
+### Linux: Server Maintenance & Monitoring
 
-Scripts for Ubuntu server administration:
-- System updates and cleanup
-- Monitoring and health checks
-- Security hardening
-- Backup automation
+Comprehensive automation scripts for Ubuntu server administration with Prometheus integration:
+
+```bash
+# Kubernetes pod health monitoring
+./Linux/kubernetes/pod-health-monitor.sh --namespace docker-services
+
+# PVC usage monitoring
+./Linux/kubernetes/pvc-monitor.sh
+
+# GPU metrics export (every 5 minutes via cron)
+./Linux/gpu/nvidia-gpu-exporter.sh
+
+# Docker cleanup (daily via cron)
+./Linux/docker/docker-cleanup.sh --keep-versions 2
+
+# Log cleanup (weekly via cron)
+./Linux/maintenance/log-cleanup.sh
+
+# System updates with state management
+./Linux/maintenance/system-updates.sh --whatif
+./Linux/maintenance/restore-previous-state.sh --list
+```
+
+**Prometheus Metrics Export:**
+- All monitoring scripts export metrics to `/var/lib/prometheus/node-exporter`
+- Metrics automatically collected by Prometheus node-exporter textfile collector
+- Available for Grafana dashboards and alerting
+
+**Key Features:**
+- **Pod Health Monitoring**: Detects CrashLoopBackOff, OOMKilled, ImagePullBackOff
+- **Docker Cleanup**: Automated image cleanup with version retention policies
+- **GPU Monitoring**: NVIDIA GPU metrics (utilization, memory, temperature, power)
+- **Log Management**: Automated compression and cleanup (journald + syslog)
+- **System Updates**: APT/Snap updates with pre/post state capture for rollback
 
 ## [*] Key Features
 
@@ -333,6 +365,56 @@ Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
 4. **Protect your secrets** - Never commit real credentials to Git
 5. **Use `.env.local`** - For local overrides (gitignored automatically)
 
+## [*] Prometheus Integration
+
+The Linux monitoring scripts export metrics in Prometheus format for centralized monitoring and alerting.
+
+### Exported Metrics
+
+**Kubernetes Pod Health:**
+```
+k8s_unhealthy_pods_total{cluster="k3s-lab"} 0
+k8s_crashloop_pods_total{cluster="k3s-lab"} 0
+k8s_oomkilled_pods_total{cluster="k3s-lab"} 0
+k8s_pending_pods_total{cluster="k3s-lab"} 0
+```
+
+**GPU Metrics:**
+```
+nvidia_gpu_utilization_percent{gpu="0",name="Quadro_RTX_5000"} 15
+nvidia_gpu_memory_used_bytes{gpu="0",name="Quadro_RTX_5000"} 6442450944
+nvidia_gpu_temperature_celsius{gpu="0",name="Quadro_RTX_5000"} 45
+```
+
+**Docker Cleanup:**
+```
+docker_cleanup_images_removed_total 18
+docker_cleanup_space_reclaimed_bytes 13958643712
+docker_cleanup_execution_time_seconds 12.5
+```
+
+### Example PromQL Queries
+
+```promql
+# Pods with high restart counts
+k8s_pod_restarts{restart_count > "10"}
+
+# GPU temperature over time
+nvidia_gpu_temperature_celsius{gpu="0"}
+
+# Docker cleanup effectiveness (GB reclaimed per run)
+rate(docker_cleanup_space_reclaimed_bytes[1d]) / 1024 / 1024 / 1024
+
+# System log growth rate
+rate(log_cleanup_logs_compressed_total[1h])
+```
+
+### Grafana Dashboard Setup
+
+1. Add Prometheus as data source in Grafana
+2. Import dashboards or create custom panels with queries above
+3. Set up alerts for critical metrics (pod crashes, high GPU temp, disk space)
+
 ## [i] Documentation
 
 Comprehensive guides available in the [`docs/`](docs/) directory:
@@ -363,4 +445,4 @@ MIT License - Use at your own risk. See [LICENSE](LICENSE) file.
 
 **Author**: David Dashti
 **Purpose**: Personal sysadmin automation scripts
-**Last Updated**: 2025-10-12
+**Last Updated**: 2025-10-15
