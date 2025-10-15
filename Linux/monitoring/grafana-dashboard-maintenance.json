@@ -1,0 +1,157 @@
+{
+  "dashboard": {
+    "title": "Lab Server - Maintenance & Cleanup",
+    "tags": ["docker", "logs", "cleanup", "maintenance"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "5m",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Docker Images Removed (Last Run)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "docker_cleanup_images_removed_total"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Space Reclaimed (Last Run)",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+        "targets": [
+          {
+            "expr": "docker_cleanup_space_reclaimed_bytes / 1024 / 1024 / 1024"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decgbytes"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Docker Cleanup Execution Time",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "docker_cleanup_execution_time_seconds"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Last Docker Cleanup",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+        "targets": [
+          {
+            "expr": "docker_cleanup_timestamp"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "dateTimeFromNow"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Space Reclaimed Over Time",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
+        "targets": [
+          {
+            "expr": "docker_cleanup_space_reclaimed_bytes / 1024 / 1024 / 1024",
+            "legendFormat": "Space Reclaimed (GB)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decgbytes"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Logs Compressed",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 12},
+        "targets": [
+          {
+            "expr": "log_cleanup_logs_compressed_total"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Logs Deleted",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 12},
+        "targets": [
+          {
+            "expr": "log_cleanup_logs_deleted_total"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Log Space Reclaimed",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 12},
+        "targets": [
+          {
+            "expr": "log_cleanup_space_reclaimed_bytes / 1024 / 1024"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decmbytes"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Last Log Cleanup",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 12},
+        "targets": [
+          {
+            "expr": "log_cleanup_timestamp"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "dateTimeFromNow"
+          }
+        }
+      }
+    ]
+  }
+}
