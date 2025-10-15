@@ -2,6 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.0+-blue.svg)](https://github.com/PowerShell/PowerShell)
+[![CI Tests](https://github.com/Dashtid/sysadmin-toolkit/workflows/CI%20-%20Automated%20Testing/badge.svg)](https://github.com/Dashtid/sysadmin-toolkit/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/Dashtid/sysadmin-toolkit/workflows/Security%20Scanning/badge.svg)](https://github.com/Dashtid/sysadmin-toolkit/actions/workflows/security-scan.yml)
 
 Personal collection of system administration scripts for Windows and Linux. Scripts for SSH configuration, system maintenance, security hardening, and remote development workflows.
 
