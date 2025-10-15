@@ -1,0 +1,159 @@
+{
+  "dashboard": {
+    "title": "Lab Server - Kubernetes Pod Health",
+    "tags": ["kubernetes", "k3s", "pods", "lab"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "1m",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Unhealthy Pods",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "k8s_unhealthy_pods_total"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1, "color": "yellow"},
+                {"value": 5, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "CrashLoopBackOff Pods",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+        "targets": [
+          {
+            "expr": "k8s_crashloop_pods_total"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "OOMKilled Pods",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "k8s_oomkilled_pods_total"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Pending Pods",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+        "targets": [
+          {
+            "expr": "k8s_pending_pods_total"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1, "color": "yellow"},
+                {"value": 3, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Pod Health Over Time",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4},
+        "targets": [
+          {
+            "expr": "k8s_unhealthy_pods_total",
+            "legendFormat": "Unhealthy"
+          },
+          {
+            "expr": "k8s_crashloop_pods_total",
+            "legendFormat": "CrashLoop"
+          },
+          {
+            "expr": "k8s_oomkilled_pods_total",
+            "legendFormat": "OOMKilled"
+          },
+          {
+            "expr": "k8s_pending_pods_total",
+            "legendFormat": "Pending"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Image Pull Errors",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 12, "x": 0, "y": 12},
+        "targets": [
+          {
+            "expr": "k8s_image_pull_error_pods_total"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 1, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Last Monitor Check",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 12, "x": 12, "y": 12},
+        "targets": [
+          {
+            "expr": "k8s_monitor_timestamp"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "dateTimeFromNow"
+          }
+        }
+      }
+    ]
+  }
+}
