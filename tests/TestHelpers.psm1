@@ -79,16 +79,20 @@ function Get-ScriptParameters {
     )
 
     $content = Get-Content $Path -Raw
-    $paramBlock = if ($content -match 'param\s*\((.*?)\)' -and $matches[1]) {
+
+    # Use multiline and singleline regex modifiers to match param blocks
+    # This handles multi-line parameter blocks with proper capturing
+    $paramBlock = if ($content -match '(?smi)param\s*\((.*?)\n\)') {
         $matches[1]
     } else {
         return @()
     }
 
     $parameters = @()
-    if ($paramBlock -match '\$(\w+)') {
-        $parameters = [regex]::Matches($paramBlock, '\$(\w+)') | ForEach-Object { $_.Groups[1].Value }
-    }
+    # Match all parameter declarations: [Parameter...]\s*[type]$name
+    $parameters = [regex]::Matches($paramBlock, '\$(\w+)') |
+        ForEach-Object { $_.Groups[1].Value } |
+        Select-Object -Unique
 
     return $parameters
 }

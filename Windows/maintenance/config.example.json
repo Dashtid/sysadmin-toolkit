@@ -1,0 +1,22 @@
+{
+  "_comment": "Configuration file for system-updates.ps1 script",
+  "_instructions": "1. Copy this file to 'config.json' in the same directory. 2. Customize the values below. 3. The config.json file is gitignored and will not be committed.",
+
+  "AutoReboot": false,
+  "LogRetentionDays": 30,
+  "SkipWindowsUpdate": false,
+  "SkipChocolatey": false,
+  "SkipWinget": false,
+  "SkipRestorePoint": false,
+
+  "UpdateTypes": [
+    "Security",
+    "Critical",
+    "Important"
+  ],
+
+  "_updateTypesNote": "Valid values: Security, Critical, Important, Recommended, Optional",
+  "_autoRebootNote": "If true, system will automatically reboot after updates if required",
+  "_logRetentionNote": "Logs older than this many days will be automatically deleted",
+  "_skipRestorePointNote": "If true, no system restore point will be created before updates"
+}
