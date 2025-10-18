@@ -31,8 +31,20 @@ dependencies = [
     "prometheus-client>=0.19.0",
 ]
 
-[project.optional-dependencies]
-dev = [
+
+[project.urls]
+Homepage = "https://github.com/Dashtid/sysadmin-toolkit"
+Repository = "https://github.com/Dashtid/sysadmin-toolkit"
+Issues = "https://github.com/Dashtid/sysadmin-toolkit/issues"
+Documentation = "https://github.com/Dashtid/sysadmin-toolkit/blob/main/README.md"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+# UV-specific configuration
+dev-dependencies = [
     "black>=24.0.0",
     "isort>=5.13.0",
     "mypy>=1.8.0",
@@ -43,15 +55,9 @@ dev = [
     "types-pyyaml>=6.0.0",
 ]
 
-[project.urls]
-Homepage = "https://github.com/Dashtid/sysadmin-toolkit"
-Repository = "https://github.com/Dashtid/sysadmin-toolkit"
-Issues = "https://github.com/Dashtid/sysadmin-toolkit/issues"
-Documentation = "https://github.com/Dashtid/sysadmin-toolkit/blob/main/README.md"
-
-[build-system]
-requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.build_meta"
+# UV workspace configuration
+managed = true
+package = true
 
 [tool.black]
 line-length = 100

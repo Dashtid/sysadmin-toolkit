@@ -1,0 +1,35 @@
+# UV Configuration File
+# https://docs.astral.sh/uv/concepts/configuration-files/
+
+[pip]
+# Use the fastest index strategy
+index-strategy = "unsafe-best-match"
+
+# Enable pip compile compatibility mode
+compile-compat = true
+
+# Resolution strategy
+resolution = "highest"
+
+# Prefer binary wheels over source distributions for faster installs
+prefer-binary = true
+
+[cache]
+# Cache directory (default: platform-specific cache directory)
+# Uncomment to customize cache location
+# dir = ".uv-cache"
+
+# Refresh cached data after this duration (in seconds)
+# Default: 86400 (24 hours)
+refresh = 86400
+
+[workspace]
+# Exclude patterns for workspace member discovery
+exclude = [
+    "tests",
+    "examples",
+    "docs",
+    ".git",
+    ".vscode",
+    "__pycache__",
+]

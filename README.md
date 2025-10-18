@@ -277,6 +277,7 @@ if (Test-IsAdministrator) {
 - PowerShell 7+ installed (recommended)
 - OpenSSH Client enabled
 - Administrator privileges for some operations
+- **uv** (optional, for Python scripts) - see installation below
 
 **Enable OpenSSH Client:**
 ```powershell
@@ -287,11 +288,52 @@ Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Client*'
 Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
 ```
 
+**Install uv (Python package manager):**
+```powershell
+# Windows installation
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Verify installation
+uv --version
+```
+
 ### Linux Systems
 
 - Ubuntu 20.04 LTS or newer
 - Sudo access for system modifications
 - Bash 4.0+
+- **uv** (optional, for Python scripts) - see installation below
+
+**Install uv (Python package manager):**
+```bash
+# Linux installation
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Verify installation
+uv --version
+```
+
+### Python Development (Optional)
+
+If you plan to use or develop Python scripts in this toolkit:
+
+```bash
+# Install project dependencies with uv
+uv sync
+
+# Or install in development mode with all dev tools
+uv sync --all-extras
+
+# Run Python scripts with uv
+uv run python script.py
+```
+
+**Why uv?**
+- 10-100x faster than pip/poetry
+- All-in-one tool (replaces pip, virtualenv, pyenv, poetry)
+- Automatic virtual environment management
+- Cross-platform lockfile (uv.lock) for reproducibility
+- Written in Rust for maximum performance
 
 ## [*] Usage Examples
 
