@@ -61,21 +61,18 @@ Describe "Integration Tests - Error Handling with Retry Logic" {
         }
 
         It "Aggregates errors from multiple server pings" {
-            # Arrange
+            # Arrange - Use simple test that doesn't require external mocking
             $servers = @("server1", "server2", "server3", "server4")
 
-            Mock Test-Connection {
-                param($ComputerName)
-                if ($ComputerName -eq "server2" -or $ComputerName -eq "server4") {
-                    throw "Host unreachable"
-                }
-                return [PSCustomObject]@{ Address = $ComputerName; StatusCode = 0 }
-            }
-
-            # Act
+            # Act - Test with actual condition checking instead of mocking
             $result = Invoke-WithErrorAggregation -Items $servers -ScriptBlock {
                 param($server)
-                Test-Connection -ComputerName $server -Count 1
+                # Simulate ping failure for server2 and server4
+                if ($server -eq "server2" -or $server -eq "server4") {
+                    throw "Host unreachable: $server"
+                }
+                # Simulate successful ping
+                return [PSCustomObject]@{ Address = $server; StatusCode = 0 }
             }
 
             # Assert
@@ -111,8 +108,9 @@ Describe "Integration Tests - SSH Setup Workflow" {
         }
 
         It "Validates SSH key file exists before adding" {
-            # Arrange
-            $keyPath = 'C:\Users\TestUser\.ssh\id_ed25519'
+            # Arrange - Use TestDrive for actual file testing
+            $keyPath = Join-Path $TestDrive 'id_ed25519'
+            New-Item -Path $keyPath -ItemType File -Value 'PRIVATE KEY DATA' -Force | Out-Null
 
             # Act
             $exists = Test-Path $keyPath
@@ -440,11 +438,14 @@ Describe "Integration Tests - Full Workflow Scenarios" {
         }
 
         It "Validates all configuration files exist" {
-            # Arrange
-            $requiredFiles = @(
-                'C:\config.json'
-                'C:\Users\Admin\.ssh\id_rsa'
-            )
+            # Arrange - Use TestDrive for actual file testing
+            $configFile = Join-Path $TestDrive 'config.json'
+            $sshKeyFile = Join-Path $TestDrive 'id_rsa'
+
+            New-Item -Path $configFile -ItemType File -Value '{"environment":"production"}' -Force | Out-Null
+            New-Item -Path $sshKeyFile -ItemType File -Value 'SSH_KEY' -Force | Out-Null
+
+            $requiredFiles = @($configFile, $sshKeyFile)
 
             # Act
             $result = Invoke-WithErrorAggregation -Items $requiredFiles -ScriptBlock {
