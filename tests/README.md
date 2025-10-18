@@ -111,6 +111,7 @@ tests/
 │   └── Integration.Tests.ps1
 ├── Linux/
 │   ├── CommonFunctions.Tests.sh       # NEW v2.0: Bash library tests
+│   ├── CommonFunctions.bats           # NEW v2.2: BATS tests for bash library (60+ tests)
 │   ├── Maintenance.Tests.ps1
 │   ├── KubernetesMonitoring.Tests.ps1
 │   ├── GPUMonitoring.Tests.ps1
@@ -431,11 +432,18 @@ chmod +x tests/Linux/*.bats
 ---
 
 **Last Updated:** 2025-10-18
-**Test Framework Version:** 2.1
+**Test Framework Version:** 2.2
 **Windows Tests:** 11 files, 750+ assertions (includes ErrorHandling, MockHelpers, Integration.Advanced)
-**Linux Tests:** 5 files, 140+ assertions (includes common-functions.sh tests)
-**Code Coverage:** Enabled with Pester 5+ (minimum 70% threshold)
-**Total Coverage:** 890+ test assertions across 16 test files
+**Linux Tests:** 6 files, 200+ assertions (includes CommonFunctions.sh + CommonFunctions.bats)
+**Code Coverage:** Enabled with Pester 5+ (minimum 70% threshold, JaCoCo reporting)
+**Total Coverage:** 950+ test assertions across 17 test files
+**Integration Test Pass Rate:** 100% (19/19 tests passing)
+
+**NEW in v2.2:**
+- [+] CommonFunctions.bats - Comprehensive BATS tests for Linux bash library (60+ tests)
+- [+] GitHub Actions JaCoCo PR comments - Automated coverage reporting on pull requests
+- [+] 100% Integration test pass rate - All Integration.Advanced.Tests.ps1 tests passing
+- [+] TestDrive pattern - Pester 5 best practice for file operation testing
 
 **NEW in v2.1:**
 - [+] MockHelpers.psm1 - Reusable mock configurations for integration testing
