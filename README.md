@@ -58,7 +58,7 @@ windows-linux-sysadmin-toolkit/
 │   └── gpu/                    # NVIDIA GPU metrics export
 ├── docs/                       # Documentation
 │   ├── SSH-TUNNEL-SETUP.md    # SSH tunnel configuration guide
-│   ├── SECURITY.md            # Security best practices
+│   ├── CHANGELOG-2025-10-15.md # Release notes and improvements
 │   └── SCRIPT_TEMPLATE.md     # Script templates
 ├── tests/                      # Automated test suite (650+ tests)
 │   ├── TestHelpers.psm1       # Shared test utilities

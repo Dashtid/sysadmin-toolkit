@@ -167,6 +167,8 @@ htmlcov/
 .coverage
 .coverage.*
 coverage.xml
+lib-coverage.xml
+full-coverage.xml
 *.cover
 *.py,cover
 .hypothesis/

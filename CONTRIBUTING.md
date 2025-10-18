@@ -301,40 +301,11 @@ export_prometheus_metric "$METRICS_FILE" "items_processed" "$count"
 #### General Requirements
 
 Python scripts MUST follow PEP 8 and use:
-- **uv** as the package manager (not pip or poetry)
 - Type hints for all function signatures
 - Docstrings for all modules, classes, and functions
-- Black for code formatting (configured in pyproject.toml)
+- Black for code formatting
 - mypy for type checking
 - pylint for linting
-
-#### Setting Up Python Development Environment
-
-```bash
-# Install uv (if not already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh  # Linux/macOS
-# or
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"  # Windows
-
-# Install project dependencies
-uv sync
-
-# Install with dev dependencies
-uv sync --all-extras
-
-# Run a Python script with uv
-uv run python script.py
-
-# Run formatters
-uv run black .
-uv run isort .
-
-# Run type checker
-uv run mypy .
-
-# Run linter
-uv run pylint *.py
-```
 
 #### Script Template
 
@@ -346,10 +317,10 @@ Module description.
 This module provides functionality for...
 
 Usage:
-    uv run python script.py [OPTIONS]
+    python script.py [OPTIONS]
 
 Examples:
-    uv run python script.py --input data.csv
+    python script.py --input data.csv
 """
 
 from typing import Optional
@@ -403,44 +374,6 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-```
-
-#### Why uv?
-
-We use **uv** instead of pip or poetry because:
-- **10-100x faster** than pip/poetry for dependency resolution and installation
-- **All-in-one tool**: Replaces pip, virtualenv, pyenv, poetry, pipx
-- **Automatic environment management**: No need to manually create/activate venvs
-- **Cross-platform lockfile** (uv.lock): Ensures reproducibility across all platforms
-- **PEP-compliant**: Works with standard pyproject.toml
-- **Written in Rust**: Maximum performance and reliability
-- **Active development**: Modern tool built for 2025+ workflows
-
-#### uv Workflow
-
-```bash
-# Add a dependency
-uv add requests
-
-# Add a dev dependency
-uv add --dev pytest
-
-# Update all dependencies
-uv lock --upgrade
-
-# Sync environment with lockfile
-uv sync
-
-# Run scripts without activating venv
-uv run python my_script.py
-
-# Run commands in the environment
-uv run pytest
-uv run black .
-uv run mypy .
-
-# Export to requirements.txt (for compatibility)
-uv pip compile pyproject.toml -o requirements.txt
 ```
 
 ---

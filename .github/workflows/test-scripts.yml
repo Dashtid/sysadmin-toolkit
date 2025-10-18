@@ -191,7 +191,8 @@ jobs:
           # Required documentation
           test -f README.md || (echo "[-] Missing README.md" && exit 1)
           test -f .gitignore || (echo "[-] Missing .gitignore" && exit 1)
-          test -f docs/SECURITY.md || (echo "[-] Missing docs/SECURITY.md" && exit 1)
+          test -f SECURITY.md || (echo "[-] Missing SECURITY.md" && exit 1)
+          test -f CONTRIBUTING.md || (echo "[-] Missing CONTRIBUTING.md" && exit 1)
 
           # Required directories
           test -d Windows/first-time-setup || (echo "[-] Missing Windows/first-time-setup" && exit 1)

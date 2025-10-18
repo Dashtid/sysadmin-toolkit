@@ -193,7 +193,7 @@ When adding new examples:
 
 - [Script Template Documentation](../docs/SCRIPT_TEMPLATE.md) - Full templates
 - [Contributing Guidelines](../CONTRIBUTING.md) - Contribution process
-- [Security Best Practices](../docs/SECURITY.md) - Security guidelines
+- [Security Best Practices](../SECURITY.md) - Security guidelines
 
 ---
 
