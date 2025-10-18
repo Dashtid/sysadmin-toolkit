@@ -44,6 +44,21 @@ $Config.TestResult.OutputPath = "test-results.xml"
 Invoke-Pester -Configuration $Config
 ```
 
+**Run with code coverage (NEW v2.1):**
+```powershell
+# Console output (default)
+.\tests\CodeCoverage.pester.ps1
+
+# Generate HTML coverage report
+.\tests\CodeCoverage.pester.ps1 -OutputFormat HTML
+
+# JaCoCo format for CI/CD
+.\tests\CodeCoverage.pester.ps1 -OutputFormat JaCoCo
+
+# Custom minimum coverage threshold
+.\tests\CodeCoverage.pester.ps1 -MinimumCoverage 80
+```
+
 ### Linux Tests (BATS)
 
 **Prerequisites:**
@@ -77,12 +92,15 @@ bats tests/Linux/ --verbose
 
 ```
 tests/
-├── run-tests.ps1                    # Main test runner (PowerShell/Pester)
-├── TestHelpers.psm1                 # Shared test utilities
-├── Benchmark.ps1                    # Performance benchmarking
+├── run-tests.ps1                      # Main test runner (PowerShell/Pester)
+├── TestHelpers.psm1                   # Shared test utilities
+├── MockHelpers.psm1                   # NEW v2.1: Reusable mock configurations
+├── CodeCoverage.pester.ps1            # NEW v2.1: Code coverage analysis runner
+├── Benchmark.ps1                      # Performance benchmarking
 ├── Windows/
 │   ├── CommonFunctions.Tests.ps1      # Core library tests
 │   ├── ErrorHandling.Tests.ps1        # NEW v2.0: Advanced error handling tests
+│   ├── Integration.Advanced.Tests.ps1 # NEW v2.1: Integration tests with mocking
 │   ├── SystemUpdates.Tests.ps1
 │   ├── SSH.Tests.ps1
 │   ├── Security.Tests.ps1
@@ -97,7 +115,7 @@ tests/
 │   ├── KubernetesMonitoring.Tests.ps1
 │   ├── GPUMonitoring.Tests.ps1
 │   └── DockerCleanup.Tests.ps1
-└── README.md                        # This file
+└── README.md                          # This file
 ```
 
 ## [i] What Gets Tested
@@ -234,6 +252,53 @@ Describe "Your Script Tests" {
 }
 ```
 
+### Integration Tests with Mock Helpers (NEW v2.1)
+
+Use MockHelpers.psm1 for consistent mocking across tests:
+
+```powershell
+# tests/Windows/YourIntegration.Tests.ps1
+
+BeforeAll {
+    $ProjectRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+    Import-Module (Join-Path $PSScriptRoot "..\\MockHelpers.psm1") -Force
+}
+
+Describe "Integration Tests" {
+    Context "Service Dependencies" {
+        BeforeAll {
+            # Mock required services
+            Mock-ServiceCommands -RunningServices @('ssh-agent', 'W32Time')
+
+            # Mock file system
+            Mock-FileSystemCommands -ExistingPaths @{
+                'C:\\config.json' = '{"setting": "value"}'
+            }
+
+            # Mock network connectivity
+            Mock-NetworkCommands -ReachableHosts @('github.com', 'npmjs.org')
+        }
+
+        It "Validates all dependencies are available" {
+            # Test complete workflow with mocked dependencies
+            # Your test logic here
+        }
+    }
+}
+```
+
+**Available Mock Helper Functions:**
+- `Mock-ServiceCommands` - Mock Get-Service, Start-Service, Stop-Service
+- `Mock-FileSystemCommands` - Mock Test-Path, Get-Content, Set-Content
+- `Mock-SSHCommands` - Mock ssh, ssh-add, ssh-keygen
+- `Mock-RegistryCommands` - Mock Get-ItemProperty, Set-ItemProperty
+- `Mock-ExternalCommands` - Mock winget, choco, npm, git
+- `Mock-NetworkCommands` - Mock Test-Connection, Invoke-WebRequest
+- `Mock-EnvironmentVariables` - Mock $env: variables
+- `New-MockCredential` - Create test PSCredential objects
+- `New-MockServiceObject` - Create mock service objects
+- `New-MockFile` - Generate test file content
+
 ### Linux (BATS) Test Template
 
 ```bash
@@ -366,7 +431,14 @@ chmod +x tests/Linux/*.bats
 ---
 
 **Last Updated:** 2025-10-18
-**Test Framework Version:** 2.0
-**Windows Tests:** 9 files, 700+ assertions (includes new ErrorHandling module tests)
-**Linux Tests:** 5 files, 140+ assertions (includes new common-functions.sh tests)
-**Total Coverage:** 1,490+ assertions across 14 test files
+**Test Framework Version:** 2.1
+**Windows Tests:** 11 files, 750+ assertions (includes ErrorHandling, MockHelpers, Integration.Advanced)
+**Linux Tests:** 5 files, 140+ assertions (includes common-functions.sh tests)
+**Code Coverage:** Enabled with Pester 5+ (minimum 70% threshold)
+**Total Coverage:** 890+ test assertions across 16 test files
+
+**NEW in v2.1:**
+- [+] MockHelpers.psm1 - Reusable mock configurations for integration testing
+- [+] CodeCoverage.pester.ps1 - Automated code coverage analysis (Console, HTML, JaCoCo)
+- [+] Integration.Advanced.Tests.ps1 - Complete workflow testing with mocking (19 tests)
+- [+] Enhanced test isolation and reproducibility with standardized mocks
