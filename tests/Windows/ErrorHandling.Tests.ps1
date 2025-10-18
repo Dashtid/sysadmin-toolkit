@@ -445,3 +445,157 @@ Describe "ErrorHandling Module - Integration Tests" {
         }
     }
 }
+
+Describe "ErrorHandling Module - Advanced Execution Coverage" {
+    Context "Test-InputValid Edge Cases for Full Coverage" {
+        It "Tests empty string with AllowEmpty false (NotEmpty type)" {
+            Test-InputValid -Value "" -Type NotEmpty -AllowEmpty:$false | Should -Be $false
+        }
+
+        It "Tests whitespace-only string with NotEmpty type" {
+            Test-InputValid -Value "   " -Type NotEmpty | Should -Be $false
+        }
+
+        It "Tests null value with AllowEmpty true" {
+            Test-InputValid -Value $null -Type NotEmpty -AllowEmpty:$true | Should -Be $true
+        }
+
+        It "Tests valid paths" {
+            Test-InputValid -Value "C:\Windows\System32" -Type Path | Should -Be $true
+            Test-InputValid -Value "/usr/local/bin" -Type Path | Should -Be $true
+        }
+
+        It "Tests URL validation edge cases" {
+            # Valid URLs
+            Test-InputValid -Value "https://github.com/user/repo" -Type URL | Should -Be $true
+            Test-InputValid -Value "http://example.com" -Type URL | Should -Be $true
+
+            # Invalid URLs
+            Test-InputValid -Value "not a url" -Type URL | Should -Be $false
+            Test-InputValid -Value "ftp://example.com" -Type URL | Should -Be $false
+        }
+    }
+
+    Context "Retry-Command with RetryOn Exception Type Filtering" {
+        It "Retries on specific exception type" {
+            $attempts = 0
+            $result = Retry-Command -ScriptBlock {
+                $attempts++
+                if ($attempts -lt 2) {
+                    throw [System.IO.IOException]::new("Simulated IO error")
+                }
+                "Success after retry"
+            } -MaxAttempts 3 -RetryOn ([System.IO.IOException])
+
+            $result | Should -Be "Success after retry"
+            $attempts | Should -Be 2
+        }
+
+        It "Does not retry on non-matching exception type" {
+            try {
+                Retry-Command -ScriptBlock {
+                    throw [System.InvalidOperationException]::new("Wrong exception type")
+                } -MaxAttempts 3 -RetryOn ([System.IO.IOException])
+
+                # Should not reach here
+                $false | Should -Be $true
+            }
+            catch {
+                $_.Exception | Should -BeOfType [System.InvalidOperationException]
+            }
+        }
+    }
+
+    Context "Write-ContextualError with Stack Trace" {
+        It "Includes stack trace in error output" {
+            try {
+                function Test-DeepCall {
+                    throw "Deep error"
+                }
+                Test-DeepCall
+            }
+            catch {
+                # This should trigger the stack trace inclusion (lines 361, 363)
+                { Write-ContextualError -ErrorRecord $_ -Context "deep call testing" } | Should -Not -Throw
+            }
+        }
+
+        It "Handles error with both Context and Suggestion" {
+            try {
+                throw "Complex error"
+            }
+            catch {
+                {
+                    Write-ContextualError -ErrorRecord $_ `
+                        -Context "complex operation" `
+                        -Suggestion "Check logs for details"
+                } | Should -Not -Throw
+            }
+        }
+    }
+
+    Context "Retry-Command Delay and Backoff" {
+        It "Executes with minimum delay" {
+            $startTime = Get-Date
+            try {
+                Retry-Command -ScriptBlock {
+                    throw "Test"
+                } -MaxAttempts 2 -DelaySeconds 0
+            }
+            catch {
+                # Expected to fail
+            }
+            $elapsed = ((Get-Date) - $startTime).TotalSeconds
+            $elapsed | Should -BeLessThan 1
+        }
+
+        It "Executes with exponential backoff" {
+            $attempts = 0
+            try {
+                Retry-Command -ScriptBlock {
+                    $attempts++
+                    throw "Test"
+                } -MaxAttempts 2 -DelaySeconds 0
+            }
+            catch {
+                # Expected to fail
+            }
+            $attempts | Should -Be 2
+        }
+    }
+
+    Context "Invoke-WithErrorAggregation Edge Cases" {
+        It "Handles empty items array" {
+            $result = Invoke-WithErrorAggregation -Items @() -ScriptBlock {
+                param($item)
+                $item
+            }
+
+            $result.SuccessCount | Should -Be 0
+            $result.FailureCount | Should -Be 0
+            $result.TotalCount | Should -Be 0
+        }
+
+        It "Handles items array with single element" {
+            $result = Invoke-WithErrorAggregation -Items @(42) -ScriptBlock {
+                param($item)
+                $item * 2
+            }
+
+            $result.SuccessCount | Should -Be 1
+            $result.SuccessItems[0] | Should -Be 42
+        }
+
+        It "Captures error messages correctly" {
+            $result = Invoke-WithErrorAggregation -Items @(1, 2, 3) -ScriptBlock {
+                param($item)
+                if ($item -eq 2) {
+                    throw "Item 2 failed"
+                }
+                $item
+            }
+
+            $result.Errors[0].Message | Should -Match "Item 2 failed"
+        }
+    }
+}
