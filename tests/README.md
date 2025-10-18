@@ -103,7 +103,6 @@ tests/
 │   ├── Integration.Advanced.Tests.ps1 # NEW v2.1: Integration tests with mocking
 │   ├── SystemUpdates.Tests.ps1
 │   ├── SSH.Tests.ps1
-│   ├── Security.Tests.ps1
 │   ├── Maintenance.Tests.ps1
 │   ├── FirstTimeSetup.Tests.ps1
 │   ├── RestorePreviousState.Tests.ps1

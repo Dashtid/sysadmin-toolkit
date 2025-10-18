@@ -75,9 +75,9 @@ git remote add origin ssh://git@localhost:2222/username/repo.git
 ## [5] Read the Documentation
 
 - **[README.md](README.md)** - Full feature overview
-- **[docs/SECURITY.md](docs/SECURITY.md)** - Security best practices
+- **[SECURITY.md](SECURITY.md)** - Security best practices
 - **[docs/SSH-TUNNEL-SETUP.md](docs/SSH-TUNNEL-SETUP.md)** - Detailed SSH tunnel guide
-- **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** - For contributors
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - For contributors
 
 ## [i] Common Tasks
 
@@ -132,13 +132,13 @@ git diff | grep -E "10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
 1. **Customize scripts** for your environment
 2. **Star the repository** if you find it useful
 3. **Open issues** for bugs or feature requests
-4. **Contribute** improvements (see [CONTRIBUTING.md](docs/CONTRIBUTING.md))
+4. **Contribute** improvements (see [CONTRIBUTING.md](CONTRIBUTING.md))
 5. **Share** with colleagues who might benefit
 
 ## [?] Need Help?
 
 - **Issues**: [GitHub Issues](https://github.com/dashtid/windows-linux-sysadmin-toolkit/issues)
-- **Security**: See [SECURITY.md](docs/SECURITY.md) for responsible disclosure
+- **Security**: See [SECURITY.md](SECURITY.md) for responsible disclosure
 - **Questions**: Open a discussion or issue
 
 ---

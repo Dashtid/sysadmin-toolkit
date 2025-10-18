@@ -384,7 +384,7 @@ For more troubleshooting tips, see [docs/TROUBLESHOOTING.md](../../docs/TROUBLES
 ## [i] Related Documentation
 
 - [Script Templates](../../docs/SCRIPT_TEMPLATE.md) - Guidelines for creating new scripts
-- [Security Best Practices](../../docs/SECURITY.md) - Security guidelines
+- [Security Best Practices](../../SECURITY.md) - Security guidelines
 - [Troubleshooting Guide](../../docs/TROUBLESHOOTING.md) - Common issues and solutions
 - [Functionality Roadmap](../../docs/ROADMAP.md) - Planned features and enhancements
 
