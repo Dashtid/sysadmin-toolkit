@@ -5,9 +5,11 @@
 [![CI Tests](https://github.com/Dashtid/sysadmin-toolkit/workflows/CI%20-%20Automated%20Testing/badge.svg)](https://github.com/Dashtid/sysadmin-toolkit/actions/workflows/ci.yml)
 [![Security Scan](https://github.com/Dashtid/sysadmin-toolkit/workflows/Security%20Scanning/badge.svg)](https://github.com/Dashtid/sysadmin-toolkit/actions/workflows/security-scan.yml)
 
-Personal collection of system administration scripts for Windows and Linux. Scripts for SSH configuration, system maintenance, security hardening, and remote development workflows.
+Personal collection of system administration scripts for Windows and Linux. Scripts for SSH configuration, system maintenance, and remote development workflows.
 
 **Note**: This is a personal toolkit - use at your own risk, customize for your environment.
+
+**Security Hardening**: Security hardening scripts (Windows security levels 1-3, auditing, backup/restore) have been moved to the [defensive-toolkit](https://github.com/Dashtid/defensive-toolkit) repository for better organization and focus on defensive security operations.
 
 ## [i] Target Environments
 
@@ -38,17 +40,9 @@ windows-linux-sysadmin-toolkit/
 │   │   ├── winget-packages.json     # Exported package lists
 │   │   └── chocolatey-packages.config
 │   ├── maintenance/            # System maintenance scripts
-│   │   ├── security-updates.ps1
 │   │   ├── system-updates.ps1
 │   │   ├── update-defender.ps1
 │   │   └── startup_script.ps1
-│   ├── security/               # Security hardening (audit, backup, restore, harden)
-│   │   ├── audit-security-posture.ps1
-│   │   ├── backup-security-settings.ps1
-│   │   ├── restore-security-settings.ps1
-│   │   ├── harden-level1-safe.ps1
-│   │   ├── harden-level2-balanced.ps1
-│   │   └── harden-level3-maximum.ps1
 │   ├── development/            # Development environment setup
 │   │   └── remote-development-setup.ps1
 │   └── utilities/              # Helper utilities

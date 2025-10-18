@@ -14,14 +14,15 @@ This document outlines the realistic testing strategy for the Windows & Linux Sy
 | Directory | Commands | Coverage | Testable Type |
 |-----------|----------|----------|---------------|
 | Windows/lib | 170 | **83.5%** | Library Modules (.psm1) |
-| Windows/security | 1,790 | 0% | Administrative Scripts |
 | Windows/maintenance | 926 | 0% | Administrative Scripts |
 | Windows/first-time-setup | 841 | 0% | Administrative Scripts |
 | Windows/ssh | 432 | 0% | Administrative Scripts |
 | Windows/utilities | 174 | 0% | Administrative Scripts |
 | Windows/network | 148 | 0% | Administrative Scripts |
 | Windows/development | 127 | 0% | Administrative Scripts |
-| **TOTAL** | **4,608** | **3.08%** | Mixed |
+| **TOTAL** | **2,818** | **5.04%** | Mixed |
+
+**Note**: Security hardening scripts (1,790 commands) have been moved to the [defensive-toolkit](https://github.com/Dashtid/defensive-toolkit) repository.
 
 #### Per-Module Coverage Details:
 - **ErrorHandling.psm1**: 91.35% (95/104 lines) ✅ **Exceeds 90% target!**
@@ -85,7 +86,7 @@ Describe "Write-InfoMessage" {
 
 **Examples**:
 - [Windows/maintenance/system-updates.ps1](../Windows/maintenance/system-updates.ps1)
-- [Windows/security/harden-level1-safe.ps1](../Windows/security/harden-level1-safe.ps1)
+- [Windows/ssh/setup-ssh-agent-access.ps1](../Windows/ssh/setup-ssh-agent-access.ps1)
 
 **Testing Approach**:
 ```powershell
@@ -133,8 +134,6 @@ tests/
 │   ├── ErrorHandling.Tests.ps1            # Unit tests for lib modules (HIGH COVERAGE)
 │   ├── Maintenance.Tests.ps1              # Validation tests for maintenance scripts
 │   ├── Maintenance.Comprehensive.Tests.ps1 # Extended validation tests
-│   ├── Security.Tests.ps1                 # Validation tests for security scripts
-│   ├── Security.Comprehensive.Tests.ps1   # Extended validation tests
 │   ├── SSH.Tests.ps1                      # Functional tests for SSH wrappers
 │   ├── SSH.Comprehensive.Tests.ps1        # Extended SSH tests
 │   ├── Integration.Tests.ps1              # Cross-module integration tests

@@ -10,7 +10,6 @@ BeforeAll {
     # Paths
     $SSHPath = Join-Path $ProjectRoot "Windows\ssh"
     $MaintenancePath = Join-Path $ProjectRoot "Windows\maintenance"
-    $SecurityPath = Join-Path $ProjectRoot "Windows\security"
 }
 
 AfterAll {
@@ -40,36 +39,6 @@ Describe "Cross-Script Integration" {
             } else {
                 Set-ItResult -Skipped -Because "SSH agent service not installed on this system"
             }
-        }
-    }
-
-    Context "Security Workflow Integration" {
-        BeforeAll {
-            $auditScript = Join-Path $SecurityPath "audit-security-posture.ps1"
-            $backupScript = Join-Path $SecurityPath "backup-security-settings.ps1"
-            $hardenScript = Join-Path $SecurityPath "harden-level1-safe.ps1"
-        }
-
-        It "Security workflow scripts exist in correct order" {
-            Test-Path $auditScript | Should -Be $true
-            Test-Path $backupScript | Should -Be $true
-            Test-Path $hardenScript | Should -Be $true
-        }
-
-        It "Audit script can run without modifications" {
-            $result = Test-ScriptSyntax -Path $auditScript
-            $result | Should -Be $true
-        }
-
-        It "Backup script has proper safety features" {
-            $content = Get-Content $backupScript -Raw
-            # Backup scripts should validate paths and create manifest files
-            $content | Should -Match "BackupPath|manifest|Initialize-BackupDirectory"
-        }
-
-        It "Hardening script creates backups before changes" {
-            $content = Get-Content $hardenScript -Raw
-            $content | Should -Match "backup|Backup|Checkpoint"
         }
     }
 }
