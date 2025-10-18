@@ -13,7 +13,7 @@ This document outlines the realistic testing strategy for the Windows & Linux Sy
 
 | Directory | Commands | Coverage | Testable Type |
 |-----------|----------|----------|---------------|
-| Windows/lib | 170 | 81.2% | Library Modules (.psm1) |
+| Windows/lib | 170 | **83.5%** | Library Modules (.psm1) |
 | Windows/security | 1,790 | 0% | Administrative Scripts |
 | Windows/maintenance | 926 | 0% | Administrative Scripts |
 | Windows/first-time-setup | 841 | 0% | Administrative Scripts |
@@ -21,15 +21,21 @@ This document outlines the realistic testing strategy for the Windows & Linux Sy
 | Windows/utilities | 174 | 0% | Administrative Scripts |
 | Windows/network | 148 | 0% | Administrative Scripts |
 | Windows/development | 127 | 0% | Administrative Scripts |
-| **TOTAL** | **4,608** | **2.99%** | Mixed |
+| **TOTAL** | **4,608** | **3.08%** | Mixed |
+
+#### Per-Module Coverage Details:
+- **ErrorHandling.psm1**: 91.35% (95/104 lines) ✅ **Exceeds 90% target!**
+- **CommonFunctions.psm1**: 68.63% (35/51 lines) - Edge cases are legitimately untestable (exit calls, Unix paths on Windows, disk full scenarios)
 
 ### Realistic Coverage Goals
 
 #### Library Modules (Windows/lib): **Target 90%+**
-- **Current**: 81.2% (138/170 commands)
+- **Current**: **83.5%** (142/170 instructions)
+- **Achievement**: ErrorHandling.psm1 at **91.35%** ✅
 - **Testable**: Fully testable through unit tests
-- **Approach**: Import modules, test all exported functions with mocks
+- **Approach**: Import modules, test all exported functions with comprehensive execution tests
 - **Goal**: Maintain 90%+ coverage as this is shared infrastructure
+- **Progress**: Added 40+ new execution tests, improved from 81.2% to 83.5%
 
 #### Administrative Scripts: **Target: Validation Tests Only**
 - **Current**: 0% (0/4,438 commands)
