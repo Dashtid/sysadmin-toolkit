@@ -77,14 +77,26 @@ bats tests/Linux/ --verbose
 
 ```
 tests/
+├── run-tests.ps1                    # Main test runner (PowerShell/Pester)
+├── TestHelpers.psm1                 # Shared test utilities
+├── Benchmark.ps1                    # Performance benchmarking
 ├── Windows/
-│   ├── FirstTimeSetup.Tests.ps1    # Package export/import tests
-│   ├── SSH.Tests.ps1                # SSH setup script tests
-│   └── Maintenance.Tests.ps1        # (Future) Maintenance script tests
+│   ├── CommonFunctions.Tests.ps1      # Core library tests
+│   ├── ErrorHandling.Tests.ps1        # NEW v2.0: Advanced error handling tests
+│   ├── SystemUpdates.Tests.ps1
+│   ├── SSH.Tests.ps1
+│   ├── Security.Tests.ps1
+│   ├── Maintenance.Tests.ps1
+│   ├── FirstTimeSetup.Tests.ps1
+│   ├── RestorePreviousState.Tests.ps1
+│   ├── StartupScript.Tests.ps1
+│   └── Integration.Tests.ps1
 ├── Linux/
-│   ├── maintenance.bats             # Maintenance script tests
-│   ├── monitoring.bats              # (Future) Monitoring script tests
-│   └── server.bats                  # (Future) Server setup tests
+│   ├── CommonFunctions.Tests.sh       # NEW v2.0: Bash library tests
+│   ├── Maintenance.Tests.ps1
+│   ├── KubernetesMonitoring.Tests.ps1
+│   ├── GPUMonitoring.Tests.ps1
+│   └── DockerCleanup.Tests.ps1
 └── README.md                        # This file
 ```
 
@@ -353,7 +365,8 @@ chmod +x tests/Linux/*.bats
 
 ---
 
-**Last Updated:** 2025-10-12
-**Test Framework Version:** 1.0
-**Windows Tests:** 2 files, 50+ assertions
-**Linux Tests:** 1 file, 30+ assertions
+**Last Updated:** 2025-10-18
+**Test Framework Version:** 2.0
+**Windows Tests:** 9 files, 700+ assertions (includes new ErrorHandling module tests)
+**Linux Tests:** 5 files, 140+ assertions (includes new common-functions.sh tests)
+**Total Coverage:** 1,490+ assertions across 14 test files
