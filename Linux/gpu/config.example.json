@@ -1,0 +1,26 @@
+{
+  "description": "Configuration for NVIDIA GPU metrics exporter",
+  "output": {
+    "log_dir": "/var/log/gpu-monitor",
+    "metrics_dir": "/var/lib/prometheus/node-exporter",
+    "metrics_file": "nvidia_gpu_metrics.prom"
+  },
+  "monitoring": {
+    "interval_seconds": 60,
+    "cluster_name": "homelab",
+    "enable_debug": false
+  },
+  "gpu": {
+    "nvidia_smi_path": "/usr/bin/nvidia-smi",
+    "enable_power_monitoring": true,
+    "enable_memory_monitoring": true,
+    "enable_temperature_monitoring": true,
+    "enable_utilization_monitoring": true
+  },
+  "alerts": {
+    "temperature_warning_celsius": 80,
+    "temperature_critical_celsius": 90,
+    "memory_warning_percent": 90,
+    "memory_critical_percent": 95
+  }
+}

@@ -1,117 +1,91 @@
 #!/usr/bin/env bash
-
-# ==============================================================================
+# ============================================================================
 # Docker Image and Container Cleanup Script
-# ==============================================================================
+# ============================================================================
+# Description: Automated Docker cleanup to reclaim disk space
+# Author: David Dashti
+# Version: 2.0.0
+# Last Updated: 2025-10-18
 #
-# DESCRIPTION:
-#   Automated Docker cleanup to reclaim disk space.
-#   Removes dangling images, old containers, unused volumes, and keeps only
-#   the N most recent versions of each image.
+# Usage:
+#   ./docker-cleanup.sh [OPTIONS]
 #
-# FEATURES:
+# Options:
+#   --keep-versions N       Keep N most recent versions per image (default: 3)
+#   --container-age-days N  Remove containers stopped > N days ago (default: 7)
+#   --prune-volumes         Also prune unused volumes (default: false)
+#   --whatif                Dry-run mode (show what would be removed)
+#   --config FILE           Use configuration file (default: config.json)
+#   --debug                 Enable debug logging
+#   --help                  Show this help message
+#
+# Examples:
+#   ./docker-cleanup.sh --whatif
+#   ./docker-cleanup.sh --keep-versions 2
+#   ./docker-cleanup.sh --container-age-days 30 --prune-volumes
+#   ./docker-cleanup.sh --config /etc/docker-cleanup/config.json
+#
+# Features:
 #   - Remove dangling images (<none>:<none>)
 #   - Keep only N latest versions per image repository
 #   - Prune stopped containers older than X days
 #   - Remove unused volumes
 #   - Prometheus metrics export (disk space reclaimed)
 #   - Dry-run mode for safe testing
-#
-# USAGE:
-#   ./docker-cleanup.sh [OPTIONS]
-#
-# OPTIONS:
-#   --keep-versions N       Keep N most recent versions per image (default: 3)
-#   --container-age-days N  Remove containers stopped > N days ago (default: 7)
-#   --prune-volumes         Also prune unused volumes (default: false)
-#   --whatif                Dry-run mode (show what would be removed)
-#   --help                  Show this help message
-#
-# EXAMPLES:
-#   ./docker-cleanup.sh --whatif
-#   ./docker-cleanup.sh --keep-versions 2
-#   ./docker-cleanup.sh --container-age-days 30 --prune-volumes
-#
-# REQUIREMENTS:
-#   - Docker installed and accessible
-#   - Appropriate permissions to run docker commands
-#
-# AUTHOR:
-#   Windows & Linux Sysadmin Toolkit
-#
-# VERSION:
-#   1.0.0
-#
-# CHANGELOG:
-#   1.0.0 - 2025-10-15
-#       - Initial release
-#       - Dangling image cleanup
-#       - Version-based image retention
-#       - Container and volume pruning
-#       - Prometheus metrics export
-#
-# ==============================================================================
+#   - Configuration file support
+# ============================================================================
 
 set -euo pipefail
 
-# ==============================================================================
-# GLOBAL VARIABLES
-# ==============================================================================
+# Script configuration
+SCRIPT_NAME=$(basename "$0")
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_VERSION="2.0.0"
 
-SCRIPT_VERSION="1.0.0"
-SCRIPT_NAME="$(basename "$0")"
+# Source common functions library
+if [[ -f "$SCRIPT_DIR/../lib/bash/common-functions.sh" ]]; then
+    source "$SCRIPT_DIR/../lib/bash/common-functions.sh"
+else
+    echo "[-] ERROR: Cannot find common-functions.sh library" >&2
+    exit 1
+fi
 
-# Configuration
+# Configuration defaults
+CONFIG_FILE="${SCRIPT_DIR}/config.json"
 KEEP_VERSIONS="${KEEP_VERSIONS:-3}"
 CONTAINER_AGE_DAYS="${CONTAINER_AGE_DAYS:-7}"
 PRUNE_VOLUMES=false
 WHATIF_MODE=false
 OUTPUT_DIR="${OUTPUT_DIR:-/var/log/docker-cleanup}"
 METRICS_DIR="${METRICS_DIR:-/var/lib/prometheus/node-exporter}"
+CLUSTER_NAME="${CLUSTER_NAME:-homelab}"
 
 # Runtime variables
-START_TIME=$(date +%s)
+START_TIME=$(get_timestamp)
 REMOVED_IMAGES_COUNT=0
 REMOVED_CONTAINERS_COUNT=0
 REMOVED_VOLUMES_COUNT=0
 SPACE_RECLAIMED_BYTES=0
 
-# ==============================================================================
+# ============================================================================
 # HELPER FUNCTIONS
-# ==============================================================================
-
-log_info() {
-    echo "[i] $1"
-}
-
-log_success() {
-    echo "[+] $1"
-}
-
-log_warning() {
-    echo "[!] $1" >&2
-}
-
-log_error() {
-    echo "[-] $1" >&2
-}
+# ============================================================================
 
 check_dependencies() {
-    if ! command -v docker &>/dev/null; then
-        log_error "Docker is not installed or not in PATH"
-        exit 1
+    check_command docker
+
+    # Test docker daemon access with retry
+    log_info "Verifying Docker daemon access..."
+    if ! retry_command 3 2 docker info >/dev/null 2>&1; then
+        die "Cannot access Docker daemon. Check Docker service status or user permissions." 1
     fi
 
-    # Test docker access
-    if ! docker info &>/dev/null; then
-        log_error "Cannot access Docker daemon"
-        log_info "Check Docker service status or your user permissions"
-        exit 1
-    fi
+    log_debug "Docker daemon accessible"
 }
 
 init_directories() {
-    mkdir -p "$OUTPUT_DIR" "$METRICS_DIR"
+    ensure_dir "$OUTPUT_DIR"
+    ensure_dir "$METRICS_DIR"
 }
 
 bytes_to_human() {
@@ -219,11 +193,14 @@ remove_old_image_versions() {
             continue
         fi
 
-        # Remove old images
+        # Remove old images with error logging
         while IFS= read -r image_id; do
-            if docker rmi "$image_id" &>/dev/null; then
+            if docker rmi "$image_id" 2>&1 | grep -q "Deleted"; then
                 ((total_removed++))
                 ((REMOVED_IMAGES_COUNT++))
+                log_debug "Removed image: $image_id"
+            else
+                log_warning "Failed to remove image: $image_id (may be in use)"
             fi
         done <<< "$images_to_remove"
 

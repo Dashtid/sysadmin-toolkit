@@ -1,14 +1,33 @@
-# SSH Agent Access Setup Script for Claude Code & Git Bash
-# This script sets up seamless SSH access without passphrase prompts
-# Works by using Windows SSH client which can access Windows SSH agent
-# Tested and verified working on Windows 11 with Git Bash
-# Author: David Dashti
-# GitHub: https://github.com/dashtid
-# Date: October 2025
-#
-# IMPORTANT: You must provide your server details when running this script!
-# Example: .\setup-ssh-agent-access.ps1 -ServerIP "192.0.2.10" -ServerUser "myuser"
+<#
+.SYNOPSIS
+    SSH Agent Access Setup Script for Claude Code & Git Bash
 
+.DESCRIPTION
+    Sets up seamless SSH access without passphrase prompts by configuring Windows SSH agent.
+    Works with Windows OpenSSH client to provide persistent SSH agent access.
+
+.PARAMETER ServerIP
+    IP address or hostname of your SSH server
+
+.PARAMETER ServerUser
+    Username for SSH connection (defaults to current Windows user)
+
+.PARAMETER SSHKeyPath
+    Path to SSH private key (defaults to ~/.ssh/id_ed25519)
+
+.EXAMPLE
+    .\setup-ssh-agent-access.ps1 -ServerIP "192.0.2.10" -ServerUser "myuser"
+
+.EXAMPLE
+    .\setup-ssh-agent-access.ps1 -ServerIP "server.example.com" -SSHKeyPath "C:\Users\me\.ssh\id_rsa"
+
+.NOTES
+    Author: David Dashti
+    Version: 2.0.0
+    Last Updated: 2025-10-18
+#>
+
+[CmdletBinding()]
 param(
     [Parameter(Mandatory=$false, HelpMessage="IP address or hostname of your SSH server")]
     [string]$ServerIP = "",
@@ -17,65 +36,105 @@ param(
     [string]$ServerUser = $env:USERNAME,
 
     [Parameter(Mandatory=$false, HelpMessage="Path to your SSH private key")]
+    [ValidateScript({
+        if ($_ -and -not (Test-Path $_)) { throw "SSH key file not found: $_" }
+        return $true
+    })]
     [string]$SSHKeyPath = "$env:USERPROFILE\.ssh\id_ed25519"
 )
 
-Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "  SSH Agent Access Setup for Claude Code" -ForegroundColor Cyan
-Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host ""
+# Import common functions module
+$commonModulePath = Join-Path $PSScriptRoot "..\lib\CommonFunctions.psm1"
+if (-not (Test-Path $commonModulePath)) {
+    Write-Error "Cannot find CommonFunctions module at: $commonModulePath"
+    exit 1
+}
+Import-Module $commonModulePath -Force
+
+# Import error handling module
+$errorHandlingPath = Join-Path $PSScriptRoot "..\lib\ErrorHandling.psm1"
+if (Test-Path $errorHandlingPath) {
+    Import-Module $errorHandlingPath -Force
+}
+
+Write-Host "`n" + ("=" * 60) -ForegroundColor Cyan
+Write-Host "  SSH Agent Access Setup for Claude Code v2.0.0" -ForegroundColor Cyan
+Write-Host ("=" * 60) -ForegroundColor Cyan
+Write-InfoMessage "Configuring Windows SSH agent for seamless authentication"
 
 # Validate inputs
 if ([string]::IsNullOrWhiteSpace($ServerIP)) {
-    Write-Host "[!] WARNING: No ServerIP provided. Git Bash shortcuts will not be configured." -ForegroundColor Yellow
-    Write-Host "    To configure server shortcuts later, run with: -ServerIP <your-server-ip> -ServerUser <your-username>" -ForegroundColor Gray
-    Write-Host ""
+    Write-WarningMessage "No ServerIP provided. Git Bash shortcuts will not be configured."
+    Write-InfoMessage "To configure server shortcuts later, run with: -ServerIP <ip> -ServerUser <user>"
+}
+else {
+    # Validate IP address if provided
+    if (Get-Command Test-InputValid -ErrorAction SilentlyContinue) {
+        if (-not (Test-InputValid -Value $ServerIP -Type IPAddress)) {
+            # Try as hostname
+            if (-not (Test-InputValid -Value $ServerIP -Type Hostname)) {
+                Write-ErrorMessage "Invalid ServerIP format: $ServerIP"
+                exit 1
+            }
+        }
+    }
 }
 
-# Check if running as administrator (not required but good to check)
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-$isAdmin = $currentPrincipal.IsInRole([Security.Principal.SecurityRole]::Administrator)
-
-if ($isAdmin) {
-    Write-Host "[+] Running with administrator privileges" -ForegroundColor Green
-} else {
-    Write-Host "[i] Running as regular user (this is fine)" -ForegroundColor Yellow
+# Check administrator privileges
+if (Test-IsAdministrator) {
+    Write-Success "Running with administrator privileges"
+}
+else {
+    Write-InfoMessage "Running as regular user (administrator privileges recommended for full setup)"
 }
 
 # Step 1: Check and configure SSH Agent service
-Write-Host "`n[1/8] Configuring SSH Agent Service..." -ForegroundColor Yellow
-$sshAgent = Get-Service ssh-agent -ErrorAction SilentlyContinue
+Write-InfoMessage "`n[Step 1/8] Configuring SSH Agent Service..."
 
-if ($sshAgent) {
+try {
+    $sshAgent = Get-Service ssh-agent -ErrorAction Stop
+
     if ($sshAgent.StartType -ne 'Automatic') {
-        if ($isAdmin) {
+        if (Test-IsAdministrator) {
             Set-Service ssh-agent -StartupType Automatic
-            Write-Host "  [+] SSH Agent set to automatic startup" -ForegroundColor Green
-        } else {
-            Write-Host "  [!] Run as admin to set SSH Agent to automatic startup" -ForegroundColor Yellow
-            Write-Host "    Manual command: Set-Service ssh-agent -StartupType Automatic" -ForegroundColor DarkGray
+            Write-Success "SSH Agent set to automatic startup"
         }
-    } else {
-        Write-Host "  [+] SSH Agent already set to automatic startup" -ForegroundColor Green
+        else {
+            Write-WarningMessage "Administrator privileges required to set SSH Agent to automatic startup"
+            Write-InfoMessage "Manual command: Set-Service ssh-agent -StartupType Automatic"
+        }
+    }
+    else {
+        Write-Success "SSH Agent already set to automatic startup"
     }
 
     if ($sshAgent.Status -ne 'Running') {
-        Start-Service ssh-agent
-        Write-Host "  [+] SSH Agent service started" -ForegroundColor Green
-    } else {
-        Write-Host "  [+] SSH Agent service already running" -ForegroundColor Green
+        Start-Service ssh-agent -ErrorAction Stop
+        Write-Success "SSH Agent service started"
     }
-} else {
-    Write-Host "  [-] SSH Agent service not found. Please install OpenSSH Client." -ForegroundColor Red
-    Write-Host "    Go to: Settings > Apps > Optional Features > Add Feature > OpenSSH Client" -ForegroundColor DarkGray
+    else {
+        Write-Success "SSH Agent service already running"
+    }
+}
+catch {
+    Write-ErrorMessage "SSH Agent service not found or cannot be configured"
+    Write-InfoMessage "Please install OpenSSH Client:"
+    Write-InfoMessage "  Settings > Apps > Optional Features > Add Feature > OpenSSH Client"
     exit 1
 }
 
 # Step 2: Set SSH_AUTH_SOCK environment variable
-Write-Host "`n[2/8] Setting SSH_AUTH_SOCK environment variable..." -ForegroundColor Yellow
-[System.Environment]::SetEnvironmentVariable('SSH_AUTH_SOCK', '\\.\pipe\openssh-ssh-agent', 'User')
-$env:SSH_AUTH_SOCK = '\\.\pipe\openssh-ssh-agent'
-Write-Host "  [+] SSH_AUTH_SOCK environment variable set" -ForegroundColor Green
+Write-InfoMessage "`n[Step 2/8] Setting SSH_AUTH_SOCK environment variable..."
+
+try {
+    [System.Environment]::SetEnvironmentVariable('SSH_AUTH_SOCK', '\\.\pipe\openssh-ssh-agent', 'User')
+    $env:SSH_AUTH_SOCK = '\\.\pipe\openssh-ssh-agent'
+    Write-Success "SSH_AUTH_SOCK environment variable set"
+}
+catch {
+    Write-ContextualError -ErrorRecord $_ -Context "setting SSH_AUTH_SOCK environment variable" -Suggestion "Try running as administrator"
+    exit 1
+}
 
 # Step 3: Create PowerShell profile for SSH_AUTH_SOCK
 Write-Host "`n[3/8] Creating PowerShell profile..." -ForegroundColor Yellow
