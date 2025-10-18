@@ -48,11 +48,15 @@ function Mock-ServiceCommands {
         [string[]]$StoppedServices = @()
     )
 
+    # Capture parameters in closure for mock scriptblocks
+    $running = $RunningServices
+    $stopped = $StoppedServices
+
     Mock Get-Service {
         param($Name)
 
-        $status = if ($RunningServices -contains $Name) { 'Running' }
-                  elseif ($StoppedServices -contains $Name) { 'Stopped' }
+        $status = if ($running -contains $Name) { 'Running' }
+                  elseif ($stopped -contains $Name) { 'Stopped' }
                   else { 'Running' }
 
         [PSCustomObject]@{
@@ -94,18 +98,24 @@ function Mock-FileSystemCommands {
         [hashtable]$ExistingPaths = @{}
     )
 
-    Mock Test-Path {
-        param($Path)
-        $ExistingPaths.ContainsKey($Path)
-    }
+    # Create scriptblocks with captured parameters using GetNewClosure()
+    $testPathScript = {
+        param($Path, $LiteralPath)
+        $testPath = if ($LiteralPath) { $LiteralPath } else { $Path }
+        return $ExistingPaths.ContainsKey($testPath)
+    }.GetNewClosure()
 
-    Mock Get-Content {
-        param($Path)
-        if ($ExistingPaths.ContainsKey($Path)) {
-            return $ExistingPaths[$Path]
+    $getContentScript = {
+        param($Path, $LiteralPath)
+        $contentPath = if ($LiteralPath) { $LiteralPath } else { $Path }
+        if ($ExistingPaths.ContainsKey($contentPath)) {
+            return $ExistingPaths[$contentPath]
         }
-        throw "Cannot find path '$Path' because it does not exist."
-    }
+        throw "Cannot find path '$contentPath' because it does not exist."
+    }.GetNewClosure()
+
+    Mock Test-Path $testPathScript
+    Mock Get-Content $getContentScript
 
     Mock Set-Content { }
     Mock New-Item { }
@@ -171,14 +181,17 @@ function Mock-RegistryCommands {
         [hashtable]$RegistryValues = @{}
     )
 
+    # Capture parameters in closure for mock scriptblocks
+    $regValues = $RegistryValues
+
     Mock Get-ItemProperty {
         param($Path, $Name)
 
-        if ($RegistryValues.ContainsKey($Path)) {
+        if ($regValues.ContainsKey($Path)) {
             if ($Name) {
-                return $RegistryValues[$Path][$Name]
+                return $regValues[$Path][$Name]
             }
-            return $RegistryValues[$Path]
+            return $regValues[$Path]
         }
         return $null
     }
@@ -212,12 +225,15 @@ function Mock-ExternalCommands {
         [hashtable]$CommandResults = @{}
     )
 
+    # Capture parameters in closure for mock scriptblocks
+    $results = $CommandResults
+
     Mock Invoke-Expression {
         param($Command)
 
-        foreach ($key in $CommandResults.Keys) {
+        foreach ($key in $results.Keys) {
             if ($Command -like "*$key*") {
-                return $CommandResults[$key]
+                return $results[$key]
             }
         }
         return ""
@@ -227,11 +243,11 @@ function Mock-ExternalCommands {
         param($FilePath, $ArgumentList)
 
         $fullCommand = "$FilePath $($ArgumentList -join ' ')"
-        foreach ($key in $CommandResults.Keys) {
+        foreach ($key in $results.Keys) {
             if ($fullCommand -like "*$key*") {
                 return @{
                     ExitCode = 0
-                    Output   = $CommandResults[$key]
+                    Output   = $results[$key]
                 }
             }
         }
@@ -271,10 +287,13 @@ function Mock-NetworkCommands {
         [hashtable]$WebResponses = @{}
     )
 
+    # Capture parameters in closure for mock scriptblocks
+    $hosts = $ReachableHosts
+
     Mock Test-Connection {
         param($ComputerName)
 
-        if ($ReachableHosts -contains $ComputerName) {
+        if ($hosts -contains $ComputerName) {
             return [PSCustomObject]@{
                 Address      = $ComputerName
                 StatusCode   = 0
@@ -284,14 +303,16 @@ function Mock-NetworkCommands {
         throw "Unable to contact $ComputerName"
     }
 
+    $responses = $WebResponses
+
     Mock Invoke-WebRequest {
         param($Uri)
 
-        foreach ($url in $WebResponses.Keys) {
+        foreach ($url in $responses.Keys) {
             if ($Uri -like "*$url*") {
                 return [PSCustomObject]@{
                     StatusCode = 200
-                    Content    = $WebResponses[$url]
+                    Content    = $responses[$url]
                 }
             }
         }
@@ -301,9 +322,9 @@ function Mock-NetworkCommands {
     Mock Invoke-RestMethod {
         param($Uri)
 
-        foreach ($url in $WebResponses.Keys) {
+        foreach ($url in $responses.Keys) {
             if ($Uri -like "*$url*") {
-                return $WebResponses[$url] | ConvertFrom-Json
+                return $responses[$url] | ConvertFrom-Json
             }
         }
         throw "404 Not Found"
@@ -337,15 +358,18 @@ function Mock-EnvironmentVariables {
         [hashtable]$Variables = @{}
     )
 
+    # Capture parameters in closure for mock scriptblocks
+    $vars = $Variables
+
     Mock Get-ChildItem {
         param($Path)
 
         if ($Path -like 'Env:*') {
             $varName = $Path -replace 'Env:', ''
-            if ($Variables.ContainsKey($varName)) {
+            if ($vars.ContainsKey($varName)) {
                 return [PSCustomObject]@{
                     Name  = $varName
-                    Value = $Variables[$varName]
+                    Value = $vars[$varName]
                 }
             }
         }
