@@ -194,11 +194,15 @@ function Test-InputValid {
 
     switch ($Type) {
         'IPAddress' {
-            try {
-                [System.Net.IPAddress]::Parse($Value) | Out-Null
+            # Use regex for strict IPv4 validation (xxx.xxx.xxx.xxx format required)
+            # [System.Net.IPAddress]::Parse() is too lenient - accepts "192.168.1" as valid
+            $ipv4Regex = '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+            $ipv6Regex = '^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})$'
+
+            if ($Value -match $ipv4Regex -or $Value -match $ipv6Regex) {
                 return $true
             }
-            catch {
+            else {
                 Write-Verbose "Invalid IP address: $Value"
                 return $false
             }

@@ -70,7 +70,7 @@ Describe "Integration Tests - Error Handling with Retry Logic" {
                     throw "Host unreachable"
                 }
                 return [PSCustomObject]@{ Address = $ComputerName; StatusCode = 0 }
-            } -ModuleName ErrorHandling
+            }
 
             # Act
             $result = Invoke-WithErrorAggregation -Items $servers -ScriptBlock {
