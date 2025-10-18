@@ -1,0 +1,31 @@
+{
+  "description": "Configuration for Docker image cleanup automation",
+  "output": {
+    "log_dir": "/var/log/docker-cleanup",
+    "metrics_dir": "/var/lib/prometheus/node-exporter",
+    "metrics_file": "docker_cleanup_metrics.prom"
+  },
+  "cleanup": {
+    "keep_versions": 2,
+    "exclude_repositories": [
+      "nginx",
+      "redis",
+      "postgres"
+    ],
+    "exclude_tags": [
+      "latest",
+      "stable",
+      "production"
+    ],
+    "dry_run": false,
+    "aggressive_prune": false
+  },
+  "monitoring": {
+    "cluster_name": "homelab",
+    "enable_debug": false
+  },
+  "thresholds": {
+    "min_space_reclaimed_mb": 100,
+    "max_execution_time_seconds": 300
+  }
+}

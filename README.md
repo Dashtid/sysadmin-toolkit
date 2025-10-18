@@ -425,11 +425,190 @@ Comprehensive guides available in the [`docs/`](docs/) directory:
 - **[Security Best Practices](docs/SECURITY.md)**: Guidelines for secure script usage
 - **[Script Template](docs/SCRIPT_TEMPLATE.md)**: PowerShell and Bash script templates with best practices
 - **[Functionality Roadmap](docs/ROADMAP.md)**: Future enhancements and expansion opportunities (20+ planned features)
+- **[Contributing Guidelines](CONTRIBUTING.md)**: Coding standards and contribution process
 
 Additional documentation:
 - **[First-Time Setup](Windows/first-time-setup/README.md)**: Windows 11 desktop setup automation
 - **[Example Scripts](examples/README.md)**: Reference implementations and templates
-- **[Test Suite](tests/README.md)**: Automated testing framework (475+ tests)
+- **[Test Suite](tests/README.md)**: Automated testing framework (650+ tests)
+
+## [!] Troubleshooting
+
+### Common Issues and Solutions
+
+#### Windows SSH Agent Issues
+
+**Problem**: SSH keys not persisting after reboot
+```powershell
+# Solution: Ensure SSH agent is set to automatic startup
+Set-Service ssh-agent -StartupType Automatic
+Start-Service ssh-agent
+ssh-add $env:USERPROFILE\.ssh\id_ed25519
+```
+
+**Problem**: "Bad owner or permissions" error
+```powershell
+# Solution: Fix SSH directory permissions
+icacls "$env:USERPROFILE\.ssh" /inheritance:r
+icacls "$env:USERPROFILE\.ssh" /grant:r "$($env:USERNAME):(OI)(CI)F"
+```
+
+**Problem**: Claude Code cannot access SSH keys
+```bash
+# Solution: Verify SSH_AUTH_SOCK environment variable
+echo $SSH_AUTH_SOCK
+# Should output: \\.\pipe\openssh-ssh-agent
+
+# If not set, run setup script again
+./Windows/ssh/setup-ssh-agent-access.ps1
+```
+
+#### PowerShell Script Issues
+
+**Problem**: "Execution policy" error when running scripts
+```powershell
+# Solution: Set execution policy for current session
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+
+# Or permanently for current user
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**Problem**: "Cannot load module CommonFunctions.psm1"
+```powershell
+# Solution: Verify module path is correct
+Test-Path "$PSScriptRoot\..\lib\CommonFunctions.psm1"
+
+# If false, check your current directory and adjust path
+```
+
+**Problem**: PSScriptAnalyzer warnings or errors
+```powershell
+# Solution: Install and run PSScriptAnalyzer
+Install-Module -Name PSScriptAnalyzer -Scope CurrentUser
+Invoke-ScriptAnalyzer -Path .\Windows -Recurse -Fix
+```
+
+#### Linux Script Issues
+
+**Problem**: "Permission denied" when running scripts
+```bash
+# Solution: Make script executable
+chmod +x script-name.sh
+
+# Or run with bash explicitly
+bash script-name.sh
+```
+
+**Problem**: "common-functions.sh: No such file or directory"
+```bash
+# Solution: Verify library path
+ls -la Linux/lib/bash/common-functions.sh
+
+# Check script is sourcing from correct relative path
+# Should be: source "$SCRIPT_DIR/../lib/bash/common-functions.sh"
+```
+
+**Problem**: Docker daemon connection refused
+```bash
+# Solution: Start Docker service and add user to docker group
+sudo systemctl start docker
+sudo usermod -aG docker $USER
+newgrp docker  # Or logout/login for group to take effect
+```
+
+**Problem**: nvidia-smi command not found
+```bash
+# Solution: Install NVIDIA drivers and verify installation
+nvidia-smi --version
+
+# If not installed, install NVIDIA drivers for your GPU
+# Ubuntu: sudo apt install nvidia-driver-535
+```
+
+#### Configuration Issues
+
+**Problem**: Script cannot find config.json
+```bash
+# Solution: Copy example config and customize
+cp config.example.json config.json
+nano config.json  # Edit with your settings
+```
+
+**Problem**: Prometheus metrics not appearing
+```bash
+# Solution: Verify node-exporter textfile collector is configured
+ls -la /var/lib/prometheus/node-exporter/
+
+# Ensure node-exporter has --collector.textfile.directory flag
+systemctl status prometheus-node-exporter
+```
+
+#### Git and Version Control Issues
+
+**Problem**: Git operations prompt for passphrase repeatedly
+```powershell
+# Windows Solution: Ensure SSH agent is running with key loaded
+Get-Service ssh-agent
+ssh-add -l  # Should list your key
+
+# If key not listed, add it
+ssh-add $env:USERPROFILE\.ssh\id_ed25519
+```
+
+```bash
+# Linux Solution: Start ssh-agent and add key
+eval $(ssh-agent)
+ssh-add ~/.ssh/id_ed25519
+```
+
+**Problem**: "Permission denied (publickey)" when pushing to GitHub
+```bash
+# Solution: Test SSH connection and ensure key is added to GitHub
+ssh -T git@github.com
+
+# Add your public key to GitHub: Settings > SSH and GPG keys
+cat ~/.ssh/id_ed25519.pub
+```
+
+### Getting Help
+
+If you encounter an issue not covered here:
+
+1. **Check script logs**: Most scripts write detailed logs to `/var/log/` (Linux) or script directory (Windows)
+2. **Run with debug mode**: Use `--debug` flag (Bash) or `-Verbose` (PowerShell) for detailed output
+3. **Review documentation**: Check `docs/` directory for specific guides
+4. **Search existing issues**: [GitHub Issues](https://github.com/Dashtid/sysadmin-toolkit/issues)
+5. **Create new issue**: Provide:
+   - OS and version
+   - Script name and version
+   - Full error message
+   - Steps to reproduce
+   - Relevant log output
+
+### Validation and Testing
+
+Before reporting an issue, verify your environment:
+
+```powershell
+# Windows validation
+Get-Host | Select-Object Version  # PowerShell version
+Get-Service ssh-agent              # SSH agent status
+$PSVersionTable.PSVersion          # Detailed PS version
+
+# Run test suite
+.\tests\run-tests.ps1
+```
+
+```bash
+# Linux validation
+bash --version                     # Bash version
+docker --version                   # Docker version
+shellcheck --version               # shellcheck availability
+
+# Test script syntax
+shellcheck script-name.sh
+```
 
 ## [!] Important Notes
 
@@ -447,4 +626,5 @@ MIT License - Use at your own risk. See [LICENSE](LICENSE) file.
 
 **Author**: David Dashti
 **Purpose**: Personal sysadmin automation scripts
-**Last Updated**: 2025-10-15
+**Version**: 2.0.0
+**Last Updated**: 2025-10-18
