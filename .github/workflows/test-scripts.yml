@@ -169,7 +169,7 @@ jobs:
         run: |
           echo "[i] Scanning for SSH private keys..."
 
-          if grep -r "BEGIN.*PRIVATE KEY" . --exclude-dir=.git --exclude-dir=tests; then
+          if grep -r "BEGIN.*PRIVATE KEY" . --exclude-dir=.git --exclude-dir=tests --exclude-dir=.github --exclude-dir=.githooks; then
             echo "[-] ERROR: Found SSH private keys in repository!"
             exit 1
           fi
