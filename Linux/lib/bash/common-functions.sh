@@ -26,6 +26,7 @@
 #     validate_dir <path>          - Check directory exists
 #     validate_number <value>      - Check value is numeric
 #     validate_ip <ip_address>     - Check valid IP address format
+#     validate_hostname <hostname> - Check valid hostname format
 #
 #   Configuration:
 #     load_config <config_file>    - Load JSON configuration
@@ -276,6 +277,47 @@ validate_ip() {
     done
 
     log_debug "IP address validated: $ip"
+    return 0
+}
+
+# Validate hostname format
+# Usage: validate_hostname <hostname>
+# Accepts: server01, web-server, server.example.com
+# Rejects: -invalid, invalid-, empty strings
+validate_hostname() {
+    local hostname="$1"
+
+    # Check for empty string
+    if [[ -z "$hostname" ]]; then
+        log_error "Empty hostname provided"
+        return 1
+    fi
+
+    # RFC 1123: hostname can contain a-z, A-Z, 0-9, hyphen, and dots
+    # Must not start or end with hyphen or dot
+    local hostname_regex='^[a-zA-Z0-9]([a-zA-Z0-9\.-]*[a-zA-Z0-9])?$'
+
+    if ! [[ "$hostname" =~ $hostname_regex ]]; then
+        log_error "Invalid hostname format: $hostname"
+        return 1
+    fi
+
+    # Check for consecutive dots
+    if [[ "$hostname" == *".."* ]]; then
+        log_error "Invalid hostname (consecutive dots): $hostname"
+        return 1
+    fi
+
+    # Check individual labels don't start or end with hyphen
+    IFS='.' read -r -a labels <<< "$hostname"
+    for label in "${labels[@]}"; do
+        if [[ "$label" == -* ]] || [[ "$label" == *- ]]; then
+            log_error "Invalid hostname (label starts or ends with hyphen): $hostname"
+            return 1
+        fi
+    done
+
+    log_debug "Hostname validated: $hostname"
     return 0
 }
 

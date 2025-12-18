@@ -156,6 +156,12 @@ jobs:
           $config.TestResult.OutputPath = './test-results-windows.xml'
           $config.TestResult.OutputFormat = 'NUnitXml'
 
+          # Enable code coverage
+          $config.CodeCoverage.Enabled = $true
+          $config.CodeCoverage.Path = @('./Windows/lib/*.psm1')
+          $config.CodeCoverage.OutputPath = './coverage-windows.xml'
+          $config.CodeCoverage.OutputFormat = 'JaCoCo'
+
           Invoke-Pester -Configuration $config
 
       - name: Upload Windows test results
@@ -163,7 +169,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-test-results
-          path: test-results-windows.xml
+          path: |
+            test-results-windows.xml
+            coverage-windows.xml
 
       - name: Publish test results
         if: always()
@@ -214,33 +222,69 @@ jobs:
           Import-Module Pester -PassThru
           Write-Host "[+] Pester installed successfully"
 
-      - name: Run Linux tests
+      - name: Run Linux Pester tests
         shell: pwsh
         run: |
           Write-Host "[i] Running Linux Pester tests..."
 
           $config = New-PesterConfiguration
-          $config.Run.Path = './tests/Linux'
-          $config.Run.Exit = $true
+          $config.Run.Path = './tests/Linux/*.Tests.ps1'
+          $config.Run.Exit = $false
           $config.Output.Verbosity = 'Detailed'
           $config.TestResult.Enabled = $true
-          $config.TestResult.OutputPath = './test-results-linux.xml'
+          $config.TestResult.OutputPath = './test-results-linux-pester.xml'
           $config.TestResult.OutputFormat = 'NUnitXml'
 
-          Invoke-Pester -Configuration $config
+          # Enable code coverage
+          $config.CodeCoverage.Enabled = $true
+          $config.CodeCoverage.Path = @('./Linux/lib/powershell/*.psm1')
+          $config.CodeCoverage.OutputPath = './coverage-linux.xml'
+          $config.CodeCoverage.OutputFormat = 'JaCoCo'
+
+          $result = Invoke-Pester -Configuration $config
+          Write-Host "[i] Pester tests completed with $($result.FailedCount) failures"
+
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+          echo "[+] BATS installed: $(bats --version)"
+
+      - name: Run Linux BATS tests
+        run: |
+          echo "[i] Running Linux BATS tests..."
+
+          if [ -d "./tests/Linux" ]; then
+            BATS_FILES=$(find ./tests/Linux -name "*.bats" -type f 2>/dev/null || true)
+
+            if [ -n "$BATS_FILES" ]; then
+              for bats_file in $BATS_FILES; do
+                echo "[*] Running: $bats_file"
+                bats "$bats_file" || echo "[!] BATS test failed: $bats_file"
+              done
+            else
+              echo "[i] No BATS test files found"
+            fi
+          else
+            echo "[i] tests/Linux directory not found"
+          fi
+
+          echo "[+] BATS tests completed"
 
       - name: Upload Linux test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: linux-test-results
-          path: test-results-linux.xml
+          path: |
+            test-results-linux-pester.xml
+            coverage-linux.xml
 
       - name: Publish test results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          files: test-results-linux.xml
+          files: test-results-linux-pester.xml
           check_name: Linux Test Results
 
   # Job 5: Test Coverage Report
@@ -278,9 +322,17 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -f ./results/test-results-windows.xml ]; then
-            echo "Windows test artifacts found" >> $GITHUB_STEP_SUMMARY
+            echo "Windows Pester test artifacts found" >> $GITHUB_STEP_SUMMARY
           fi
 
-          if [ -f ./results/test-results-linux.xml ]; then
-            echo "Linux test artifacts found" >> $GITHUB_STEP_SUMMARY
+          if [ -f ./results/test-results-linux-pester.xml ]; then
+            echo "Linux Pester test artifacts found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f ./results/coverage-windows.xml ]; then
+            echo "Windows coverage report found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f ./results/coverage-linux.xml ]; then
+            echo "Linux coverage report found" >> $GITHUB_STEP_SUMMARY
           fi

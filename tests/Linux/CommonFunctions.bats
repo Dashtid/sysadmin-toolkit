@@ -262,24 +262,26 @@ teardown() {
 # PROMETHEUS METRICS TESTS
 # ============================================================================
 
-@test "[+] export_prometheus_metric creates valid metric output" {
-    run export_prometheus_metric "test_metric" "gauge" 42 "Test metric description"
+@test "[+] export_prometheus_metric writes metric to file" {
+    local metrics_file="${TEST_TEMP_DIR}/test_metrics.prom"
+    run export_prometheus_metric "$metrics_file" "test_metric" 42
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "# HELP test_metric Test metric description" ]]
-    [[ "$output" =~ "# TYPE test_metric gauge" ]]
-    [[ "$output" =~ "test_metric 42" ]]
+    [ -f "$metrics_file" ]
+    grep -q "test_metric 42" "$metrics_file"
 }
 
-@test "[+] export_prometheus_metric supports counter type" {
-    run export_prometheus_metric "test_counter" "counter" 100 "Test counter"
+@test "[+] export_prometheus_metric supports labels" {
+    local metrics_file="${TEST_TEMP_DIR}/test_metrics_labels.prom"
+    run export_prometheus_metric "$metrics_file" "test_counter" 100 'host="server1"'
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "# TYPE test_counter counter" ]]
+    grep -q 'test_counter{host="server1"} 100' "$metrics_file"
 }
 
-@test "[+] export_prometheus_metric supports histogram type" {
-    run export_prometheus_metric "test_histogram" "histogram" 0.5 "Test histogram"
+@test "[+] init_prometheus_metrics creates metrics file" {
+    local metrics_file="${TEST_TEMP_DIR}/init_metrics.prom"
+    run init_prometheus_metrics "$metrics_file"
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "# TYPE test_histogram histogram" ]]
+    [ -f "$metrics_file" ]
 }
 
 # ============================================================================
