@@ -204,6 +204,11 @@ jobs:
 
           echo "[+] Repository structure is valid"
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-utils
+
       - name: Check Windows package exports
         run: |
           echo "[i] Validating Windows package exports..."

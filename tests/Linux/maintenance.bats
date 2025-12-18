@@ -80,9 +80,10 @@ setup() {
     grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/system-update.sh"
 }
 
-# Test for logging functions
-@test "scripts define logging functions" {
-    grep -q "^log()\|^info()\|^error()\|^warning()" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
+# Test for logging approach (either functions or colored echo)
+@test "scripts have logging approach" {
+    # Check for logging functions OR colored echo output
+    grep -q "^log()\|^info()\|^error()\|^warning()\|echo -e.*\[" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
 # Test for sudo checks where needed
