@@ -40,7 +40,9 @@ jobs:
           $Config.CodeCoverage.OutputPath = "coverage.xml"
           $Config.CodeCoverage.OutputFormat = "JaCoCo"
 
-          $Result = Invoke-Pester -Configuration $Config -PassThru
+          $Config.Run.PassThru = $true
+
+          $Result = Invoke-Pester -Configuration $Config
 
           # Display coverage summary
           Write-Host ""

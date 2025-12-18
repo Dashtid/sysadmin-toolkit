@@ -458,7 +458,7 @@ rate(log_cleanup_logs_compressed_total[1h])
 Comprehensive guides available in the [`docs/`](docs/) directory:
 
 - **[SSH Tunnel Setup Guide](docs/SSH-TUNNEL-SETUP.md)**: Detailed Gitea tunnel configuration
-- **[Security Best Practices](docs/SECURITY.md)**: Guidelines for secure script usage
+- **[Security Best Practices](SECURITY.md)**: Guidelines for secure script usage
 - **[Script Template](docs/SCRIPT_TEMPLATE.md)**: PowerShell and Bash script templates with best practices
 - **[Functionality Roadmap](docs/ROADMAP.md)**: Future enhancements and expansion opportunities (20+ planned features)
 - **[Contributing Guidelines](CONTRIBUTING.md)**: Coding standards and contribution process
