@@ -5,7 +5,7 @@ Get started with the System Administration Toolkit in 5 minutes.
 ## [1] Clone the Repository
 
 ```bash
-git clone https://github.com/dashtid/windows-linux-sysadmin-toolkit.git
+git clone https://github.com/Dashtid/sysadmin-toolkit.git
 cd windows-linux-sysadmin-toolkit
 ```
 
@@ -137,7 +137,7 @@ git diff | grep -E "10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"
 
 ## [?] Need Help?
 
-- **Issues**: [GitHub Issues](https://github.com/dashtid/windows-linux-sysadmin-toolkit/issues)
+- **Issues**: [GitHub Issues](https://github.com/Dashtid/sysadmin-toolkit/issues)
 - **Security**: See [SECURITY.md](SECURITY.md) for responsible disclosure
 - **Questions**: Open a discussion or issue
 

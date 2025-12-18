@@ -451,7 +451,7 @@ For issues or questions:
 
 1. Check the troubleshooting section above
 2. Review log files in `C:\Users\YourName\.setup-logs\`
-3. Open an issue on GitHub: https://github.com/dashtid/windows-linux-sysadmin-toolkit/issues
+3. Open an issue on GitHub: https://github.com/Dashtid/sysadmin-toolkit/issues
 
 ---
 
