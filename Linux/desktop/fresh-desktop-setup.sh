@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # Ubuntu Desktop Fresh Installation Setup Script
 # Sets up a new Ubuntu desktop for development and daily use
 # Run as regular user (will prompt for sudo when needed)

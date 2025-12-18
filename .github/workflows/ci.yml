@@ -20,10 +20,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup PowerShell
-        uses: azure/powershell@v2
-        with:
-          azPSVersion: 'latest'
+      - name: Check PowerShell Version
+        shell: pwsh
+        run: |
+          $PSVersionTable
+          Write-Host "[+] PowerShell ready for analysis" 
 
       - name: Install PSScriptAnalyzer
         shell: pwsh
@@ -252,12 +253,14 @@ jobs:
     steps:
       - name: Download Windows test results
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: windows-test-results
           path: ./results
 
       - name: Download Linux test results
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: linux-test-results
           path: ./results
