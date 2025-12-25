@@ -51,8 +51,9 @@ teardown() {
 # SECURITY AND COMPLIANCE TESTS
 # ============================================================================
 
-@test "[-] Script contains no emojis (CLAUDE.md compliance)" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|🎉|⚠️|📁' "$SCRIPT_PATH"
+@test "[-] Script contains no emojis - CLAUDE.md compliance" {
+    # Use literal emoji chars instead of PCRE ranges for portability
+    ! grep -E '✅|❌|🎉|⚠️|📁|🔄|✓|✗' "$SCRIPT_PATH"
 }
 
 @test "[+] Script uses ASCII markers [+] [-] [i] [!]" {
