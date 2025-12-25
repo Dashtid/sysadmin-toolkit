@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Configuration file for monitoring scripts (Windows and Linux)",
+
+  "thresholds": {
+    "cpu": {
+      "warning": 80,
+      "critical": 95
+    },
+    "memory": {
+      "warning": 85,
+      "critical": 95
+    },
+    "disk": {
+      "warning": 80,
+      "critical": 90
+    },
+    "gpu_temperature": {
+      "warning": 70,
+      "critical": 85
+    }
+  },
+
+  "services_to_monitor": {
+    "windows": [
+      "ssh-agent",
+      "W32Time",
+      "Spooler",
+      "BITS"
+    ],
+    "linux": [
+      "sshd",
+      "docker",
+      "nginx",
+      "cron"
+    ]
+  },
+
+  "ssl_certificates": {
+    "domains": [
+      "example.com",
+      "api.example.com",
+      "*.example.com"
+    ],
+    "warning_days": 30,
+    "critical_days": 7
+  },
+
+  "output": {
+    "format": "json",
+    "log_dir": "/var/log/monitoring",
+    "metrics_enabled": true,
+    "metrics_dir": "/var/lib/prometheus/node-exporter"
+  },
+
+  "notifications": {
+    "enabled": true,
+    "channels": {
+      "slack": {
+        "enabled": false,
+        "webhook_url": ""
+      },
+      "email": {
+        "enabled": false,
+        "smtp_server": "smtp.example.com",
+        "smtp_port": 587,
+        "from": "monitoring@example.com",
+        "to": ["admin@example.com"]
+      }
+    },
+    "notify_on": {
+      "warning": true,
+      "critical": true,
+      "recovery": true
+    }
+  }
+}

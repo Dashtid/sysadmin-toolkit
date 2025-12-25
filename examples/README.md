@@ -12,6 +12,24 @@ These examples serve as:
 
 ## Available Examples
 
+### Script Templates
+
+| File | Language | Purpose |
+|------|----------|---------|
+| [example-powershell-script.ps1](example-powershell-script.ps1) | PowerShell | Full-featured script template |
+| [example-bash-script.sh](example-bash-script.sh) | Bash | Linux script template |
+| [example-python-script.py](example-python-script.py) | Python | Python script template |
+
+### Configuration Templates
+
+| File | Purpose |
+|------|---------|
+| [.env.example](.env.example) | Environment variables for all scripts |
+| [docker-cleanup.config.example.json](docker-cleanup.config.example.json) | Docker cleanup configuration |
+| [monitoring.config.example.json](monitoring.config.example.json) | Monitoring thresholds and alerts |
+
+---
+
 ### [example-powershell-script.ps1](example-powershell-script.ps1)
 
 Comprehensive PowerShell script demonstrating:

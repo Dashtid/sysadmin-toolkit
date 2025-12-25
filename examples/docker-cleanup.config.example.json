@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Configuration file for Linux/docker/docker-cleanup.sh",
+
+  "keep_versions": 3,
+  "container_age_days": 7,
+  "prune_volumes": false,
+  "prune_networks": true,
+
+  "protected_images": [
+    "postgres:15",
+    "postgres:16",
+    "redis:7-alpine",
+    "nginx:stable-alpine"
+  ],
+
+  "protected_containers": [
+    "production-db",
+    "critical-service"
+  ],
+
+  "output": {
+    "log_dir": "/var/log/docker-cleanup",
+    "metrics_enabled": true,
+    "metrics_dir": "/var/lib/prometheus/node-exporter"
+  },
+
+  "notifications": {
+    "enabled": false,
+    "slack_webhook_url": "",
+    "email": "",
+    "notify_on_success": false,
+    "notify_on_failure": true
+  },
+
+  "schedule": {
+    "cron": "0 3 * * 0",
+    "comment": "Every Sunday at 3 AM"
+  }
+}
