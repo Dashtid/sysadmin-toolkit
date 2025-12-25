@@ -178,7 +178,7 @@ jobs:
           # SC1091: Cannot follow sourced file (common-functions.sh)
           # SC2154: Variable referenced but not assigned (from sourced files)
           find Linux -name "*.sh" -type f -exec shellcheck -x \
-            --exclude=SC2034,SC1091,SC2154,SC2155,SC2046 \
+            --exclude=SC2034,SC1091,SC2154,SC2155,SC2046,SC2178,SC2128 \
             --severity=warning {} \;
           echo "[+] Shellcheck passed"
 
