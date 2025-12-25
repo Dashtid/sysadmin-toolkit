@@ -34,7 +34,8 @@ Describe "system-updates.ps1 - Comprehensive Coverage" {
         }
 
         It "Contains no emojis (CLAUDE.md compliance)" {
-            $ScriptContent | Should -Not -Match '[\x{1F300}-\x{1F9FF}]|✅|❌'
+            # Note: Using literal emoji chars as .NET regex doesn't support \x{XXXX} for high codepoints
+            $ScriptContent | Should -Not -Match '✅|❌|🎉|⚠️|📁|🔄|✓|✗'
         }
 
         It "Uses ASCII markers [+] [-] [i] [!]" {
@@ -217,8 +218,10 @@ Describe "system-updates.ps1 - Comprehensive Coverage" {
         }
 
         It "Uses secure API calls" {
-            $ScriptContent | Should -Match 'Invoke-RestMethod|Invoke-WebRequest' -Or
-            $ScriptContent | Should -Not -Match 'Invoke-Expression.*http'
+            # Either script uses proper API calls, OR it doesn't use dangerous Invoke-Expression with URLs
+            $usesProperApi = $ScriptContent -match 'Invoke-RestMethod|Invoke-WebRequest'
+            $usesInsecureExpression = $ScriptContent -match 'Invoke-Expression.*http'
+            ($usesProperApi -or -not $usesInsecureExpression) | Should -Be $true
         }
 
         It "Validates inputs" {
@@ -259,7 +262,7 @@ Describe "Restore-PreviousState.ps1 - Comprehensive Tests" {
         }
 
         It "Has no emojis" {
-            $ScriptContent | Should -Not -Match '[\x{1F300}-\x{1F9FF}]'
+            $ScriptContent | Should -Not -Match '✅|❌|🎉|⚠️|📁|🔄|✓|✗'
         }
     }
 
@@ -557,7 +560,8 @@ Describe "Maintenance Scripts Integration" {
             $scripts = Get-ChildItem $MaintenancePath -Filter "*.ps1"
             foreach ($script in $scripts) {
                 $content = Get-Content $script.FullName -Raw
-                $content | Should -Not -Match '[\x{1F300}-\x{1F9FF}]'
+                # Note: Using literal emoji chars as .NET regex doesn't support \x{XXXX} for high codepoints
+                $content | Should -Not -Match '✅|❌|🎉|⚠️|📁|🔄|✓|✗'
             }
         }
     }

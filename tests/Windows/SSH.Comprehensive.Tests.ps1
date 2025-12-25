@@ -36,7 +36,8 @@ Describe "setup-ssh-agent-access.ps1 - Comprehensive Tests" {
         }
 
         It "Contains no emojis (CLAUDE.md compliance)" {
-            $ScriptContent | Should -Not -Match '[\x{1F300}-\x{1F9FF}]|✅|❌|🎉'
+            # Note: Using literal emoji chars as .NET regex doesn't support \x{XXXX} for high codepoints
+            $ScriptContent | Should -Not -Match '✅|❌|🎉|⚠️|📁|🔄|✓|✗'
         }
 
         It "Uses ASCII markers [+] [-] [i] [!]" {
@@ -209,7 +210,7 @@ Describe "gitea-tunnel-manager.ps1 - Comprehensive Tests" {
         }
 
         It "Contains no emojis" {
-            $ScriptContent | Should -Not -Match '[\x{1F300}-\x{1F9FF}]|✅|❌'
+            $ScriptContent | Should -Not -Match '✅|❌|🎉|⚠️|📁|🔄|✓|✗'
         }
 
         It "Uses ASCII markers" {
@@ -361,8 +362,8 @@ Describe "SSH Scripts Integration Tests" {
             $scripts = Get-ChildItem $SSHScriptsPath -Filter "*.ps1"
             foreach ($script in $scripts) {
                 $content = Get-Content $script.FullName -Raw
-                # Should NOT have emojis
-                $content | Should -Not -Match '[\x{1F300}-\x{1F9FF}]'
+                # Should NOT have emojis - using literal chars as .NET regex doesn't support \x{XXXX}
+                $content | Should -Not -Match '✅|❌|🎉|⚠️|📁|🔄|✓|✗'
             }
         }
     }
