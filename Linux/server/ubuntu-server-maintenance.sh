@@ -26,7 +26,7 @@ configure_firewall() {
 secure_ssh() {
     echo "🔒 Securing SSH..."
     # Backup sshd_config
-    cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak.$(date +%F)
+    cp /etc/ssh/sshd_config "/etc/ssh/sshd_config.bak.$(date +%F)"
     sed -i 's/#PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
     systemctl restart sshd

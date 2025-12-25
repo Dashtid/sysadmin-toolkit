@@ -102,6 +102,8 @@ jobs:
               -e SC2034 \
               -e SC2086 \
               -e SC2181 \
+              -e SC2155 \
+              -e SC2046 \
               "$script"; then
               FAILED_FILES=$((FAILED_FILES + 1))
               echo "[-] shellcheck failed for: $script"

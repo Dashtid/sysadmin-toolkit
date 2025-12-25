@@ -102,7 +102,7 @@ secure_ssh() {
     log "🔒 Securing SSH configuration..."
     
     # Backup original config
-    cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak.$(date +%F)
+    cp /etc/ssh/sshd_config "/etc/ssh/sshd_config.bak.$(date +%F)"
     
     # Apply security settings
     sed -i 's/#PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
