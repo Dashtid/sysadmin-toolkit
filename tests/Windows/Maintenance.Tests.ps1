@@ -27,10 +27,7 @@ Describe "Maintenance Script Existence" {
             $scriptPath | Should -Exist
         }
 
-        It "update-defender.ps1 should exist" {
-            $scriptPath = Join-Path $MaintenancePath "update-defender.ps1"
-            $scriptPath | Should -Exist
-        }
+        # update-defender.ps1 removed (Windows auto-updates Defender)
 
         It "Restore-PreviousState.ps1 should exist (v2.0.0)" {
             $scriptPath = Join-Path $MaintenancePath "Restore-PreviousState.ps1"
@@ -75,10 +72,7 @@ Describe "Maintenance Script Syntax" {
             Test-ScriptSyntax -Path $scriptPath | Should -Be $true
         }
 
-        It "update-defender.ps1 has valid syntax" {
-            $scriptPath = Join-Path $MaintenancePath "update-defender.ps1"
-            Test-ScriptSyntax -Path $scriptPath | Should -Be $true
-        }
+        # update-defender.ps1 removed (Windows auto-updates Defender)
 
         It "Restore-PreviousState.ps1 has valid syntax" {
             $scriptPath = Join-Path $MaintenancePath "Restore-PreviousState.ps1"

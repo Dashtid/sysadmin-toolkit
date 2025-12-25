@@ -213,7 +213,7 @@ Tests run automatically on:
 **Linux:**
 - [ ] Monitoring scripts (system-health-check, ssl-cert-check)
 - [ ] Server setup scripts (headless-server-setup, docker-lab-environment)
-- [ ] Desktop setup scripts (fresh-desktop-setup)
+- [x] Desktop setup scripts (fresh-desktop-setup) - REMOVED, only headless servers used
 
 ## [+] Writing New Tests
 

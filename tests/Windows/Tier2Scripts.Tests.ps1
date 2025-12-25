@@ -8,7 +8,7 @@
     Comprehensive tests for:
     - Get-UserAccountAudit.ps1 (User Account Audit)
     - Repair-CommonIssues.ps1 (Common Issue Auto-Fixer)
-    - Watch-DiskSpace.ps1 (Disk Space Monitor)
+    - Get-SystemPerformance.ps1 (includes Disk Space Monitor functionality)
     - Get-ApplicationHealth.ps1 (Application Health Monitor)
     - Get-SystemReport.ps1 (System Information Reporter)
 
@@ -25,7 +25,8 @@ BeforeAll {
     # Script paths
     $Script:UserAccountAuditScript = Join-Path $TestRoot "Windows\security\Get-UserAccountAudit.ps1"
     $Script:RepairCommonIssuesScript = Join-Path $TestRoot "Windows\troubleshooting\Repair-CommonIssues.ps1"
-    $Script:DiskSpaceScript = Join-Path $TestRoot "Windows\monitoring\Watch-DiskSpace.ps1"
+    # Watch-DiskSpace.ps1 merged into Get-SystemPerformance.ps1
+    $Script:SystemPerformanceScript = Join-Path $TestRoot "Windows\monitoring\Get-SystemPerformance.ps1"
     $Script:ApplicationHealthScript = Join-Path $TestRoot "Windows\monitoring\Get-ApplicationHealth.ps1"
     $Script:SystemReportScript = Join-Path $TestRoot "Windows\reporting\Get-SystemReport.ps1"
     $Script:CommonFunctionsModule = Join-Path $TestRoot "Windows\lib\CommonFunctions.psm1"
@@ -232,39 +233,20 @@ Describe "Repair-CommonIssues.ps1" -Tag "Troubleshooting", "Repair" {
     }
 }
 
-Describe "Watch-DiskSpace.ps1" -Tag "Monitoring", "DiskSpace" {
-    Context "Script Existence and Syntax" {
-        It "Script file should exist" {
-            $Script:DiskSpaceScript | Should -Exist
-        }
-
-        It "Script should have valid PowerShell syntax" {
-            $errors = $null
-            $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $Script:DiskSpaceScript -Raw), [ref]$errors)
-            $errors.Count | Should -Be 0
-        }
-
-        It "Script should contain required elements" {
-            $content = Get-Content $Script:DiskSpaceScript -Raw
-            $content | Should -Match '#Requires -Version 5.1'
-            $content | Should -Match '\.SYNOPSIS'
-            $content | Should -Match '\.DESCRIPTION'
-            $content | Should -Match 'param\s*\('
-        }
-    }
-
-    Context "Parameters" {
+# Watch-DiskSpace.ps1 functionality merged into Get-SystemPerformance.ps1
+Describe "Get-SystemPerformance.ps1 Disk Analysis" -Tag "Monitoring", "DiskSpace" {
+    Context "Disk Analysis Parameters (merged from Watch-DiskSpace.ps1)" {
         BeforeAll {
-            $scriptInfo = Get-Command $Script:DiskSpaceScript -ErrorAction SilentlyContinue
+            $scriptInfo = Get-Command $Script:SystemPerformanceScript -ErrorAction SilentlyContinue
             $parameters = $scriptInfo.Parameters
         }
 
-        It "Should have WarningThresholdPercent parameter" {
-            $parameters.ContainsKey('WarningThresholdPercent') | Should -BeTrue
+        It "Script file should exist" {
+            $Script:SystemPerformanceScript | Should -Exist
         }
 
-        It "Should have CriticalThresholdPercent parameter" {
-            $parameters.ContainsKey('CriticalThresholdPercent') | Should -BeTrue
+        It "Should have IncludeDiskAnalysis parameter" {
+            $parameters.ContainsKey('IncludeDiskAnalysis') | Should -BeTrue
         }
 
         It "Should have AutoCleanup parameter" {
@@ -282,45 +264,36 @@ Describe "Watch-DiskSpace.ps1" -Tag "Monitoring", "DiskSpace" {
         It "Should have TopFilesCount parameter" {
             $parameters.ContainsKey('TopFilesCount') | Should -BeTrue
         }
-
-        It "Should have OutputFormat parameter" {
-            $parameters.ContainsKey('OutputFormat') | Should -BeTrue
-        }
     }
 
-    Context "Disk Monitoring Features" {
-        It "Should define Get-DiskInformation function" {
-            $content = Get-Content $Script:DiskSpaceScript -Raw
-            $content | Should -Match 'function\s+Get-DiskInformation'
-        }
-
+    Context "Disk Analysis Functions (merged from Watch-DiskSpace.ps1)" {
         It "Should define Get-LargestFiles function" {
-            $content = Get-Content $Script:DiskSpaceScript -Raw
+            $content = Get-Content $Script:SystemPerformanceScript -Raw
             $content | Should -Match 'function\s+Get-LargestFiles'
         }
 
+        It "Should define Get-LargestFolders function" {
+            $content = Get-Content $Script:SystemPerformanceScript -Raw
+            $content | Should -Match 'function\s+Get-LargestFolders'
+        }
+
         It "Should define Get-CleanupSuggestions function" {
-            $content = Get-Content $Script:DiskSpaceScript -Raw
+            $content = Get-Content $Script:SystemPerformanceScript -Raw
             $content | Should -Match 'function\s+Get-CleanupSuggestions'
         }
 
-        It "Should define Invoke-AutoCleanup function" {
-            $content = Get-Content $Script:DiskSpaceScript -Raw
-            $content | Should -Match 'function\s+Invoke-AutoCleanup'
-        }
-
-        It "Should use Win32_LogicalDisk for disk information" {
-            $content = Get-Content $Script:DiskSpaceScript -Raw
-            $content | Should -Match 'Win32_LogicalDisk'
+        It "Should define Get-DiskAnalysis function" {
+            $content = Get-Content $Script:SystemPerformanceScript -Raw
+            $content | Should -Match 'function\s+Get-DiskAnalysis'
         }
 
         It "Should check for temp files" {
-            $content = Get-Content $Script:DiskSpaceScript -Raw
+            $content = Get-Content $Script:SystemPerformanceScript -Raw
             $content | Should -Match '\$env:TEMP'
         }
 
         It "Should check for browser caches" {
-            $content = Get-Content $Script:DiskSpaceScript -Raw
+            $content = Get-Content $Script:SystemPerformanceScript -Raw
             $content | Should -Match 'Chrome.*Cache|Edge.*Cache|Firefox'
         }
     }

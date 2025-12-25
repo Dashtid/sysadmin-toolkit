@@ -469,67 +469,9 @@ Describe "setup-scheduled-tasks.ps1 - Tests" {
 }
 
 # ============================================================================
-# UPDATE-DEFENDER.PS1 TESTS
+# UPDATE-DEFENDER.PS1 TESTS - REMOVED
+# Windows 11 auto-updates Defender, making this script redundant
 # ============================================================================
-
-Describe "update-defender.ps1 - Tests" {
-    BeforeAll {
-        $ScriptPath = Join-Path $MaintenancePath "update-defender.ps1"
-        $ScriptContent = Get-Content $ScriptPath -Raw
-    }
-
-    Context "Script Structure" {
-        It "Script exists" {
-            Test-Path $ScriptPath | Should -Be $true
-        }
-
-        It "Has valid syntax" {
-            $Errors = $null
-            [System.Management.Automation.PSParser]::Tokenize($ScriptContent, [ref]$Errors)
-            $Errors.Count | Should -Be 0
-        }
-    }
-
-    Context "Windows Defender Updates" {
-        It "Updates Defender definitions" {
-            $ScriptContent | Should -Match 'Update-MpSignature|Defender.*Update'
-        }
-
-        It "Checks Defender status" {
-            $ScriptContent | Should -Match 'Get-MpComputerStatus|Defender.*Status'
-        }
-
-        It "Gets signature version" {
-            $ScriptContent | Should -Match 'SignatureVersion|AntivirusSignature'
-        }
-
-        It "Starts quick scan (optional)" {
-            if ($ScriptContent -match 'scan') {
-                $ScriptContent | Should -Match 'Start-MpScan'
-            }
-        }
-    }
-
-    Context "Error Handling" {
-        It "Handles update failures" {
-            $ScriptContent | Should -Match 'catch|ErrorAction'
-        }
-
-        It "Checks if Defender is enabled" {
-            $ScriptContent | Should -Match 'Enabled|Active|Defender.*Status'
-        }
-    }
-
-    Context "Reporting" {
-        It "Reports update success" {
-            $ScriptContent | Should -Match 'success|updated|complete'
-        }
-
-        It "Shows before/after versions" {
-            $ScriptContent | Should -Match 'version|before|after'
-        }
-    }
-}
 
 # ============================================================================
 # STARTUP_SCRIPT.PS1 TESTS
@@ -646,41 +588,9 @@ Describe "system-integrity-check.ps1 - Tests" {
 }
 
 # ============================================================================
-# FIX-MONTHLY-TASKS.PS1 TESTS
+# FIX-MONTHLY-TASKS.PS1 TESTS - REMOVED
+# Script was not being used
 # ============================================================================
-
-Describe "fix-monthly-tasks.ps1 - Tests" {
-    BeforeAll {
-        $ScriptPath = Join-Path $MaintenancePath "fix-monthly-tasks.ps1"
-        $ScriptContent = Get-Content $ScriptPath -Raw
-    }
-
-    Context "Script Structure" {
-        It "Script exists" {
-            Test-Path $ScriptPath | Should -Be $true
-        }
-
-        It "Has valid syntax" {
-            $Errors = $null
-            [System.Management.Automation.PSParser]::Tokenize($ScriptContent, [ref]$Errors)
-            $Errors.Count | Should -Be 0
-        }
-    }
-
-    Context "Monthly Maintenance" {
-        It "Performs monthly tasks" {
-            $ScriptContent | Should -Match 'monthly|month|30.*day'
-        }
-
-        It "Cleans up old files" {
-            $ScriptContent | Should -Match 'Remove-Item.*days|cleanup.*old|delete.*old'
-        }
-
-        It "Optimizes system" {
-            $ScriptContent | Should -Match 'Optimize|defrag|trim'
-        }
-    }
-}
 
 # ============================================================================
 # INTEGRATION TESTS - MAINTENANCE WORKFLOW
@@ -689,15 +599,14 @@ Describe "fix-monthly-tasks.ps1 - Tests" {
 Describe "Maintenance Scripts Integration" {
     Context "Script Consistency" {
         It "All maintenance scripts exist" {
+            # Note: update-defender.ps1 and fix-monthly-tasks.ps1 removed in cleanup
             $scripts = @(
                 "system-updates.ps1"
                 "Restore-PreviousState.ps1"
                 "cleanup-disk.ps1"
                 "setup-scheduled-tasks.ps1"
-                "update-defender.ps1"
                 "startup_script.ps1"
                 "system-integrity-check.ps1"
-                "fix-monthly-tasks.ps1"
             )
 
             foreach ($script in $scripts) {

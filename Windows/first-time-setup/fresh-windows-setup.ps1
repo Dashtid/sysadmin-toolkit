@@ -1,15 +1,22 @@
 # Fresh Windows 11 Setup - Master Script
 # Complete automated setup for a new Windows 11 installation
 # This script orchestrates the entire setup process
+# Supports Work and Home profiles with different package sets
 # Run as Administrator in PowerShell 7+
 
 #Requires -Version 7.0
 #Requires -RunAsAdministrator
 
 param(
+    [Parameter()]
+    [ValidateSet('Work', 'Home')]
+    [string]$SetupProfile,               # Setup profile: Work or Home
+
     [switch]$UseLatestVersions = $true,  # Install latest versions by default
     [switch]$SkipPackageInstall,         # Skip package installation (config only)
     [switch]$SkipSystemConfig,           # Skip system configuration
+    [switch]$SkipWSL,                    # Skip WSL2 setup
+    [switch]$SkipGaming,                 # Skip gaming packages (Home profile)
     [switch]$Minimal                     # Minimal installation
 )
 
@@ -102,24 +109,42 @@ function Show-SetupSummary {
     Write-Section "Setup Configuration"
 
     Write-Info "Setup Mode: $(if ($Minimal) { 'Minimal' } else { 'Full' })"
+    Write-Info "Profile: $(if ($SetupProfile) { $SetupProfile } else { 'Exported Packages' })"
     Write-Info "Package Installation: $(if ($SkipPackageInstall) { 'SKIPPED' } else { 'ENABLED' })"
     Write-Info "System Configuration: $(if ($SkipSystemConfig) { 'SKIPPED' } else { 'ENABLED' })"
-    Write-Info "Version Strategy: $(if ($UseLatestVersions) { 'Latest Versions' } else { 'Pinned Versions' })"
+    Write-Info "WSL2 Setup: $(if ($SkipWSL) { 'SKIPPED' } else { 'ENABLED' })"
+    if ($SetupProfile -eq 'Home') {
+        Write-Info "Gaming Packages: $(if ($SkipGaming) { 'SKIPPED' } else { 'ENABLED' })"
+    }
     Write-Info "Log File: $LogFile"
 
     Write-Info ""
 
     if (!$SkipPackageInstall) {
-        $WingetFile = Join-Path $PSScriptRoot "winget-packages.json"
-        $ChocoFile = Join-Path $PSScriptRoot "chocolatey-packages.config"
+        if ($SetupProfile) {
+            Write-Info "Package source: Profile-based ($SetupProfile)"
+            if ($SetupProfile -eq 'Work') {
+                Write-Info "  - Includes: Teams, Azure CLI, WatchGuard VPN"
+                Write-Info "  - Dev directory: $env:USERPROFILE\Development"
+            } else {
+                Write-Info "  - Includes: Discord, Spotify, ProtonVPN, Ollama"
+                if (-not $SkipGaming) { Write-Info "  - Includes: Steam" }
+                Write-Info "  - Dev directory: C:\Code"
+            }
+        } else {
+            $WingetFile = Join-Path $PSScriptRoot "winget-packages.json"
+            $ChocoFile = Join-Path $PSScriptRoot "chocolatey-packages.config"
 
-        $WingetCount = (Get-Content $WingetFile | ConvertFrom-Json).Sources.Packages.Count
-        [xml]$ChocoXml = Get-Content $ChocoFile
-        $ChocoCount = $ChocoXml.packages.package.Count
-
-        Write-Info "Packages to install:"
-        Write-Info "  - Winget: $WingetCount packages"
-        Write-Info "  - Chocolatey: $ChocoCount packages"
+            if (Test-Path $WingetFile) {
+                $WingetCount = (Get-Content $WingetFile | ConvertFrom-Json).Sources.Packages.Count
+                Write-Info "  - Winget: $WingetCount packages"
+            }
+            if (Test-Path $ChocoFile) {
+                [xml]$ChocoXml = Get-Content $ChocoFile
+                $ChocoCount = $ChocoXml.packages.package.Count
+                Write-Info "  - Chocolatey: $ChocoCount packages"
+            }
+        }
     }
 
     Write-Info ""
@@ -159,7 +184,7 @@ function Install-Packages {
     }
 }
 
-# Configure system
+# Configure system based on profile
 function Set-SystemConfiguration {
     if ($SkipSystemConfig) {
         Write-Info "Skipping system configuration (as requested)"
@@ -168,28 +193,147 @@ function Set-SystemConfiguration {
 
     Write-Section "Configuring System Settings"
 
-    $WorkLaptopScript = Join-Path (Split-Path $PSScriptRoot) "first-time-setup\work-laptop-setup.ps1"
+    # Configure Windows settings (common to all profiles)
+    Write-Info "Applying Windows settings..."
+    try {
+        # Show file extensions
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0 -ErrorAction SilentlyContinue
+        # Show hidden files
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Hidden" -Value 1 -ErrorAction SilentlyContinue
+        # Enable dark mode
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 0 -ErrorAction SilentlyContinue
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 0 -ErrorAction SilentlyContinue
+        # Disable web search in start menu
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value 0 -ErrorAction SilentlyContinue
+        Write-Success "Windows settings applied"
+    } catch {
+        Write-Warning "Some Windows settings could not be applied: $($_.Exception.Message)"
+    }
 
-    if (!(Test-Path $WorkLaptopScript)) {
-        Write-Warning "work-laptop-setup.ps1 not found, skipping system configuration"
+    # Setup development directories based on profile
+    Write-Info "Setting up development directories..."
+    if ($SetupProfile -eq 'Work') {
+        $DevDir = "$env:USERPROFILE\Development"
+        $Directories = @("$DevDir\Projects", "$DevDir\Scripts", "$DevDir\Tools", "$DevDir\Documentation")
+    } else {
+        $DevDir = "C:\Code"
+        $Directories = @("$DevDir", "$DevDir\personal", "$DevDir\learning", "$DevDir\projects")
+    }
+
+    foreach ($Dir in $Directories) {
+        if (!(Test-Path $Dir)) {
+            New-Item -ItemType Directory -Path $Dir -Force | Out-Null
+        }
+    }
+    Write-Success "Development directories created at: $DevDir"
+
+    # Configure Git
+    Write-Info "Configuring Git..."
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        git config --global init.defaultBranch main
+        git config --global pull.rebase false
+        git config --global core.autocrlf true
+        git config --global core.editor "code --wait"
+        Write-Success "Git configured with VS Code as default editor"
+    } else {
+        Write-Warning "Git not found. Install Git first, then configure manually."
+    }
+
+    # WSL2 setup (Work profile or if not skipped)
+    if (-not $SkipWSL -and ($SetupProfile -eq 'Work' -or $null -eq $SetupProfile)) {
+        Write-Info "Setting up WSL2..."
+        try {
+            Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction SilentlyContinue | Out-Null
+            Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart -ErrorAction SilentlyContinue | Out-Null
+            wsl --set-default-version 2 2>$null
+            Write-Success "WSL2 enabled (run 'wsl --install -d Ubuntu' after reboot)"
+        } catch {
+            Write-Warning "WSL2 setup failed: $($_.Exception.Message)"
+        }
+    }
+
+    Write-Success "System configuration completed"
+}
+
+# Install profile-specific packages
+function Install-ProfilePackages {
+    if ($SkipPackageInstall -or $null -eq $SetupProfile) {
         return
     }
 
-    $ConfigArgs = @{
-        SkipWinget = $true
-        SkipChocolatey = $true
+    Write-Section "Installing $SetupProfile Profile Packages"
+
+    # Common Winget packages for both profiles
+    $CommonWinget = @(
+        'Microsoft.VisualStudioCode',
+        'Git.Git',
+        'Docker.DockerDesktop',
+        'OpenJS.NodeJS',
+        'GitHub.cli',
+        'Microsoft.PowerShell',
+        'PuTTY.PuTTY',
+        'WinSCP.WinSCP',
+        'Google.Chrome',
+        'Microsoft.Edge',
+        'Brave.Brave',
+        'Notepad++.Notepad++',
+        'geeksoftwareGmbH.PDF24Creator',
+        'Obsidian.Obsidian'
+    )
+
+    # Profile-specific Winget packages
+    $ProfileWinget = @()
+    if ($SetupProfile -eq 'Work') {
+        $ProfileWinget = @(
+            'Microsoft.AzureCLI',
+            'JohnMacFarlane.Pandoc',
+            'Microsoft.Teams',
+            'Zoom.Zoom.EXE',
+            'WatchGuard.MobileVPNWithSSLClient',
+            'RevoUninstaller.RevoUninstaller'
+        )
+    } else {
+        # Home profile
+        $ProfileWinget = @(
+            'Ollama.Ollama',
+            'Proton.ProtonVPN',
+            'Proton.ProtonMail',
+            'Discord.Discord',
+            'Spotify.Spotify',
+            'OpenVPNTechnologies.OpenVPN',
+            'Logitech.OptionsPlus',
+            'Zoom.Zoom.EXE'
+        )
+        if (-not $SkipGaming) {
+            $ProfileWinget += 'Valve.Steam'
+        }
     }
 
-    if ($Minimal) {
-        $ConfigArgs['Minimal'] = $true
+    $AllWinget = $CommonWinget + $ProfileWinget
+
+    # Install via Winget
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        winget source update --accept-source-agreements 2>$null
+
+        foreach ($Package in $AllWinget) {
+            Write-Info "Installing $Package..."
+            winget install --id $Package --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
+        }
+        Write-Success "Winget packages installed"
+    } else {
+        Write-Warning "Winget not available. Install packages manually."
     }
 
-    Write-Info "Running system configuration script..."
-    Write-Info "Script: $WorkLaptopScript"
+    # Common Chocolatey packages
+    if (Get-Command choco -ErrorAction SilentlyContinue) {
+        $ChocoPackages = @('python', 'python3', 'uv', 'pandoc', 'bind-toolsonly', 'grype', 'syft')
 
-    & $WorkLaptopScript @ConfigArgs
-
-    Write-Success "System configuration completed"
+        foreach ($Package in $ChocoPackages) {
+            Write-Info "Installing $Package via Chocolatey..."
+            choco install $Package -y --no-progress 2>&1 | Out-Null
+        }
+        Write-Success "Chocolatey packages installed"
+    }
 }
 
 # Show post-installation tasks
@@ -248,11 +392,18 @@ function Main {
 
     Write-Info "Starting Fresh Windows 11 Setup..."
     Write-Info "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+    if ($SetupProfile) {
+        Write-Info "Profile: $SetupProfile"
+    }
     Write-Info ""
 
     # Pre-flight checks
     Test-PowerShellVersion
-    Test-RequiredFiles
+
+    # Only check for exported package files if no profile specified
+    if (-not $SetupProfile) {
+        Test-RequiredFiles
+    }
 
     # Show configuration and confirm
     Show-SetupSummary
@@ -260,7 +411,13 @@ function Main {
     # Execute setup steps
     $StartTime = Get-Date
 
-    Install-Packages
+    # Use profile-based packages if profile specified, otherwise use exported packages
+    if ($SetupProfile) {
+        Install-ProfilePackages
+    } else {
+        Install-Packages
+    }
+
     Set-SystemConfiguration
 
     $EndTime = Get-Date
