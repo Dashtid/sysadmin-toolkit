@@ -347,7 +347,7 @@ SCRIPT
     [ -f "$SCRIPT_PATH" ]
 }
 
-@test "[i] Script size is reasonable (< 1000 lines)" {
+@test "[i] Script size is reasonable under 1000 lines" {
     line_count=$(wc -l < "$SCRIPT_PATH")
     [ "$line_count" -lt 1000 ]
 }
