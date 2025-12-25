@@ -655,8 +655,8 @@ function Get-NetworkHealthReport {
 
     # Connectivity tests (ping)
     Write-InfoMessage "Testing host connectivity..."
-    foreach ($host in $Hosts) {
-        $connectResult = Test-HostConnectivity -HostName $host
+    foreach ($targetHost in $Hosts) {
+        $connectResult = Test-HostConnectivity -HostName $targetHost
         $report.ConnectivityTests += $connectResult
         $report.Summary.TotalTests++
 
@@ -696,9 +696,9 @@ function Get-NetworkHealthReport {
     # Port connectivity tests
     if (-not $SkipPortScan) {
         Write-InfoMessage "Testing port connectivity..."
-        foreach ($host in $Hosts) {
+        foreach ($targetHost in $Hosts) {
             foreach ($port in $Ports) {
-                $portResult = Test-PortConnectivity -HostName $host -Port $port
+                $portResult = Test-PortConnectivity -HostName $targetHost -Port $port
                 $report.PortTests += $portResult
                 $report.Summary.TotalTests++
 
