@@ -51,7 +51,8 @@ teardown() {
 # ============================================================================
 
 @test "[-] Script contains no emojis (CLAUDE.md compliance)" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|🎉|⚠️|📁' "$SCRIPT_PATH"
+    # Use literal emoji chars instead of PCRE ranges for portability
+    ! grep -E '✅|❌|🎉|⚠️|📁|🔄|✓|✗' "$SCRIPT_PATH"
 }
 
 @test "[+] Script uses ASCII markers [+] [-] [i] [!]" {
@@ -355,13 +356,7 @@ SCRIPT
 # ============================================================================
 
 @test "[+] All logging functions work together" {
-    run bash -c "
-        source $SCRIPT_PATH
-        log_info 'Info test'
-        log_success 'Success test'
-        log_warning 'Warning test'
-        log_error 'Error test'
-    "
+    run bash -c "source '$SCRIPT_PATH' && log_info 'Info test' && log_success 'Success test' && log_warning 'Warning test' && log_error 'Error test'"
     [ "$status" -eq 0 ]
     [[ "$output" =~ \[i\] ]]
     [[ "$output" =~ \[+\] ]]
@@ -370,12 +365,7 @@ SCRIPT
 }
 
 @test "[+] Validation functions don't interfere with each other" {
-    run bash -c "
-        source $SCRIPT_PATH
-        validate_ip '192.168.1.1' && \
-        validate_hostname 'server01' && \
-        echo 'Both validations passed'
-    "
+    run bash -c "source '$SCRIPT_PATH' && validate_ip '192.168.1.1' && validate_hostname 'server01' && echo 'Both validations passed'"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Both validations passed" ]]
 }
