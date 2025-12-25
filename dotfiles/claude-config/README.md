@@ -183,5 +183,5 @@ Check the deny/ask lists in `settings.json`. You can override by modifying `sett
 ---
 
 **Version**: 2.1
-**Last Updated**: 2025-10-12
+**Last Updated**: 2025-12-25
 **Maintained By**: [Your GitHub Username]

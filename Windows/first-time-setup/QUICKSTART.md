@@ -36,9 +36,8 @@ git push
 | Script | Purpose | When to Use |
 |--------|---------|-------------|
 | `export-current-packages.ps1` | Capture current packages | Before reinstalling, monthly backup |
-| `fresh-windows-setup.ps1` | Complete automated setup | New Windows 11 installation |
+| `fresh-windows-setup.ps1` | Complete automated setup | New Windows 11 installation (supports -Profile Work/Home) |
 | `install-from-exported-packages.ps1` | Install packages only | Just need software, skip config |
-| `work-laptop-setup.ps1` | System configuration only | After packages are installed |
 
 ## [!] Prerequisites
 
@@ -226,4 +225,4 @@ git add -u && git commit -m "update: monthly package refresh" && git push
 
 **Full documentation:** See [README.md](README.md) for complete details.
 
-**Last Updated:** 2025-10-12
+**Last Updated:** 2025-12-25

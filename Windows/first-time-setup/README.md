@@ -21,8 +21,8 @@ For a brand new Windows 11 installation, run these scripts in order:
 # 2. On your NEW machine, install all packages
 .\install-from-exported-packages.ps1
 
-# 3. Complete system configuration (optional)
-.\work-laptop-setup.ps1 -SkipWinget -SkipChocolatey
+# 3. Or use full setup with profile support
+.\fresh-windows-setup.ps1 -Profile Work
 ```
 
 ## [i] Current Package Lists
@@ -134,27 +134,33 @@ Installs all packages from previously exported lists.
 
 **Time estimate:** 30-60 minutes depending on internet speed
 
-### work-laptop-setup.ps1
+### fresh-windows-setup.ps1
 
-Comprehensive system configuration beyond just package installation.
+Complete automated setup with profile-based configuration (Work/Home).
 
 **Usage:**
 ```powershell
-# Full setup (use after install-from-exported-packages.ps1)
-.\work-laptop-setup.ps1 -SkipWinget -SkipChocolatey
+# Full work profile setup
+.\fresh-windows-setup.ps1 -Profile Work
+
+# Full home profile setup (includes gaming packages)
+.\fresh-windows-setup.ps1 -Profile Home
+
+# Skip package install (configuration only)
+.\fresh-windows-setup.ps1 -Profile Work -SkipPackageInstall
 
 # Minimal setup
-.\work-laptop-setup.ps1 -Minimal
+.\fresh-windows-setup.ps1 -Profile Work -Minimal
 ```
 
 **What it does:**
+- Installs packages from winget/chocolatey based on profile
 - Configures Windows features (Hyper-V, WSL2, Containers)
 - Installs PowerShell modules (posh-git, oh-my-posh, etc.)
 - Configures PowerShell profile
 - Sets up Git configuration
 - Creates development directory structure
 - Configures Windows settings (dark mode, show extensions, etc.)
-- Creates desktop shortcuts
 
 ## [!] Prerequisites
 
@@ -219,9 +225,9 @@ winget install Microsoft.PowerShell
 
 5. **Wait for installation to complete** (30-60 minutes)
 
-6. **Run system configuration:**
+6. **Or run complete setup (alternative to steps 4-5):**
    ```powershell
-   .\work-laptop-setup.ps1 -SkipWinget -SkipChocolatey
+   .\fresh-windows-setup.ps1 -Profile Work
    ```
 
 7. **Reboot your computer**
@@ -394,7 +400,7 @@ Edit the exported JSON/XML files directly:
 
 ### Adding Custom Configuration
 
-Modify `work-laptop-setup.ps1` to add:
+Modify `fresh-windows-setup.ps1` to add:
 - Additional Windows registry tweaks
 - Custom PowerShell functions
 - More PowerShell modules
@@ -409,7 +415,7 @@ C:\Users\YourName\.setup-logs\
 
 Log files include:
 - `package-install-YYYYMMDD-HHMMSS.log` - Package installation
-- `work-laptop-setup-YYYYMMDD-HHMMSS.log` - System configuration
+- `fresh-windows-setup-YYYYMMDD-HHMMSS.log` - System configuration
 - `installed-programs.txt` - Full list of installed software
 - `chocolatey-packages.txt` - Readable Chocolatey list
 - `last-export.txt` - Timestamp of last export
@@ -455,7 +461,7 @@ For issues or questions:
 
 ---
 
-**Last Updated:** 2025-10-12
+**Last Updated:** 2025-12-25
 **Scripts Version:** 2.0
 **Winget Packages:** 57
 **Chocolatey Packages:** 52

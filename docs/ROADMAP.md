@@ -87,9 +87,9 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 **Implementation Notes**:
 ```powershell
-# Extend existing cleanup-disk.ps1
-# Add alerting mechanism
-# Visualization of disk usage
+# Now integrated into Get-SystemPerformance.ps1
+# Use -IncludeDiskAnalysis for detailed analysis
+# Use -AutoCleanup for automatic cleanup
 ```
 
 ### 1.4 Event Log Analyzer [COMPLETED]
@@ -159,7 +159,7 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 **Implementation Notes**:
 ```powershell
-# Extend backup-security-settings.ps1
+# Extend Backup-UserData.ps1 for system state
 # Export to structured JSON format
 # Include restoration instructions
 ```
@@ -570,7 +570,7 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 **Implementation Notes**:
 ```powershell
-# Extend system-integrity-check.ps1
+# Use Repair-CommonIssues.ps1 -Fix SystemFiles
 # Elevated privilege requirements
 # Progress reporting for long operations
 # Pre-check to determine needed repairs
@@ -596,7 +596,7 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 6. [x] User Account Audit - Windows/security/Get-UserAccountAudit.ps1
 7. [x] Common Issue Auto-Fixer - Windows/troubleshooting/Repair-CommonIssues.ps1
-8. [x] Disk Space Monitor - Windows/monitoring/Watch-DiskSpace.ps1
+8. [x] Disk Space Monitor - Merged into Get-SystemPerformance.ps1 (-IncludeDiskAnalysis)
 9. [x] Application Health Monitor - Windows/monitoring/Get-ApplicationHealth.ps1
 10. [x] System Information Reporter - Windows/reporting/Get-SystemReport.ps1
 
@@ -645,10 +645,11 @@ These can be implemented quickly with high value:
 
 ## Integration Points
 
-### With Existing Scripts:
-- **Performance Monitor** → Can trigger cleanup-disk.ps1 when thresholds exceeded
-- **Event Log Analyzer** → Integrate with audit-security-posture.ps1
-- **Backup Script** → Use backup-security-settings.ps1 patterns
+### With Existing Scripts
+
+- **Performance Monitor** → Includes disk cleanup via -AutoCleanup parameter
+- **Event Log Analyzer** → Integrate with Get-UserAccountAudit.ps1
+- **Backup Script** → Backup-UserData.ps1 handles user data and settings
 - **Service Monitor** → Extend startup_script.ps1 capabilities
 - **Network Diagnostics** → Use in gitea-tunnel-manager.ps1 health checks
 
@@ -696,9 +697,9 @@ Track implementation progress:
   - Watch-ServiceHealth.ps1
   - Get-EventLogAnalysis.ps1
   - Disk Space Monitor (integrated into Get-SystemPerformance.ps1)
-- [x] Backup category (2/3 scripts - security settings + user backup done)
-  - backup-security-settings.ps1 (existing)
-  - Backup-UserData.ps1 (NEW)
+- [x] Backup category (2/3 scripts)
+  - Backup-UserData.ps1 (includes security settings backup)
+  - Backup-BrowserProfiles.ps1
 - [x] Network category (2/3 scripts)
   - Test-NetworkHealth.ps1 (NEW)
   - Manage-VPN.ps1 (NEW)
@@ -713,16 +714,56 @@ Track implementation progress:
   - Test-DevEnvironment.ps1 (NEW)
 - [x] Reporting (1/2 scripts) - Get-SystemReport.ps1 (NEW)
 - [ ] Cloud integration (0/2 scripts)
-- [x] Troubleshooting (3/2 scripts - exceeds target)
-  - system-integrity-check.ps1 (existing)
-  - cleanup-disk.ps1 (existing)
-  - Repair-CommonIssues.ps1 (NEW)
+- [x] Troubleshooting (1/2 scripts)
+  - Repair-CommonIssues.ps1 (includes SFC/DISM via -Fix SystemFiles)
 
-**Current Completion**: ~75% of identified functionality
+**Windows Completion**: ~75% of identified functionality
 **Tier 1 Status**: COMPLETE (2025-11-30)
 **Tier 2 Status**: COMPLETE (2025-11-30)
 **Tier 3 Status**: COMPLETE (2025-11-30)
 **Target Phase 4**: 90% completion (Tier 4 advanced features)
+
+---
+
+## Linux Parity Initiative (2025-12-25)
+
+Closing the gap between Windows and Linux script coverage.
+
+### Completed Linux Scripts
+
+- [x] **Security Hardening** - Linux/security/security-hardening.sh (NEW)
+  - SSH hardening (key-only auth, disable root login, secure ciphers)
+  - Firewall configuration (UFW with sensible defaults)
+  - Kernel hardening (sysctl security parameters)
+  - File permission auditing (sensitive files, SUID/SGID)
+  - User security (password policies, inactive accounts)
+  - Service hardening (disable risky services)
+  - Automatic security updates
+  - Audit mode + apply mode with backups
+
+- [x] **Service Health Monitor** - Linux/monitoring/service-health-monitor.sh (NEW)
+  - Monitor critical services (configurable list)
+  - Auto-restart failed services with retry logic
+  - Multiple alert methods (log, email, Slack)
+  - Prometheus metrics export
+  - Daemon mode with configurable interval
+  - JSON config file support
+
+### Linux Test Coverage
+
+- [x] CommonFunctions.bats - 60+ tests for bash library
+- [x] maintenance.bats - Maintenance script tests
+- [x] SystemHealthCheck.bats - NEW: 40+ tests
+- [x] SecurityHardening.bats - NEW: 60+ tests
+- [x] ServiceHealthMonitor.bats - NEW: 50+ tests
+
+**Linux Test Total**: 5 BATS test files, 200+ test assertions
+
+### CI/CD Improvements
+
+- [x] Strict shellcheck (removed || true, proper exclusions)
+- [x] All BATS tests run in CI
+- [x] Severity threshold: warning level
 
 ---
 
@@ -738,4 +779,5 @@ Track implementation progress:
 **Tier 1 Completed**: 2025-11-30
 **Tier 2 Completed**: 2025-11-30
 **Tier 3 Completed**: 2025-11-30
+**Linux Parity**: 2025-12-25 (security-hardening.sh, service-health-monitor.sh)
 **Next Review**: When ready to implement Tier 4 features

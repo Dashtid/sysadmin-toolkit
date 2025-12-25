@@ -13,8 +13,8 @@ setup() {
     [ -f "${LINUX_MAINTENANCE}/disk-cleanup.sh" ]
 }
 
-@test "system-update.sh exists" {
-    [ -f "${LINUX_MAINTENANCE}/system-update.sh" ]
+@test "system-updates.sh exists" {
+    [ -f "${LINUX_MAINTENANCE}/system-updates.sh" ]
 }
 
 # Test script permissions
@@ -22,8 +22,8 @@ setup() {
     [ -x "${LINUX_MAINTENANCE}/disk-cleanup.sh" ]
 }
 
-@test "system-update.sh is executable" {
-    [ -x "${LINUX_MAINTENANCE}/system-update.sh" ]
+@test "system-updates.sh is executable" {
+    [ -x "${LINUX_MAINTENANCE}/system-updates.sh" ]
 }
 
 # Test script syntax (bash -n checks syntax without executing)
@@ -31,8 +31,8 @@ setup() {
     bash -n "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-@test "system-update.sh has valid bash syntax" {
-    bash -n "${LINUX_MAINTENANCE}/system-update.sh"
+@test "system-updates.sh has valid bash syntax" {
+    bash -n "${LINUX_MAINTENANCE}/system-updates.sh"
 }
 
 # Test for proper shebang
@@ -40,8 +40,8 @@ setup() {
     head -1 "${LINUX_MAINTENANCE}/disk-cleanup.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
 }
 
-@test "system-update.sh has bash shebang" {
-    head -1 "${LINUX_MAINTENANCE}/system-update.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
+@test "system-updates.sh has bash shebang" {
+    head -1 "${LINUX_MAINTENANCE}/system-updates.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
 }
 
 # Test for no emojis (per CLAUDE.md rules)
@@ -49,8 +49,8 @@ setup() {
     ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-@test "system-update.sh contains no emojis" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/system-update.sh"
+@test "system-updates.sh contains no emojis" {
+    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/system-updates.sh"
 }
 
 # Test for ASCII markers [+] [-] [i] [!]
@@ -58,8 +58,8 @@ setup() {
     grep -q '\[\+\]\|\[-\]\|\[i\]\|\[!\]' "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-@test "system-update.sh uses ASCII markers" {
-    grep -q '\[\+\]\|\[-\]\|\[i\]\|\[!\]' "${LINUX_MAINTENANCE}/system-update.sh"
+@test "system-updates.sh uses ASCII markers" {
+    grep -q '\[\+\]\|\[-\]\|\[i\]\|\[!\]' "${LINUX_MAINTENANCE}/system-updates.sh"
 }
 
 # Test for no hardcoded credentials
@@ -67,8 +67,8 @@ setup() {
     ! grep -i "password=" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-@test "system-update.sh contains no API keys" {
-    ! grep -i "api[_-]\?key=" "${LINUX_MAINTENANCE}/system-update.sh"
+@test "system-updates.sh contains no API keys" {
+    ! grep -i "api[_-]\?key=" "${LINUX_MAINTENANCE}/system-updates.sh"
 }
 
 # Test for error handling
@@ -76,8 +76,8 @@ setup() {
     grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-@test "system-update.sh has error handling" {
-    grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/system-update.sh"
+@test "system-updates.sh has error handling" {
+    grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/system-updates.sh"
 }
 
 # Test for logging approach (either functions or colored echo)
@@ -88,7 +88,7 @@ setup() {
 
 # Test for sudo checks where needed
 @test "scripts check for appropriate privileges" {
-    grep -q "EUID\|whoami\|sudo" "${LINUX_MAINTENANCE}/system-update.sh"
+    grep -q "EUID\|whoami\|sudo" "${LINUX_MAINTENANCE}/system-updates.sh"
 }
 
 # Test script help output (dry run)
@@ -109,11 +109,71 @@ setup() {
 }
 
 # Test for apt/yum/dnf update patterns
-@test "system-update.sh uses apt or yum/dnf" {
-    grep -q "apt.*update\|yum.*update\|dnf.*update" "${LINUX_MAINTENANCE}/system-update.sh"
+@test "system-updates.sh uses apt or yum/dnf" {
+    grep -q "apt.*update\|yum.*update\|dnf.*update" "${LINUX_MAINTENANCE}/system-updates.sh"
 }
 
 # Test for cleanup of package caches
 @test "disk-cleanup.sh cleans package manager caches" {
     grep -q "apt.*clean\|apt.*autoclean\|apt.*autoremove\|yum.*clean" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
+}
+
+# ============================================================================
+# LOG-CLEANUP.SH TESTS
+# ============================================================================
+
+@test "log-cleanup.sh exists" {
+    [ -f "${LINUX_MAINTENANCE}/log-cleanup.sh" ]
+}
+
+@test "log-cleanup.sh is executable" {
+    [ -x "${LINUX_MAINTENANCE}/log-cleanup.sh" ]
+}
+
+@test "log-cleanup.sh has valid bash syntax" {
+    bash -n "${LINUX_MAINTENANCE}/log-cleanup.sh"
+}
+
+@test "log-cleanup.sh has bash shebang" {
+    head -1 "${LINUX_MAINTENANCE}/log-cleanup.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
+}
+
+@test "log-cleanup.sh contains no emojis" {
+    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/log-cleanup.sh"
+}
+
+@test "log-cleanup.sh has error handling" {
+    grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/log-cleanup.sh"
+}
+
+@test "log-cleanup.sh targets log files" {
+    grep -q "/var/log\|\.log\|journalctl" "${LINUX_MAINTENANCE}/log-cleanup.sh"
+}
+
+# ============================================================================
+# RESTORE-PREVIOUS-STATE.SH TESTS
+# ============================================================================
+
+@test "restore-previous-state.sh exists" {
+    [ -f "${LINUX_MAINTENANCE}/restore-previous-state.sh" ]
+}
+
+@test "restore-previous-state.sh is executable" {
+    [ -x "${LINUX_MAINTENANCE}/restore-previous-state.sh" ]
+}
+
+@test "restore-previous-state.sh has valid bash syntax" {
+    bash -n "${LINUX_MAINTENANCE}/restore-previous-state.sh"
+}
+
+@test "restore-previous-state.sh has bash shebang" {
+    head -1 "${LINUX_MAINTENANCE}/restore-previous-state.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
+}
+
+@test "restore-previous-state.sh contains no emojis" {
+    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/restore-previous-state.sh"
+}
+
+@test "restore-previous-state.sh has error handling" {
+    grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/restore-previous-state.sh"
 }

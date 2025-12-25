@@ -307,176 +307,14 @@ Describe "gitea-tunnel-manager.ps1 - Comprehensive Tests" {
 }
 
 # ============================================================================
-# COMPLETE-SSH-SETUP.PS1 TESTS
+# COMPLETE-SSH-SETUP.PS1 TESTS - REMOVED
+# Script deleted - was a template with hardcoded placeholder keys
 # ============================================================================
 
-Describe "complete-ssh-setup.ps1 - Comprehensive Tests" {
-    BeforeAll {
-        $ScriptPath = Join-Path $SSHScriptsPath "complete-ssh-setup.ps1"
-        $ScriptContent = Get-Content $ScriptPath -Raw
-    }
-
-    Context "Script Structure" {
-        It "Script exists" {
-            Test-Path $ScriptPath | Should -Be $true
-        }
-
-        It "Has valid syntax" {
-            $Errors = $null
-            [System.Management.Automation.PSParser]::Tokenize($ScriptContent, [ref]$Errors)
-            $Errors.Count | Should -Be 0
-        }
-
-        It "Requires Administrator privileges" {
-            $ScriptContent | Should -Match '#Requires -RunAsAdministrator'
-        }
-    }
-
-    Context "OpenSSH Server Installation" {
-        It "Checks for OpenSSH Server capability" {
-            $ScriptContent | Should -Match 'OpenSSH.Server|Add-WindowsCapability'
-        }
-
-        It "Installs OpenSSH Server if missing" {
-            $ScriptContent | Should -Match 'Add-WindowsCapability.*OpenSSH'
-        }
-
-        It "Checks service status" {
-            $ScriptContent | Should -Match 'Get-Service.*sshd'
-        }
-    }
-
-    Context "Service Configuration" {
-        It "Starts SSH service" {
-            $ScriptContent | Should -Match 'Start-Service.*sshd'
-        }
-
-        It "Sets service to automatic startup" {
-            $ScriptContent | Should -Match 'Set-Service.*Automatic|StartupType.*Automatic'
-        }
-
-        It "Verifies service is running" {
-            $ScriptContent | Should -Match 'Status.*Running|Get-Service.*Status'
-        }
-    }
-
-    Context "Firewall Configuration" {
-        It "Checks for existing firewall rule" {
-            $ScriptContent | Should -Match 'Get-NetFirewallRule.*OpenSSH'
-        }
-
-        It "Creates firewall rule if needed" {
-            $ScriptContent | Should -Match 'New-NetFirewallRule'
-        }
-
-        It "Opens port 22" {
-            $ScriptContent | Should -Match 'LocalPort.*22|Port.*22'
-        }
-
-        It "Configures inbound rule" {
-            $ScriptContent | Should -Match 'Direction.*Inbound|Inbound'
-        }
-    }
-
-    Context "SSH Key Authentication Setup" {
-        It "Creates .ssh directory" {
-            $ScriptContent | Should -Match 'New-Item.*\.ssh|mkdir.*\.ssh'
-        }
-
-        It "Manages authorized_keys file" {
-            $ScriptContent | Should -Match 'authorized_keys'
-        }
-
-        It "Sets file permissions with icacls" {
-            $ScriptContent | Should -Match 'icacls'
-        }
-
-        It "Adds public keys" {
-            $ScriptContent | Should -Match 'Add-Content.*authorized_keys|Set-Content'
-        }
-    }
-
-    Context "Security Hardening" {
-        It "Configures SSH daemon settings" {
-            $ScriptContent | Should -Match 'sshd_config|Set-Content.*sshd'
-        }
-
-        It "Disables password authentication (optional)" {
-            if ($ScriptContent -match 'sshd_config') {
-                $ScriptContent | Should -Match 'PasswordAuthentication|PubkeyAuthentication'
-            }
-        }
-    }
-
-    Context "Validation and Testing" {
-        It "Provides connection test instructions" {
-            $ScriptContent | Should -Match 'ssh.*@|Test.*connection|Connect'
-        }
-
-        It "Shows completion message" {
-            $ScriptContent | Should -Match 'complete|success|done'
-        }
-    }
-}
-
 # ============================================================================
-# SETUP-SSH-KEY-AUTH.PS1 TESTS
+# SETUP-SSH-KEY-AUTH.PS1 TESTS - REMOVED
+# Script deleted - was a template with hardcoded placeholder keys
 # ============================================================================
-
-Describe "setup-ssh-key-auth.ps1 - Comprehensive Tests" {
-    BeforeAll {
-        $ScriptPath = Join-Path $SSHScriptsPath "setup-ssh-key-auth.ps1"
-        if (Test-Path $ScriptPath) {
-            $ScriptContent = Get-Content $ScriptPath -Raw
-        }
-    }
-
-    Context "Script Existence and Structure" {
-        It "Script exists" {
-            Test-Path $ScriptPath | Should -Be $true
-        }
-
-        It "Has valid syntax" {
-            $Errors = $null
-            [System.Management.Automation.PSParser]::Tokenize($ScriptContent, [ref]$Errors)
-            $Errors.Count | Should -Be 0
-        }
-    }
-
-    Context "Key Generation" {
-        It "Can generate SSH keys" {
-            $ScriptContent | Should -Match 'ssh-keygen|New.*Key'
-        }
-
-        It "Supports ed25519 keys" {
-            $ScriptContent | Should -Match 'ed25519|rsa'
-        }
-
-        It "Prompts for key passphrase" {
-            $ScriptContent | Should -Match 'passphrase|password|SecureString'
-        }
-    }
-
-    Context "Key Deployment" {
-        It "Copies public key to remote server" {
-            $ScriptContent | Should -Match 'ssh-copy-id|Copy.*authorized_keys|scp'
-        }
-
-        It "Validates key permissions" {
-            $ScriptContent | Should -Match 'chmod|icacls|permissions'
-        }
-    }
-
-    Context "Testing and Validation" {
-        It "Tests SSH connection" {
-            $ScriptContent | Should -Match 'ssh.*test|Test-Connection|ssh.*whoami'
-        }
-
-        It "Provides success feedback" {
-            $ScriptContent | Should -Match '\[+\]|success|complete'
-        }
-    }
-}
 
 # ============================================================================
 # INTEGRATION TESTS - SSH WORKFLOW
@@ -485,11 +323,11 @@ Describe "setup-ssh-key-auth.ps1 - Comprehensive Tests" {
 Describe "SSH Scripts Integration Tests" {
     Context "Script Interaction and Workflow" {
         It "All SSH scripts exist" {
+            # Note: complete-ssh-setup.ps1 and setup-ssh-key-auth.ps1 were removed
+            # (templates with hardcoded placeholder keys)
             $scripts = @(
                 "setup-ssh-agent-access.ps1"
                 "gitea-tunnel-manager.ps1"
-                "complete-ssh-setup.ps1"
-                "setup-ssh-key-auth.ps1"
             )
 
             foreach ($script in $scripts) {
