@@ -241,13 +241,19 @@ teardown() {
     COUNTER_FILE="${TEST_TEMP_DIR}/retry_counter"
     echo "0" > "$COUNTER_FILE"
 
+    # Create a helper script that fails twice then succeeds
+    cat > "${TEST_TEMP_DIR}/retry_test.sh" << 'SCRIPT'
+#!/bin/bash
+COUNTER_FILE="$1"
+count=$(cat "$COUNTER_FILE")
+count=$((count + 1))
+echo $count > "$COUNTER_FILE"
+[ $count -ge 3 ]
+SCRIPT
+    chmod +x "${TEST_TEMP_DIR}/retry_test.sh"
+
     # Command that fails twice then succeeds
-    run retry_command 5 1 bash -c "
-        count=\$(cat $COUNTER_FILE)
-        count=\$((count + 1))
-        echo \$count > $COUNTER_FILE
-        [ \$count -ge 3 ]
-    "
+    run retry_command 5 1 "${TEST_TEMP_DIR}/retry_test.sh" "$COUNTER_FILE"
 
     [ "$status" -eq 0 ]
     [ "$(cat "$COUNTER_FILE")" -eq 3 ]
