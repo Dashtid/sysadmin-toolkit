@@ -6,7 +6,7 @@ set -euo pipefail
 
 ### --- Updates & Upgrades ---
 update_system() {
-    echo "🔄 Updating system..."
+    echo "[i] Updating system..."
     apt update && apt -y upgrade && apt -y dist-upgrade
     apt -y autoremove --purge
     apt -y autoclean
@@ -14,7 +14,7 @@ update_system() {
 
 ### --- Security Hardening ---
 configure_firewall() {
-    echo "🛡️ Configuring UFW firewall..."
+    echo "[i] Configuring UFW firewall..."
     apt install -y ufw
     ufw default deny incoming
     ufw default allow outgoing
@@ -24,7 +24,7 @@ configure_firewall() {
 }
 
 secure_ssh() {
-    echo "🔒 Securing SSH..."
+    echo "[+] Securing SSH..."
     # Backup sshd_config
     cp /etc/ssh/sshd_config "/etc/ssh/sshd_config.bak.$(date +%F)"
     sed -i 's/#PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
@@ -33,7 +33,7 @@ secure_ssh() {
 }
 
 harden_fail2ban() {
-    echo "🚨 Configuring fail2ban..."
+    echo "[!] Configuring fail2ban..."
     apt install -y fail2ban
     systemctl enable --now fail2ban
     # Optional: create local jail config
@@ -49,14 +49,14 @@ EOF
 
 ### --- Monitoring & Logs ---
 setup_log_rotation() {
-    echo "📜 Ensuring logrotate is enabled..."
+    echo "[i] Ensuring logrotate is enabled..."
     apt install -y logrotate
     systemctl enable logrotate.timer
     systemctl start logrotate.timer
 }
 
 install_htop_sysstat() {
-    echo "📊 Installing monitoring tools..."
+    echo "[i] Installing monitoring tools..."
     apt install -y htop sysstat iotop vnstat
     systemctl enable --now sysstat
     systemctl enable --now vnstat
@@ -64,13 +64,13 @@ install_htop_sysstat() {
 
 ### --- Docker Maintenance ---
 docker_cleanup() {
-    echo "🐋 Cleaning up Docker..."
+    echo "[i] Cleaning up Docker..."
     docker system prune -af --volumes
 }
 
 ### --- Backup Hook ---
 backup_reminder() {
-    echo "💾 Reminder: set up backups!"
+    echo "[i] Reminder: set up backups!"
     echo "Suggested tool: restic, borgbackup, or rsync + cron"
 }
 
@@ -84,7 +84,7 @@ main() {
     install_htop_sysstat
     docker_cleanup
     backup_reminder
-    echo "✅ All maintenance tasks complete!"
+    echo "[+] All maintenance tasks complete!"
 }
 
 main
