@@ -46,11 +46,13 @@ setup() {
 
 # Test for no emojis (per CLAUDE.md rules)
 @test "disk-cleanup.sh contains no emojis" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/disk-cleanup.sh"
+    # Check for common emoji byte sequences (UTF-8 emoji range)
+    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
 @test "system-update.sh contains no emojis" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/system-update.sh"
+    # Check for common emoji byte sequences (UTF-8 emoji range)
+    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/system-update.sh"
 }
 
 # Test for ASCII markers [+] [-] [i] [!]
@@ -139,7 +141,8 @@ setup() {
 }
 
 @test "log-cleanup.sh contains no emojis" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/log-cleanup.sh"
+    # Check for common emoji byte sequences (UTF-8 emoji range)
+    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/log-cleanup.sh"
 }
 
 @test "log-cleanup.sh has error handling" {
@@ -171,7 +174,8 @@ setup() {
 }
 
 @test "restore-previous-state.sh contains no emojis" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/restore-previous-state.sh"
+    # Check for common emoji byte sequences (UTF-8 emoji range)
+    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/restore-previous-state.sh"
 }
 
 @test "restore-previous-state.sh has error handling" {

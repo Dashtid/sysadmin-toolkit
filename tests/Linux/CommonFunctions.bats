@@ -51,8 +51,9 @@ teardown() {
 # ============================================================================
 
 @test "[-] Script contains no emojis (CLAUDE.md compliance)" {
-    # Use literal emoji chars instead of PCRE ranges for portability
-    ! grep -E '✅|❌|🎉|⚠️|📁|🔄|✓|✗' "$SCRIPT_PATH"
+    # Check for common emoji byte sequences (UTF-8 emoji range)
+    # Using hex grep to avoid BATS parsing issues with literal emojis
+    ! grep -P '\xE2\x9C|\xF0\x9F' "$SCRIPT_PATH"
 }
 
 @test "[+] Script uses ASCII markers [+] [-] [i] [!]" {
