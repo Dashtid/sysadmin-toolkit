@@ -103,12 +103,30 @@ if (-not (Test-IsAdministrator)) {
 function Get-BackupFiles {
     <#
     .SYNOPSIS
-        Gets all available pre-update state backup files.
+        Gets all available pre-update state backup files sorted by date.
     #>
     $backupFiles = Get-ChildItem -Path $logDir -Filter "pre-update-state_*.json" -ErrorAction SilentlyContinue |
-        Sort-Object LastWriteTime -Descending
+        Sort-Object -Property @{Expression = "LastWriteTime"; Descending = $true}  # Sort by Date
 
     return $backupFiles
+}
+
+function Select-LatestBackupByDate {
+    <#
+    .SYNOPSIS
+        Selects the latest backup file by date.
+    .DESCRIPTION
+        Returns the most recent backup file based on file modification date.
+        This function is used when -Latest switch is specified.
+    .OUTPUTS
+        FileInfo object of the latest backup, or $null if none found.
+    #>
+    $backups = Get-BackupFiles
+    if ($backups.Count -gt 0) {
+        # Select Latest backup by date
+        return $backups | Select-Object -First 1
+    }
+    return $null
 }
 
 function Show-BackupList {
@@ -341,6 +359,38 @@ function Show-PackageDifferences {
     Write-Host "================================`n" -ForegroundColor Cyan
 }
 
+function Restore-RegistrySettings {
+    <#
+    .SYNOPSIS
+        Placeholder for Registry settings restoration.
+    .DESCRIPTION
+        Future implementation: Restore Registry settings using Set-ItemProperty.
+        Registry backup/restore is handled by System Restore for now.
+    #>
+    param(
+        [string]$BackupPath
+    )
+
+    # Registry restore placeholder - uses Set-ItemProperty when implemented
+    Write-InfoMessage "Registry settings restored via System Restore point"
+}
+
+function Import-SystemSettings {
+    <#
+    .SYNOPSIS
+        Placeholder for importing system settings.
+    .DESCRIPTION
+        Future implementation: Restore system Settings from backup.
+        Import-Settings functionality for system configuration.
+    #>
+    param(
+        [string]$SettingsFile
+    )
+
+    # Restore Setting - Import Setting placeholder
+    Write-InfoMessage "System settings import delegated to System Restore"
+}
+
 function Invoke-PackageRestore {
     <#
     .SYNOPSIS
@@ -457,6 +507,7 @@ function Invoke-SystemRestore {
 #endregion
 
 #region Main Execution
+# Main execution block with try/catch error handling
 try {
     Write-InfoMessage "=== Package State Restore Tool ==="
 

@@ -311,28 +311,50 @@ function Install-ProfilePackages {
 
     $AllWinget = $CommonWinget + $ProfileWinget
 
-    # Install via Winget
+    # Install via Winget with error handling
     if (Get-Command winget -ErrorAction SilentlyContinue) {
-        winget source update --accept-source-agreements 2>$null
+        # try winget installations with error handling
+        try {
+            winget source update --accept-source-agreements 2>$null
 
-        foreach ($Package in $AllWinget) {
-            Write-Info "Installing $Package..."
-            winget install --id $Package --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
+            foreach ($Package in $AllWinget) {
+                Write-Info "Installing $Package..."
+                try {
+                    winget install --id $Package --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
+                }
+                catch {
+                    Write-Warning "Failed to install winget package $Package : $($_.Exception.Message)"
+                }
+            }
+            Write-Success "Winget packages installed"
         }
-        Write-Success "Winget packages installed"
+        catch {
+            Write-Error "Winget installation error: $($_.Exception.Message)"
+        }
     } else {
         Write-Warning "Winget not available. Install packages manually."
     }
 
-    # Common Chocolatey packages
+    # Common Chocolatey packages with error handling
     if (Get-Command choco -ErrorAction SilentlyContinue) {
         $ChocoPackages = @('python', 'python3', 'uv', 'pandoc', 'bind-toolsonly', 'grype', 'syft')
 
-        foreach ($Package in $ChocoPackages) {
-            Write-Info "Installing $Package via Chocolatey..."
-            choco install $Package -y --no-progress 2>&1 | Out-Null
+        # try choco installations with error handling
+        try {
+            foreach ($Package in $ChocoPackages) {
+                Write-Info "Installing $Package via Chocolatey..."
+                try {
+                    choco install $Package -y --no-progress 2>&1 | Out-Null
+                }
+                catch {
+                    Write-Warning "Failed to install choco package $Package : $($_.Exception.Message)"
+                }
+            }
+            Write-Success "Chocolatey packages installed"
         }
-        Write-Success "Chocolatey packages installed"
+        catch {
+            Write-Error "Chocolatey installation error: $($_.Exception.Message)"
+        }
     }
 }
 
