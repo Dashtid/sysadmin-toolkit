@@ -200,7 +200,7 @@ Describe "Monitoring Script Parameters" {
         }
 
         It "OutputFormat has valid ValidateSet" {
-            $scriptContent | Should -Match "ValidateSet\('Console', 'HTML', 'JSON', 'CSV', 'All'\)"
+            $scriptContent | Should -Match "ValidateSet\('Console', 'HTML', 'JSON', 'CSV', 'Prometheus', 'All'\)"
         }
     }
 

@@ -350,6 +350,83 @@ function Get-LogDirectory {
     return $logPath
 }
 
+<#
+.SYNOPSIS
+    Exports metrics in Prometheus textfile collector format.
+
+.DESCRIPTION
+    Generates Prometheus-compatible metrics output for integration with node_exporter
+    textfile collector or similar Prometheus scraping tools.
+
+.PARAMETER Metrics
+    Array of metric hashtables. Each hashtable should contain:
+    - Name: The metric name (required)
+    - Help: Description of the metric (required)
+    - Type: Prometheus metric type - gauge, counter, histogram, summary (required)
+    - Labels: Optional hashtable of label key-value pairs
+    - Value: The metric value (required)
+
+.PARAMETER OutputPath
+    Optional path to write metrics file. If specified, writes to file for
+    node_exporter textfile collector integration.
+
+.OUTPUTS
+    Array of strings containing the Prometheus-formatted metrics.
+
+.EXAMPLE
+    $metrics = @(
+        @{ Name = "cpu_percent"; Help = "CPU usage percentage"; Type = "gauge"; Value = 45 }
+    )
+    Export-PrometheusMetrics -Metrics $metrics
+
+.EXAMPLE
+    $metrics = @(
+        @{ Name = "disk_bytes"; Help = "Disk usage"; Type = "gauge"; Labels = @{drive="C"}; Value = 1073741824 }
+    )
+    Export-PrometheusMetrics -Metrics $metrics -OutputPath "C:\metrics\node.prom"
+#>
+function Export-PrometheusMetrics {
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param(
+        [Parameter(Mandatory)]
+        [array]$Metrics,
+
+        [Parameter()]
+        [string]$OutputPath
+    )
+
+    $output = @()
+
+    foreach ($metric in $Metrics) {
+        # Add HELP line
+        $output += "# HELP $($metric.Name) $($metric.Help)"
+
+        # Add TYPE line
+        $output += "# TYPE $($metric.Name) $($metric.Type)"
+
+        # Build label string if labels exist
+        $labelStr = ""
+        if ($metric.Labels) {
+            $pairs = $metric.Labels.GetEnumerator() | ForEach-Object {
+                "$($_.Key)=`"$($_.Value)`""
+            }
+            $labelStr = "{$($pairs -join ',')}"
+        }
+
+        # Add metric line
+        $output += "$($metric.Name)$labelStr $($metric.Value)"
+    }
+
+    # Write to file if OutputPath specified
+    if ($OutputPath) {
+        $output | Out-File -FilePath $OutputPath -Encoding UTF8
+        Write-InfoMessage "Prometheus metrics written to: $OutputPath"
+    }
+
+    return $output
+}
+
 # Export public functions
 Export-ModuleMember -Function @(
     'Write-Log',
@@ -362,7 +439,8 @@ Export-ModuleMember -Function @(
     'Test-PowerShell7',
     'Get-PowerShell7Path',
     'Get-ToolkitRootPath',
-    'Get-LogDirectory'
+    'Get-LogDirectory',
+    'Export-PrometheusMetrics'
 )
 
 # Export color scheme for scripts that need custom colors

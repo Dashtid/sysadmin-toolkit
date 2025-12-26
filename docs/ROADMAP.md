@@ -2,8 +2,8 @@
 
 This document outlines potential future enhancements for the Windows & Linux Sysadmin Toolkit based on industry best practices and common sysadmin needs identified in 2025.
 
-**Status**: Active Development - Tier 1, Tier 2, Tier 3, & Quick Wins Complete
-**Last Updated**: 2025-12-25
+**Status**: Active Development - Tier 1, Tier 2, Tier 3, Tier 5, & Quick Wins Complete
+**Last Updated**: 2025-12-26
 
 ## Current Coverage Analysis
 
@@ -632,6 +632,48 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 **Total Effort**: ~15-20 hours
 **Impact**: Enterprise-level features and compliance
 
+### Tier 5: Observability & Developer Experience [COMPLETED]
+
+**Status**: COMPLETE (2025-12-26)
+**Total Effort**: ~4-6 hours
+**Impact**: Better monitoring integration and developer productivity
+
+#### Observability
+
+| Script | Status | Description |
+|--------|--------|-------------|
+| Export-PrometheusMetrics | Complete | Prometheus textfile exporter function in CommonFunctions.psm1 |
+| Get-SystemPerformance -Prometheus | Complete | Prometheus output format for performance monitoring |
+
+**Features**:
+- Prometheus textfile collector format (# HELP, # TYPE, metrics with labels)
+- Integration with node_exporter for Prometheus scraping
+- Export metrics to file for textfile collector integration
+- Windows system metrics: CPU, memory, disk, network, I/O
+
+#### Developer Experience
+
+| Script | Status | Description |
+|--------|--------|-------------|
+| Backup-DeveloperEnvironment.ps1 | Complete | Backup VSCode, Terminal, Git, SSH configs |
+| Restore-DeveloperEnvironment.ps1 | Complete | Restore developer environment from backup |
+
+**Features**:
+- VSCode settings and keybindings backup
+- VSCode extensions list export/reinstall
+- Windows Terminal settings backup
+- PowerShell profile backup
+- Git global configuration backup
+- SSH config backup
+- Timestamped backups with manifest.json
+- WhatIf support for preview
+- Automatic backup before restore
+
+#### Future Considerations (Not in scope - see defensive-toolkit)
+- Secret management → defensive-toolkit
+- Security hardening → defensive-toolkit
+- Compliance reporting → defensive-toolkit
+
 ---
 
 ## Quick Wins (1-2 hours each) [COMPLETED]
@@ -729,10 +771,11 @@ Track implementation progress:
 - [x] Troubleshooting (1/2 scripts)
   - Repair-CommonIssues.ps1 (includes SFC/DISM via -Fix SystemFiles)
 
-**Windows Completion**: ~85% of identified functionality
+**Windows Completion**: ~90% of identified functionality
 **Tier 1 Status**: COMPLETE (2025-11-30)
 **Tier 2 Status**: COMPLETE (2025-11-30)
 **Tier 3 Status**: COMPLETE (2025-11-30)
+**Tier 5 Status**: COMPLETE (2025-12-26) - Observability & Developer Experience
 **Quick Wins Status**: COMPLETE (2025-12-25)
 **Target Phase 4**: 95% completion (Tier 4 advanced features)
 
@@ -792,6 +835,7 @@ Closing the gap between Windows and Linux script coverage.
 **Tier 1 Completed**: 2025-11-30
 **Tier 2 Completed**: 2025-11-30
 **Tier 3 Completed**: 2025-11-30
+**Tier 5 Completed**: 2025-12-26 (Prometheus export, Developer environment backup/restore)
 **Quick Wins Completed**: 2025-12-25 (Export-SystemState, Test-BackupIntegrity, Compare-SoftwareInventory)
 **Linux Parity**: 2025-12-25 (security-hardening.sh, service-health-monitor.sh)
 **Next Review**: When ready to implement Tier 4 features

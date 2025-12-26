@@ -45,7 +45,8 @@ Describe "CommonFunctions Module - Basic Validation" {
                 'Test-PowerShell7',
                 'Get-PowerShell7Path',
                 'Get-ToolkitRootPath',
-                'Get-LogDirectory'
+                'Get-LogDirectory',
+                'Export-PrometheusMetrics'
             )
 
             foreach ($func in $expectedFunctions) {
@@ -572,6 +573,206 @@ Describe "CommonFunctions Module - Execution Coverage Tests" {
             $moduleContent | Should -Match '\$script:Colors'
             $moduleContent | Should -Match 'Red.*=.*''Red'''
             $moduleContent | Should -Match 'Green.*=.*''Green'''
+        }
+    }
+}
+
+Describe "CommonFunctions Module - Export-PrometheusMetrics" {
+    Context "Function Structure" {
+        It "Export-PrometheusMetrics function exists" {
+            Get-Command Export-PrometheusMetrics -Module CommonFunctions -ErrorAction SilentlyContinue |
+                Should -Not -BeNullOrEmpty
+        }
+
+        It "Export-PrometheusMetrics has Metrics parameter" {
+            $params = (Get-Command Export-PrometheusMetrics).Parameters
+            $params.ContainsKey('Metrics') | Should -Be $true
+        }
+
+        It "Export-PrometheusMetrics has OutputPath parameter" {
+            $params = (Get-Command Export-PrometheusMetrics).Parameters
+            $params.ContainsKey('OutputPath') | Should -Be $true
+        }
+
+        It "Export-PrometheusMetrics has CmdletBinding" {
+            $functionDef = (Get-Command Export-PrometheusMetrics).Definition
+            $functionDef | Should -Match "\[CmdletBinding\(\)\]"
+        }
+
+        It "Export-PrometheusMetrics has comment-based help" {
+            $help = Get-Help Export-PrometheusMetrics
+            $help.Synopsis | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Basic Metric Export" {
+        It "Exports single metric in Prometheus format" {
+            $metrics = @(
+                @{ Name = "test_metric"; Help = "Test metric description"; Type = "gauge"; Value = 42 }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Contain "# HELP test_metric Test metric description"
+            $result | Should -Contain "# TYPE test_metric gauge"
+            $result | Should -Contain "test_metric 42"
+        }
+
+        It "Exports multiple metrics" {
+            $metrics = @(
+                @{ Name = "metric_one"; Help = "First metric"; Type = "gauge"; Value = 10 }
+                @{ Name = "metric_two"; Help = "Second metric"; Type = "counter"; Value = 20 }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Contain "# HELP metric_one First metric"
+            $result | Should -Contain "# TYPE metric_one gauge"
+            $result | Should -Contain "metric_one 10"
+            $result | Should -Contain "# HELP metric_two Second metric"
+            $result | Should -Contain "# TYPE metric_two counter"
+            $result | Should -Contain "metric_two 20"
+        }
+
+        It "Handles counter metric type" {
+            $metrics = @(
+                @{ Name = "requests_total"; Help = "Total requests"; Type = "counter"; Value = 1234 }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Contain "# TYPE requests_total counter"
+        }
+
+        It "Handles gauge metric type" {
+            $metrics = @(
+                @{ Name = "temperature"; Help = "Current temp"; Type = "gauge"; Value = 23.5 }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Contain "# TYPE temperature gauge"
+        }
+    }
+
+    Context "Label Handling" {
+        It "Exports metric with single label" {
+            $metrics = @(
+                @{ Name = "disk_bytes"; Help = "Disk usage"; Type = "gauge"; Labels = @{ drive = "C" }; Value = 1073741824 }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Contain 'disk_bytes{drive="C"} 1073741824'
+        }
+
+        It "Exports metric with multiple labels" {
+            $metrics = @(
+                @{
+                    Name   = "http_requests"
+                    Help   = "HTTP requests"
+                    Type   = "counter"
+                    Labels = @{ method = "GET"; status = "200" }
+                    Value  = 500
+                }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            # Check that both labels are present (order may vary)
+            $metricLine = $result | Where-Object { $_ -match "^http_requests\{" }
+            $metricLine | Should -Not -BeNullOrEmpty
+            $metricLine | Should -Match 'method="GET"'
+            $metricLine | Should -Match 'status="200"'
+            $metricLine | Should -Match " 500$"
+        }
+
+        It "Handles metric without labels" {
+            $metrics = @(
+                @{ Name = "simple_metric"; Help = "Simple"; Type = "gauge"; Value = 100 }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Contain "simple_metric 100"
+            $result | Should -Not -Contain "simple_metric{"
+        }
+    }
+
+    Context "File Output" {
+        It "Writes metrics to file when OutputPath specified" {
+            $metrics = @(
+                @{ Name = "file_test_metric"; Help = "Test"; Type = "gauge"; Value = 99 }
+            )
+            $testPath = Join-Path $TestDrive "test_metrics.prom"
+
+            Export-PrometheusMetrics -Metrics $metrics -OutputPath $testPath
+
+            Test-Path $testPath | Should -Be $true
+        }
+
+        It "File contains correct content" {
+            $metrics = @(
+                @{ Name = "file_content_test"; Help = "Content test"; Type = "gauge"; Value = 123 }
+            )
+            $testPath = Join-Path $TestDrive "content_test.prom"
+
+            Export-PrometheusMetrics -Metrics $metrics -OutputPath $testPath
+            $content = Get-Content $testPath
+
+            $content | Should -Contain "# HELP file_content_test Content test"
+            $content | Should -Contain "# TYPE file_content_test gauge"
+            $content | Should -Contain "file_content_test 123"
+        }
+
+        It "Returns metrics even when writing to file" {
+            $metrics = @(
+                @{ Name = "return_test"; Help = "Return test"; Type = "gauge"; Value = 456 }
+            )
+            $testPath = Join-Path $TestDrive "return_test.prom"
+
+            $result = Export-PrometheusMetrics -Metrics $metrics -OutputPath $testPath
+
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -Contain "return_test 456"
+        }
+
+        It "Returns metrics without writing to file when OutputPath not specified" {
+            $metrics = @(
+                @{ Name = "no_file_test"; Help = "No file"; Type = "gauge"; Value = 789 }
+            )
+
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Not -BeNullOrEmpty
+            $result | Should -Contain "no_file_test 789"
+        }
+    }
+
+    Context "Windows Monitoring Integration Scenarios" {
+        It "Formats CPU metrics correctly" {
+            $metrics = @(
+                @{ Name = "windows_cpu_percent"; Help = "CPU usage percentage"; Type = "gauge"; Value = 45.5 }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Contain "# HELP windows_cpu_percent CPU usage percentage"
+            $result | Should -Contain "windows_cpu_percent 45.5"
+        }
+
+        It "Formats memory metrics correctly" {
+            $metrics = @(
+                @{ Name = "windows_memory_used_bytes"; Help = "Memory used in bytes"; Type = "gauge"; Value = 8589934592 }
+                @{ Name = "windows_memory_total_bytes"; Help = "Total memory in bytes"; Type = "gauge"; Value = 17179869184 }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Contain "windows_memory_used_bytes 8589934592"
+            $result | Should -Contain "windows_memory_total_bytes 17179869184"
+        }
+
+        It "Formats disk metrics with drive labels correctly" {
+            $metrics = @(
+                @{ Name = "windows_disk_free_bytes"; Help = "Free disk space"; Type = "gauge"; Labels = @{ drive = "C" }; Value = 107374182400 }
+                @{ Name = "windows_disk_free_bytes"; Help = "Free disk space"; Type = "gauge"; Labels = @{ drive = "D" }; Value = 536870912000 }
+            )
+            $result = Export-PrometheusMetrics -Metrics $metrics
+
+            $result | Should -Contain 'windows_disk_free_bytes{drive="C"} 107374182400'
+            $result | Should -Contain 'windows_disk_free_bytes{drive="D"} 536870912000'
         }
     }
 }

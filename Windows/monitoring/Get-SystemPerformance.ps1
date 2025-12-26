@@ -20,7 +20,8 @@
     - Network: Bytes sent/received, packets, errors, bandwidth utilization
 
 .PARAMETER OutputFormat
-    Output format for the report. Valid values: Console, HTML, JSON, CSV, All.
+    Output format for the report. Valid values: Console, HTML, JSON, CSV, Prometheus, All.
+    Prometheus format exports metrics in Prometheus textfile collector format.
     Default: Console
 
 .PARAMETER OutputPath
@@ -69,6 +70,10 @@
     .\Get-SystemPerformance.ps1 -Thresholds $thresholds -AlertOnly
     Only alerts when custom thresholds are exceeded.
 
+.EXAMPLE
+    .\Get-SystemPerformance.ps1 -OutputFormat Prometheus -OutputPath "C:\metrics"
+    Exports metrics in Prometheus textfile collector format for node_exporter.
+
 .NOTES
     File Name      : Get-SystemPerformance.ps1
     Author         : Windows & Linux Sysadmin Toolkit
@@ -88,7 +93,7 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [ValidateSet('Console', 'HTML', 'JSON', 'CSV', 'All')]
+    [ValidateSet('Console', 'HTML', 'JSON', 'CSV', 'Prometheus', 'All')]
     [string]$OutputFormat = 'Console',
 
     [Parameter()]
@@ -1203,6 +1208,169 @@ function Export-CSVReport {
     Write-Success "CSV report saved: $csvPath"
     return $csvPath
 }
+
+function Export-PrometheusReport {
+    <#
+    .SYNOPSIS
+        Exports metrics in Prometheus textfile collector format.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]$Metrics,
+
+        [hashtable]$SystemInfo,
+
+        [string]$Path
+    )
+
+    $timestamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
+    $promPath = Join-Path $Path "windows_performance_$timestamp.prom"
+
+    # Build metrics array for Export-PrometheusMetrics
+    $promMetrics = @()
+
+    # CPU metrics
+    $promMetrics += @{
+        Name   = "windows_cpu_usage_percent"
+        Help   = "CPU usage percentage"
+        Type   = "gauge"
+        Value  = $Metrics.CPU.UsagePercent
+    }
+    $promMetrics += @{
+        Name   = "windows_cpu_queue_length"
+        Help   = "Processor queue length"
+        Type   = "gauge"
+        Value  = $Metrics.CPU.QueueLength
+    }
+
+    # Memory metrics
+    $promMetrics += @{
+        Name   = "windows_memory_total_bytes"
+        Help   = "Total physical memory in bytes"
+        Type   = "gauge"
+        Value  = [math]::Round($Metrics.Memory.TotalGB * 1GB)
+    }
+    $promMetrics += @{
+        Name   = "windows_memory_available_bytes"
+        Help   = "Available physical memory in bytes"
+        Type   = "gauge"
+        Value  = [math]::Round($Metrics.Memory.AvailableGB * 1GB)
+    }
+    $promMetrics += @{
+        Name   = "windows_memory_used_bytes"
+        Help   = "Used physical memory in bytes"
+        Type   = "gauge"
+        Value  = [math]::Round($Metrics.Memory.UsedGB * 1GB)
+    }
+    $promMetrics += @{
+        Name   = "windows_memory_usage_percent"
+        Help   = "Memory usage percentage"
+        Type   = "gauge"
+        Value  = $Metrics.Memory.UsagePercent
+    }
+
+    # Disk I/O metrics
+    $promMetrics += @{
+        Name   = "windows_disk_activity_percent"
+        Help   = "Disk time percentage"
+        Type   = "gauge"
+        Value  = $Metrics.Disk.TimePercent
+    }
+    $promMetrics += @{
+        Name   = "windows_disk_queue_length"
+        Help   = "Disk queue length"
+        Type   = "gauge"
+        Value  = $Metrics.Disk.QueueLength
+    }
+    $promMetrics += @{
+        Name   = "windows_disk_read_bytes_per_second"
+        Help   = "Disk read rate in bytes per second"
+        Type   = "gauge"
+        Value  = [math]::Round($Metrics.Disk.ReadMBps * 1MB)
+    }
+    $promMetrics += @{
+        Name   = "windows_disk_write_bytes_per_second"
+        Help   = "Disk write rate in bytes per second"
+        Type   = "gauge"
+        Value  = [math]::Round($Metrics.Disk.WriteMBps * 1MB)
+    }
+
+    # Disk volume metrics
+    foreach ($vol in $Metrics.DiskVolumes) {
+        $drive = $vol.DriveLetter -replace ':', ''
+        $promMetrics += @{
+            Name   = "windows_disk_total_bytes"
+            Help   = "Total disk space in bytes"
+            Type   = "gauge"
+            Labels = @{ drive = $drive }
+            Value  = [math]::Round($vol.TotalGB * 1GB)
+        }
+        $promMetrics += @{
+            Name   = "windows_disk_free_bytes"
+            Help   = "Free disk space in bytes"
+            Type   = "gauge"
+            Labels = @{ drive = $drive }
+            Value  = [math]::Round($vol.FreeGB * 1GB)
+        }
+        $promMetrics += @{
+            Name   = "windows_disk_usage_percent"
+            Help   = "Disk usage percentage"
+            Type   = "gauge"
+            Labels = @{ drive = $drive }
+            Value  = $vol.UsagePercent
+        }
+    }
+
+    # Network metrics
+    if ($Metrics.Network.Keys.Count -gt 0) {
+        $promMetrics += @{
+            Name   = "windows_network_sent_bytes_total"
+            Help   = "Total bytes sent"
+            Type   = "counter"
+            Value  = [math]::Round($Metrics.Network.TotalSentGB * 1GB)
+        }
+        $promMetrics += @{
+            Name   = "windows_network_received_bytes_total"
+            Help   = "Total bytes received"
+            Type   = "counter"
+            Value  = [math]::Round($Metrics.Network.TotalReceivedGB * 1GB)
+        }
+        $promMetrics += @{
+            Name   = "windows_network_errors_total"
+            Help   = "Total network errors"
+            Type   = "counter"
+            Value  = $Metrics.Network.TotalErrors
+        }
+    }
+
+    # Alert count
+    $promMetrics += @{
+        Name   = "windows_performance_alerts"
+        Help   = "Number of active performance alerts"
+        Type   = "gauge"
+        Value  = $Metrics.Alerts.Count
+    }
+
+    # System info as labels on an info metric
+    if ($SystemInfo) {
+        $promMetrics += @{
+            Name   = "windows_system_info"
+            Help   = "System information"
+            Type   = "gauge"
+            Labels = @{
+                computer = $SystemInfo.ComputerName
+                os       = $SystemInfo.OSName -replace ' ', '_'
+            }
+            Value  = 1
+        }
+    }
+
+    # Export using the CommonFunctions Export-PrometheusMetrics
+    Export-PrometheusMetrics -Metrics $promMetrics -OutputPath $promPath
+    Write-Success "Prometheus metrics saved: $promPath"
+    return $promPath
+}
 #endregion
 
 #region Main Execution
@@ -1228,11 +1396,12 @@ try {
             # Skip output if AlertOnly and no alerts
             if (-not $AlertOnly -or $metrics.Alerts.Count -gt 0) {
                 switch ($OutputFormat) {
-                    'Console' { Write-ConsoleReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes }
-                    'HTML'    { Export-HTMLReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath }
-                    'JSON'    { Export-JSONReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath }
-                    'CSV'     { Export-CSVReport -Metrics $metrics -SystemInfo $systemInfo -Path $OutputPath }
-                    'All'     {
+                    'Console'    { Write-ConsoleReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes }
+                    'HTML'       { Export-HTMLReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath }
+                    'JSON'       { Export-JSONReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath }
+                    'CSV'        { Export-CSVReport -Metrics $metrics -SystemInfo $systemInfo -Path $OutputPath }
+                    'Prometheus' { Export-PrometheusReport -Metrics $metrics -SystemInfo $systemInfo -Path $OutputPath }
+                    'All'        {
                         Write-ConsoleReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes
                         Export-HTMLReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath
                         Export-JSONReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath
@@ -1257,11 +1426,12 @@ try {
         # Skip output if AlertOnly and no alerts
         if (-not $AlertOnly -or $metrics.Alerts.Count -gt 0) {
             switch ($OutputFormat) {
-                'Console' { Write-ConsoleReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes }
-                'HTML'    { Export-HTMLReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath }
-                'JSON'    { Export-JSONReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath }
-                'CSV'     { Export-CSVReport -Metrics $metrics -SystemInfo $systemInfo -Path $OutputPath }
-                'All'     {
+                'Console'    { Write-ConsoleReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes }
+                'HTML'       { Export-HTMLReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath }
+                'JSON'       { Export-JSONReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath }
+                'CSV'        { Export-CSVReport -Metrics $metrics -SystemInfo $systemInfo -Path $OutputPath }
+                'Prometheus' { Export-PrometheusReport -Metrics $metrics -SystemInfo $systemInfo -Path $OutputPath }
+                'All'        {
                     Write-ConsoleReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes
                     Export-HTMLReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath
                     Export-JSONReport -Metrics $metrics -SystemInfo $systemInfo -Processes $processes -Path $OutputPath
