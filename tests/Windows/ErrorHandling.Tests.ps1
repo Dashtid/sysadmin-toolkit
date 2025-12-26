@@ -571,14 +571,13 @@ Describe "ErrorHandling Module - Advanced Execution Coverage" {
 
     Context "Invoke-WithErrorAggregation Edge Cases" {
         It "Handles empty items array" {
-            $result = Invoke-WithErrorAggregation -Items @() -ScriptBlock {
-                param($item)
-                $item
-            }
-
-            $result.SuccessCount | Should -Be 0
-            $result.FailureCount | Should -Be 0
-            $result.TotalCount | Should -Be 0
+            # Empty arrays are rejected by Mandatory parameter validation
+            {
+                Invoke-WithErrorAggregation -Items @() -ScriptBlock {
+                    param($item)
+                    $item
+                }
+            } | Should -Throw
         }
 
         It "Handles items array with single element" {

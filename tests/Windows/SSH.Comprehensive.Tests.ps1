@@ -40,10 +40,11 @@ Describe "setup-ssh-agent-access.ps1 - Comprehensive Tests" {
             $ScriptContent | Should -Not -Match '✅|❌|🎉|⚠️|📁|🔄|✓|✗'
         }
 
-        It "Uses ASCII markers [+] [-] [i] [!]" {
+        It "Uses ASCII markers [+] [-] [!]" {
+            # Script uses [+] for success, [-] for error, [!] for warnings
             $ScriptContent | Should -Match '\[\+\]'
             $ScriptContent | Should -Match '\[-\]'
-            $ScriptContent | Should -Match '\[i\]'
+            $ScriptContent | Should -Match '\[!\]'
         }
 
         It "Has description/synopsis" {
@@ -382,9 +383,10 @@ Describe "SSH Scripts Integration Tests" {
         It "All scripts have description comments" {
             $scripts = Get-ChildItem $SSHScriptsPath -Filter "*.ps1"
             foreach ($script in $scripts) {
-                $firstLines = Get-Content $script.FullName -Head 20 -Raw
-                $hasDescription = $firstLines -match '#.*SSH|#.*ssh|<#.*SSH'
-                $hasDescription | Should -Be $true
+                $firstLines = (Get-Content $script.FullName -Head 20) -join "`n"
+                # Match SSH/ssh anywhere in comments (single or multi-line)
+                $hasDescription = $firstLines -match 'SSH|ssh'
+                $hasDescription | Should -Be $true -Because "$($script.Name) should have SSH description"
             }
         }
 

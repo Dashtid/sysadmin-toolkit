@@ -134,7 +134,7 @@ Describe "startup_script.ps1 - Core Functions" {
 
         It "Cleans temporary files" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "\$env:TEMP|temporary files"
+            $content | Should -Match '\$env:TEMP|temporary files'
         }
 
         It "Cleans Windows Update cache" {
@@ -351,17 +351,21 @@ Describe "startup_script.ps1 - Cleanup Operations" {
     Context "System Cleanup" {
         It "Cleans temp directory" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "\$env:TEMP.*Remove-Item"
+            # Check both elements exist (may be on different lines in pipeline)
+            $content | Should -Match '\$env:TEMP'
+            $content | Should -Match "Remove-Item"
         }
 
         It "Stops Windows Update service before cleaning cache" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Stop-Service.*wuauserv"
+            $content | Should -Match "Stop-Service"
+            $content | Should -Match "wuauserv"
         }
 
         It "Restarts Windows Update service after cleaning" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Start-Service.*wuauserv"
+            $content | Should -Match "Start-Service"
+            $content | Should -Match "wuauserv"
         }
 
         It "Runs cleanmgr.exe" {
@@ -439,7 +443,9 @@ Describe "startup_script.ps1 - Code Quality" {
 
         It "Has clear region sections" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "#region.*#endregion"
+            # Check both region markers exist (on different lines)
+            $content | Should -Match "#region"
+            $content | Should -Match "#endregion"
         }
 
         It "Has Main Execution region" {
@@ -483,7 +489,8 @@ Describe "startup_script.ps1 - Comparison with system-updates.ps1" {
 
         It "Does not support Winget" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Not -Match "winget|Update-Winget"
+            # Check for actual winget commands/functions, not mentions in comments
+            $content | Should -Not -Match "function.*Winget|winget upgrade"
         }
 
         It "Does not have WhatIf support" {

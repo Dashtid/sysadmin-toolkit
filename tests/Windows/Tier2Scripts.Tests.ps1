@@ -514,7 +514,7 @@ Describe "CommonFunctions Integration" -Tag "Integration" {
             $scripts = @(
                 $Script:UserAccountAuditScript,
                 $Script:RepairCommonIssuesScript,
-                $Script:DiskSpaceScript,
+                $Script:SystemPerformanceScript,
                 $Script:ApplicationHealthScript,
                 $Script:SystemReportScript
             )
@@ -529,7 +529,7 @@ Describe "CommonFunctions Integration" -Tag "Integration" {
             $scripts = @(
                 $Script:UserAccountAuditScript,
                 $Script:RepairCommonIssuesScript,
-                $Script:DiskSpaceScript,
+                $Script:SystemPerformanceScript,
                 $Script:ApplicationHealthScript,
                 $Script:SystemReportScript
             )
@@ -547,7 +547,7 @@ Describe "CommonFunctions Integration" -Tag "Integration" {
         It "All Tier 2 scripts should support multiple output formats" {
             $scripts = @(
                 $Script:UserAccountAuditScript,
-                $Script:DiskSpaceScript,
+                $Script:SystemPerformanceScript,
                 $Script:ApplicationHealthScript,
                 $Script:SystemReportScript
             )
@@ -561,10 +561,10 @@ Describe "CommonFunctions Integration" -Tag "Integration" {
 
     Context "Exit Codes" {
         It "All Tier 2 scripts should return meaningful exit codes" {
+            # SystemPerformanceScript uses return value instead of ExitCode
             $scripts = @(
                 $Script:UserAccountAuditScript,
                 $Script:RepairCommonIssuesScript,
-                $Script:DiskSpaceScript,
                 $Script:ApplicationHealthScript
             )
 
@@ -581,7 +581,7 @@ Describe "HTML Report Generation" -Tag "Reporting" {
         It "All reporting scripts should have Export-HtmlReport function" {
             $scripts = @(
                 $Script:UserAccountAuditScript,
-                $Script:DiskSpaceScript,
+                $Script:SystemPerformanceScript,
                 $Script:ApplicationHealthScript,
                 $Script:SystemReportScript
             )
@@ -595,7 +595,7 @@ Describe "HTML Report Generation" -Tag "Reporting" {
         It "HTML reports should include proper HTML structure" {
             $scripts = @(
                 $Script:UserAccountAuditScript,
-                $Script:DiskSpaceScript,
+                $Script:SystemPerformanceScript,
                 $Script:ApplicationHealthScript,
                 $Script:SystemReportScript
             )

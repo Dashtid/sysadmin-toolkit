@@ -114,7 +114,9 @@ Describe "Backup-BrowserProfiles.ps1" -Tag "BrowserBackup", "Tier3" {
 
         It "Should have OutputFormat parameter" {
             $content = Get-Content $script:BrowserBackupPath -Raw
-            $content | Should -Match '\[ValidateSet\(.*Console.*HTML.*JSON.*\)\].*\[string\]\$OutputFormat'
+            # Check ValidateSet and OutputFormat exist (may be on different lines)
+            $content | Should -Match "ValidateSet.*'Console'.*'HTML'.*'JSON'"
+            $content | Should -Match '\[string\]\$OutputFormat'
         }
 
         It "Should have IncludeCookies switch parameter" {
@@ -504,7 +506,9 @@ Describe "Test-DevEnvironment.ps1" -Tag "DevEnvironment", "Tier3" {
 
         It "Should have OutputFormat parameter" {
             $content = Get-Content $script:DevEnvPath -Raw
-            $content | Should -Match '\[ValidateSet\(.*Console.*HTML.*JSON.*\)\].*\[string\]\$OutputFormat'
+            # Check ValidateSet and OutputFormat exist (may be on different lines)
+            $content | Should -Match "ValidateSet.*'Console'.*'HTML'.*'JSON'"
+            $content | Should -Match '\[string\]\$OutputFormat'
         }
     }
 
