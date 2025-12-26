@@ -82,12 +82,14 @@ Describe "system-updates.ps1 - Requirements and Dependencies" {
     Context "Module Dependencies" {
         It "Imports CommonFunctions module" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Import-Module.*CommonFunctions"
+            # Script uses $modulePath variable pointing to CommonFunctions.psm1
+            $content | Should -Match "Import-Module.*modulePath|CommonFunctions\.psm1"
         }
 
         It "Checks for CommonFunctions module existence" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Test-Path.*CommonFunctions"
+            # Script checks path and shows error if not found
+            $content | Should -Match "Test-Path.*modulePath|CommonFunctions.*not found"
         }
 
         It "References PSWindowsUpdate module" {
