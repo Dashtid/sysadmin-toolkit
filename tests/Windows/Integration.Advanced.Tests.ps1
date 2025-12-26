@@ -98,15 +98,9 @@ Describe "Integration Tests - SSH Setup Workflow" {
             }
         }
 
-        It "Verifies SSH agent service is running" {
-            # Skip if ssh-agent service doesn't exist (CI environment)
-            $service = Get-Service -Name 'ssh-agent' -ErrorAction SilentlyContinue
-            if (-not $service) {
-                Set-ItResult -Skipped -Because "ssh-agent service not available in CI"
-                return
-            }
-
+        It "Verifies SSH agent service is running" -Skip:(-not (Get-Service -Name 'ssh-agent' -ErrorAction SilentlyContinue)) {
             # Assert if service exists
+            $service = Get-Service -Name 'ssh-agent' -ErrorAction SilentlyContinue
             $service | Should -Not -BeNullOrEmpty
         }
 
@@ -406,14 +400,7 @@ Describe "Integration Tests - Full Workflow Scenarios" {
             Mock-NetworkCommands -ReachableHosts @('github.com', 'registry.npmjs.org')
         }
 
-        It "Validates environment before starting setup" {
-            # Skip if ssh-agent service doesn't exist (CI environment)
-            $sshService = Get-Service -Name 'ssh-agent' -ErrorAction SilentlyContinue
-            if (-not $sshService) {
-                Set-ItResult -Skipped -Because "ssh-agent service not available in CI"
-                return
-            }
-
+        It "Validates environment before starting setup" -Skip:(-not (Get-Service -Name 'ssh-agent' -ErrorAction SilentlyContinue)) {
             # Arrange
             $requiredServices = @('ssh-agent')
 
