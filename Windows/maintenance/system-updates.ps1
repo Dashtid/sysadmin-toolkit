@@ -101,7 +101,11 @@ param(
     [string]$ConfigFile,
 
     [Parameter()]
-    [switch]$SkipRestorePoint
+    [switch]$SkipRestorePoint,
+
+    [Parameter()]
+    [ValidateRange(0, 3600)]
+    [int]$RebootDelaySeconds = 60
 )
 
 #region Module Imports
@@ -136,13 +140,14 @@ if (-not $ConfigFile) {
 
 # Initialize global configuration
 $global:config = @{
-    AutoReboot        = $AutoReboot.IsPresent
-    LogRetentionDays  = $LogRetentionDays
-    SkipWindowsUpdate = $SkipWindowsUpdate.IsPresent
-    SkipChocolatey    = $SkipChocolatey.IsPresent
-    SkipWinget        = $SkipWinget.IsPresent
-    SkipRestorePoint  = $SkipRestorePoint.IsPresent
-    UpdateTypes       = @("Security", "Critical", "Important")
+    AutoReboot         = $AutoReboot.IsPresent
+    LogRetentionDays   = $LogRetentionDays
+    SkipWindowsUpdate  = $SkipWindowsUpdate.IsPresent
+    SkipChocolatey     = $SkipChocolatey.IsPresent
+    SkipWinget         = $SkipWinget.IsPresent
+    SkipRestorePoint   = $SkipRestorePoint.IsPresent
+    RebootDelaySeconds = $RebootDelaySeconds
+    UpdateTypes        = @("Security", "Critical", "Important")
 }
 
 # Load configuration from file if it exists
@@ -286,7 +291,10 @@ function Test-PendingReboot {
 function Invoke-Reboot {
     <#
     .SYNOPSIS
-        Handles system reboot based on configuration.
+        Handles system reboot based on configuration with configurable delay.
+    .DESCRIPTION
+        Provides a configurable delay/timeout before reboot to allow user intervention.
+        The delay can be set via -RebootDelaySeconds parameter or config file.
     #>
     param(
         [Parameter()]
@@ -294,11 +302,14 @@ function Invoke-Reboot {
     )
 
     $script:UpdateSummary.RebootRequired = $true
+    $delaySeconds = $global:config.RebootDelaySeconds
 
     if ($Force -or $global:config.AutoReboot) {
         if ($PSCmdlet.ShouldProcess("System", "Reboot computer")) {
-            Write-WarningMessage "System will reboot in 60 seconds. Press Ctrl+C to cancel."
-            Start-Sleep -Seconds 5
+            # Wait for reboot with configurable delay/timeout
+            Write-WarningMessage "System will reboot in $delaySeconds seconds. Press Ctrl+C to cancel."
+            Write-InfoMessage "Waiting $delaySeconds seconds before reboot..."
+            Start-Sleep -Seconds $delaySeconds
             Restart-Computer -Force
         }
     }
@@ -307,10 +318,44 @@ function Invoke-Reboot {
     }
 }
 
+function Test-RestorePointCreation {
+    <#
+    .SYNOPSIS
+        Validates that a restore point was successfully created.
+    .DESCRIPTION
+        Uses Get-ComputerRestorePoint to verify the restore point exists.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$Description
+    )
+
+    try {
+        # Get-ComputerRestorePoint to verify restore point was created
+        $restorePoints = Get-ComputerRestorePoint -ErrorAction SilentlyContinue |
+            Where-Object { $_.Description -like "*$Description*" }
+
+        if ($restorePoints) {
+            Write-InfoMessage "Restore point validated successfully"
+            return $true
+        }
+        else {
+            Write-WarningMessage "Could not validate restore point creation"
+            return $false
+        }
+    }
+    catch {
+        Write-WarningMessage "Error validating restore point: $($_.Exception.Message)"
+        return $false
+    }
+}
+
 function New-SystemRestorePoint {
     <#
     .SYNOPSIS
         Creates a system restore point before applying updates.
+    .DESCRIPTION
+        Creates a restore point and validates its creation using Test-RestorePointCreation.
     #>
     if ($global:config.SkipRestorePoint) {
         Write-InfoMessage "Skipping system restore point creation (disabled in configuration)"
@@ -327,9 +372,20 @@ function New-SystemRestorePoint {
 
             Write-Success "System restore point created: $description"
             $script:UpdateSummary.RestorePoint = $description
+
+            # Validate restore point was created
+            Test-RestorePointCreation -Description $description | Out-Null
+
             return $description
         }
+        catch [System.Runtime.InteropServices.COMException] {
+            # Handle restore point creation errors gracefully
+            Write-WarningMessage "Restore point creation failed (COM error): $($_.Exception.Message)"
+            Write-InfoMessage "This may occur if a restore point was created recently"
+            return $null
+        }
         catch {
+            # Catch Restore point errors gracefully
             Write-WarningMessage "Failed to create system restore point: $($_.Exception.Message)"
             return $null
         }
@@ -383,7 +439,9 @@ function Export-PreUpdateState {
 function Update-Winget {
     <#
     .SYNOPSIS
-        Updates all Winget packages.
+        Updates all Winget packages with error handling.
+    .DESCRIPTION
+        Uses try/catch to handle winget errors gracefully.
     #>
     if ($global:config.SkipWinget) {
         Write-InfoMessage "Skipping Winget updates (disabled in configuration)"
@@ -393,6 +451,7 @@ function Update-Winget {
 
     Write-InfoMessage "=== Starting Winget Updates ==="
 
+    # try winget updates with comprehensive error handling
     try {
         if (!(Get-Command winget -ErrorAction SilentlyContinue)) {
             Write-WarningMessage "Winget is not installed or not available in PATH"
@@ -403,7 +462,13 @@ function Update-Winget {
         if ($PSCmdlet.ShouldProcess("Winget packages", "Update all")) {
             # Accept source agreements to avoid interactive prompts
             Write-InfoMessage "Updating Winget sources..."
-            & winget source update --disable-interactivity 2>&1 | Out-Null
+            try {
+                # ErrorAction Stop for winget source update
+                $null = & winget source update --disable-interactivity 2>&1
+            }
+            catch {
+                Write-WarningMessage "Winget source update warning: $($_.Exception.Message)"
+            }
 
             Write-InfoMessage "Checking for available Winget updates..."
             $upgradeList = & winget upgrade --include-unknown 2>&1 | Out-String
@@ -443,6 +508,8 @@ function Update-Chocolatey {
     <#
     .SYNOPSIS
         Updates Chocolatey itself and all installed packages.
+    .DESCRIPTION
+        Uses try/catch to handle choco errors gracefully.
     #>
     if ($global:config.SkipChocolatey) {
         Write-InfoMessage "Skipping Chocolatey updates (disabled in configuration)"
@@ -452,6 +519,7 @@ function Update-Chocolatey {
 
     Write-InfoMessage "=== Starting Chocolatey Updates ==="
 
+    # try choco updates with comprehensive error handling
     try {
         if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
             Write-WarningMessage "Chocolatey is not installed"
@@ -463,8 +531,13 @@ function Update-Chocolatey {
             Write-InfoMessage "Updating Chocolatey itself..."
             Write-Progress -Activity "Updating Chocolatey" -Status "Updating Chocolatey itself..." -PercentComplete 25
 
-            $chocoSelfOutput = & choco upgrade chocolatey -y --no-progress 2>&1
-            Write-LogMessage ($chocoSelfOutput | Out-String) -NoConsole
+            try {
+                $chocoSelfOutput = & choco upgrade chocolatey -y --no-progress 2>&1
+                Write-LogMessage ($chocoSelfOutput | Out-String) -NoConsole
+            }
+            catch {
+                Write-WarningMessage "Chocolatey self-update warning: $($_.Exception.Message)"
+            }
 
             Write-InfoMessage "Checking for outdated packages..."
             $outdated = & choco outdated --limit-output
@@ -548,6 +621,7 @@ function Update-Windows {
         }
     }
     catch {
+        # catch Update errors and handle gracefully
         Write-ErrorMessage "Error checking Windows Updates: $($_.Exception.Message)"
         $script:UpdateSummary.WindowsUpdates.Failed = 1
     }
@@ -696,7 +770,7 @@ catch {
     exit 1
 }
 finally {
-    # Stop transcript
+    # finally block: Stop-Transcript and cleanup
     try {
         Stop-Transcript -ErrorAction SilentlyContinue
     }

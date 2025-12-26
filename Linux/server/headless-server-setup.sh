@@ -43,16 +43,16 @@ check_root() {
 
 # System updates and upgrades
 update_system() {
-    log "🔄 Updating system packages..."
+    log "[i] Updating system packages..."
     apt update && apt -y upgrade && apt -y dist-upgrade
     apt -y autoremove --purge
     apt -y autoclean
-    log "✅ System update completed"
+    log "[+] System update completed"
 }
 
 # Install essential packages
 install_essentials() {
-    log "📦 Installing essential packages..."
+    log "[i] Installing essential packages..."
     apt install -y \
         curl \
         wget \
@@ -71,12 +71,12 @@ install_essentials() {
         python3-pip \
         nodejs \
         npm
-    log "✅ Essential packages installed"
+    log "[+] Essential packages installed"
 }
 
 # Configure firewall
 configure_firewall() {
-    log "🛡️ Configuring UFW firewall..."
+    log "[i] Configuring UFW firewall..."
     apt install -y ufw
     ufw default deny incoming
     ufw default allow outgoing
@@ -94,15 +94,15 @@ configure_firewall() {
     ufw allow 2377/tcp  # Docker swarm
     
     ufw --force enable
-    log "✅ Firewall configured"
+    log "[+] Firewall configured"
 }
 
 # Secure SSH configuration
 secure_ssh() {
-    log "🔒 Securing SSH configuration..."
+    log "[+] Securing SSH configuration..."
     
     # Backup original config
-    cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak.$(date +%F)
+    cp /etc/ssh/sshd_config "/etc/ssh/sshd_config.bak.$(date +%F)"
     
     # Apply security settings
     sed -i 's/#PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
@@ -119,12 +119,12 @@ secure_ssh() {
     echo "ClientAliveCountMax 2" >> /etc/ssh/sshd_config
     
     systemctl restart sshd
-    log "✅ SSH secured"
+    log "[+] SSH secured"
 }
 
 # Install and configure fail2ban
 setup_fail2ban() {
-    log "🚨 Setting up fail2ban..."
+    log "[!] Setting up fail2ban..."
     apt install -y fail2ban
     
     # Create local jail configuration
@@ -149,12 +149,12 @@ enabled = false
 EOF
     
     systemctl enable --now fail2ban
-    log "✅ Fail2ban configured"
+    log "[+] Fail2ban configured"
 }
 
 # Setup log rotation and monitoring
 setup_logging() {
-    log "📜 Configuring logging and rotation..."
+    log "[i] Configuring logging and rotation..."
     apt install -y logrotate rsyslog
     
     # Ensure logrotate is enabled
@@ -166,12 +166,12 @@ setup_logging() {
     systemctl enable --now sysstat
     systemctl enable --now vnstat
     
-    log "✅ Logging and monitoring configured"
+    log "[+] Logging and monitoring configured"
 }
 
 # Install Docker
 install_docker() {
-    log "🐋 Installing Docker..."
+    log "[i] Installing Docker..."
     
     # Remove old versions
     apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
@@ -193,7 +193,7 @@ install_docker() {
     curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
     
-    log "✅ Docker installed"
+    log "[+] Docker installed"
 }
 
 # Configure Docker for development
@@ -221,12 +221,12 @@ configure_docker() {
 EOF
     
     systemctl restart docker
-    log "✅ Docker configured for development"
+    log "[+] Docker configured for development"
 }
 
 # Setup development tools
 setup_dev_tools() {
-    log "🛠️ Setting up development tools..."
+    log "[i] Setting up development tools..."
     
     # Install additional development packages
     apt install -y \
@@ -247,12 +247,12 @@ setup_dev_tools() {
         chmod +x /usr/local/bin/exa
     fi
     
-    log "✅ Development tools installed"
+    log "[+] Development tools installed"
 }
 
 # Create useful aliases and functions
 setup_aliases() {
-    log "🔗 Setting up useful aliases..."
+    log "[i] Setting up useful aliases..."
     
     cat > /etc/profile.d/server-aliases.sh << 'EOF'
 # Server management aliases
@@ -291,12 +291,12 @@ alias gp='git push'
 alias gl='git log --oneline'
 EOF
     
-    log "✅ Aliases configured"
+    log "[+] Aliases configured"
 }
 
 # Setup automatic updates (security only)
 setup_auto_updates() {
-    log "🔄 Configuring automatic security updates..."
+    log "[i] Configuring automatic security updates..."
     
     apt install -y unattended-upgrades
     
@@ -320,7 +320,7 @@ APT::Periodic::AutocleanInterval "7";
 EOF
     
     systemctl enable --now unattended-upgrades
-    log "✅ Automatic security updates configured"
+    log "[+] Automatic security updates configured"
 }
 
 # Final system optimization
@@ -341,12 +341,12 @@ EOF
     # Apply sysctl changes
     sysctl -p
     
-    log "✅ System optimized"
+    log "[+] System optimized"
 }
 
 # Main execution function
 main() {
-    log "🚀 Starting Ubuntu Server Headless Setup..."
+    log "[+] Starting Ubuntu Server Headless Setup..."
     
     check_root
     update_system
@@ -362,13 +362,13 @@ main() {
     setup_auto_updates
     optimize_system
     
-    log "✅ Ubuntu Server setup completed successfully!"
-    log "📋 Setup log saved to: $LOG_FILE"
+    log "[+] Ubuntu Server setup completed successfully!"
+    log "[i] Setup log saved to: $LOG_FILE"
     
-    info "🔄 Please reboot the system to ensure all changes take effect"
-    info "🐋 After reboot, verify Docker: docker --version && docker-compose --version"
-    info "🔒 SSH is now secured - ensure you have SSH keys configured"
-    info "📊 Monitor system: htop, docker stats, vnstat -l"
+    info "[i] Please reboot the system to ensure all changes take effect"
+    info "[i] After reboot, verify Docker: docker --version && docker-compose --version"
+    info "[+] SSH is now secured - ensure you have SSH keys configured"
+    info "[i] Monitor system: htop, docker stats, vnstat -l"
 }
 
 # Run main function

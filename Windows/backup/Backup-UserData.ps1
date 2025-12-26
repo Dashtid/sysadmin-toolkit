@@ -700,8 +700,8 @@ function Write-ConsoleReport {
     if ($Report.Stats.Errors.Count -gt 0) {
         Write-Host "ERRORS" -ForegroundColor White
         Write-Host "-" * 40
-        foreach ($error in ($Report.Stats.Errors | Select-Object -First 10)) {
-            Write-Host "  [-] $error" -ForegroundColor Red
+        foreach ($err in ($Report.Stats.Errors | Select-Object -First 10)) {
+            Write-Host "  [-] $err" -ForegroundColor Red
         }
         if ($Report.Stats.Errors.Count -gt 10) {
             Write-Host "  ... and $($Report.Stats.Errors.Count - 10) more errors"

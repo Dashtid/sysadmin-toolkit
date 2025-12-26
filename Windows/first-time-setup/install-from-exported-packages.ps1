@@ -227,7 +227,7 @@ function Main {
     Write-Info "  1. Review the log file for any errors"
     Write-Info "  2. Restart your computer to ensure all changes take effect"
     Write-Info "  3. Configure installed applications as needed"
-    Write-Info "  4. Run work-laptop-setup.ps1 for additional system configuration"
+    Write-Info "  4. Or run fresh-windows-setup.ps1 -Profile Work for complete setup"
 }
 
 # Run main function

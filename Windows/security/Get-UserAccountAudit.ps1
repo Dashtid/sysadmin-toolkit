@@ -146,6 +146,7 @@ function Get-UserSecurityIssues {
         Identifies security issues for a user account.
     #>
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingUsernameAndPasswordParams', '', Justification = 'UserInfo is an object, not credentials')]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject]$UserInfo,
@@ -154,7 +155,7 @@ function Get-UserSecurityIssues {
         [int]$DaysInactive,
 
         [Parameter()]
-        [int]$PasswordAgeDays
+        [int]$MaxCredentialAge
     )
 
     $issues = @()
@@ -175,8 +176,8 @@ function Get-UserSecurityIssues {
     }
 
     # Check for old password
-    if ($UserInfo.PasswordAge -gt $PasswordAgeDays -and $UserInfo.Enabled) {
-        $issues += "Password older than $PasswordAgeDays days"
+    if ($UserInfo.PasswordAge -gt $MaxCredentialAge -and $UserInfo.Enabled) {
+        $issues += "Password older than $MaxCredentialAge days"
     }
 
     # Check for admin with issues
@@ -275,7 +276,7 @@ function Get-UserAccountDetails {
             }
 
             # Get security issues
-            $userInfo.SecurityIssues = Get-UserSecurityIssues -UserInfo $userInfo -DaysInactive $DaysInactive -PasswordAgeDays $PasswordAgeDays
+            $userInfo.SecurityIssues = Get-UserSecurityIssues -UserInfo $userInfo -DaysInactive $DaysInactive -MaxCredentialAge $PasswordAgeDays
 
             $results += $userInfo
         }

@@ -2,8 +2,8 @@
 
 This document outlines potential future enhancements for the Windows & Linux Sysadmin Toolkit based on industry best practices and common sysadmin needs identified in 2025.
 
-**Status**: Active Development - Tier 1, Tier 2, & Tier 3 Complete
-**Last Updated**: 2025-11-30
+**Status**: Active Development - Tier 1, Tier 2, Tier 3, & Quick Wins Complete
+**Last Updated**: 2025-12-25
 
 ## Current Coverage Analysis
 
@@ -87,9 +87,9 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 **Implementation Notes**:
 ```powershell
-# Extend existing cleanup-disk.ps1
-# Add alerting mechanism
-# Visualization of disk usage
+# Now integrated into Get-SystemPerformance.ps1
+# Use -IncludeDiskAnalysis for detailed analysis
+# Use -AutoCleanup for automatic cleanup
 ```
 
 ### 1.4 Event Log Analyzer [COMPLETED]
@@ -118,7 +118,7 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 ## Category 2: Backup & Disaster Recovery
 
 **Priority**: CRITICAL
-**Current Status**: Partial (user backup complete, system state pending)
+**Current Status**: COMPLETE (user backup, system state, and validation)
 
 ### 2.1 Automated User Backup Script [COMPLETED]
 
@@ -143,7 +143,8 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 # Integration with OneDrive/network shares
 ```
 
-### 2.2 Complete System State Snapshot
+### 2.2 Complete System State Snapshot [COMPLETED]
+
 **Effort**: 1-2 hours
 **Impact**: Medium - Faster recovery
 
@@ -159,12 +160,14 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 **Implementation Notes**:
 ```powershell
-# Extend backup-security-settings.ps1
-# Export to structured JSON format
-# Include restoration instructions
+# Windows/backup/Export-SystemState.ps1
+# Exports drivers, registry, network, tasks, features, services, packages
+# Supports -Compress for ZIP archive, -IncludeEventLogs for event logs
+# Multiple output formats: Console, HTML, JSON, All
 ```
 
-### 2.3 Backup Validation & Recovery Testing
+### 2.3 Backup Validation & Recovery Testing [COMPLETED]
+
 **Effort**: 2-3 hours
 **Impact**: High - Confidence in disaster recovery
 
@@ -177,10 +180,10 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 **Implementation Notes**:
 ```powershell
-# Hash comparison of backed up files
-# Test restore to temp location
-# Validate JSON/XML structure
-# Report generation
+# Windows/backup/Test-BackupIntegrity.ps1
+# TestType: Quick (sample hashes), Full (extract all), Restore (actual restore)
+# SHA256 hash verification against backup_metadata.json
+# Multiple output formats: Console, HTML, JSON, All
 ```
 
 ---
@@ -303,7 +306,7 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 ## Category 5: Application Management
 
 **Priority**: MEDIUM
-**Current Status**: Partial (health monitoring complete, inventory and browser backup pending)
+**Current Status**: COMPLETE (health monitoring, inventory comparison, browser backup)
 
 ### 5.1 Application Health Monitor [COMPLETED]
 
@@ -325,7 +328,8 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 # Event log parsing for app crashes
 ```
 
-### 5.2 Software Inventory & Comparison
+### 5.2 Software Inventory & Comparison [COMPLETED]
+
 **Effort**: 1-2 hours
 **Impact**: Low - Asset management
 
@@ -339,9 +343,11 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 **Implementation Notes**:
 ```powershell
-# Extend export-current-packages.ps1
-# Add registry-based detection
-# Include Windows Store apps
+# Windows/first-time-setup/Compare-SoftwareInventory.ps1
+# Compare baseline to file or live system
+# Sources: Winget, Chocolatey, Registry, All
+# Detects: Added, Removed, VersionChanged packages
+# -ExportMissing generates install script for missing packages
 ```
 
 ### 5.3 Browser Profile Backup & Restore [COMPLETED]
@@ -570,7 +576,7 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 **Implementation Notes**:
 ```powershell
-# Extend system-integrity-check.ps1
+# Use Repair-CommonIssues.ps1 -Fix SystemFiles
 # Elevated privilege requirements
 # Progress reporting for long operations
 # Pre-check to determine needed repairs
@@ -596,7 +602,7 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 6. [x] User Account Audit - Windows/security/Get-UserAccountAudit.ps1
 7. [x] Common Issue Auto-Fixer - Windows/troubleshooting/Repair-CommonIssues.ps1
-8. [x] Disk Space Monitor - Windows/monitoring/Watch-DiskSpace.ps1
+8. [x] Disk Space Monitor - Merged into Get-SystemPerformance.ps1 (-IncludeDiskAnalysis)
 9. [x] Application Health Monitor - Windows/monitoring/Get-ApplicationHealth.ps1
 10. [x] System Information Reporter - Windows/reporting/Get-SystemReport.ps1
 
@@ -628,27 +634,31 @@ This document outlines potential future enhancements for the Windows & Linux Sys
 
 ---
 
-## Quick Wins (1-2 hours each)
+## Quick Wins (1-2 hours each) [COMPLETED]
 
 These can be implemented quickly with high value:
 
-- [*] Disk Space Monitor expansion (extend existing cleanup script)
-- [*] User Account Audit script
-- [*] Software Inventory expansion
-- [*] Network Diagnostics Suite (basic version)
-- [*] Development Environment Validator
+- [x] Disk Space Monitor expansion (extend existing cleanup script)
+- [x] User Account Audit script
+- [x] Software Inventory expansion - Compare-SoftwareInventory.ps1 (NEW 2025-12-25)
+- [x] Network Diagnostics Suite (basic version)
+- [x] Development Environment Validator
+- [x] System State Export - Export-SystemState.ps1 (NEW 2025-12-25)
+- [x] Backup Validation - Test-BackupIntegrity.ps1 (NEW 2025-12-25)
 
 **Total Effort**: ~5-10 hours
+**Status**: COMPLETE (2025-12-25)
 **Value**: Immediate improvement to toolkit completeness
 
 ---
 
 ## Integration Points
 
-### With Existing Scripts:
-- **Performance Monitor** → Can trigger cleanup-disk.ps1 when thresholds exceeded
-- **Event Log Analyzer** → Integrate with audit-security-posture.ps1
-- **Backup Script** → Use backup-security-settings.ps1 patterns
+### With Existing Scripts
+
+- **Performance Monitor** → Includes disk cleanup via -AutoCleanup parameter
+- **Event Log Analyzer** → Integrate with Get-UserAccountAudit.ps1
+- **Backup Script** → Backup-UserData.ps1 handles user data and settings
 - **Service Monitor** → Extend startup_script.ps1 capabilities
 - **Network Diagnostics** → Use in gitea-tunnel-manager.ps1 health checks
 
@@ -696,16 +706,19 @@ Track implementation progress:
   - Watch-ServiceHealth.ps1
   - Get-EventLogAnalysis.ps1
   - Disk Space Monitor (integrated into Get-SystemPerformance.ps1)
-- [x] Backup category (2/3 scripts - security settings + user backup done)
-  - backup-security-settings.ps1 (existing)
-  - Backup-UserData.ps1 (NEW)
+- [x] Backup category (4/3 scripts - exceeds target)
+  - Backup-UserData.ps1 (includes security settings backup)
+  - Backup-BrowserProfiles.ps1
+  - Export-SystemState.ps1 (NEW 2025-12-25)
+  - Test-BackupIntegrity.ps1 (NEW 2025-12-25)
 - [x] Network category (2/3 scripts)
   - Test-NetworkHealth.ps1 (NEW)
   - Manage-VPN.ps1 (NEW)
 - [x] User management (1/2 scripts) - Get-UserAccountAudit.ps1 (NEW)
-- [x] Application management (2/3 scripts)
+- [x] Application management (3/3 scripts - COMPLETE)
   - Get-ApplicationHealth.ps1 (NEW)
   - Backup-BrowserProfiles.ps1 (NEW)
+  - Compare-SoftwareInventory.ps1 (NEW 2025-12-25)
 - [x] Development tools (4/3 scripts - exceeds target)
   - remote-development-setup.ps1 (existing)
   - Manage-WSL.ps1 (NEW)
@@ -713,16 +726,57 @@ Track implementation progress:
   - Test-DevEnvironment.ps1 (NEW)
 - [x] Reporting (1/2 scripts) - Get-SystemReport.ps1 (NEW)
 - [ ] Cloud integration (0/2 scripts)
-- [x] Troubleshooting (3/2 scripts - exceeds target)
-  - system-integrity-check.ps1 (existing)
-  - cleanup-disk.ps1 (existing)
-  - Repair-CommonIssues.ps1 (NEW)
+- [x] Troubleshooting (1/2 scripts)
+  - Repair-CommonIssues.ps1 (includes SFC/DISM via -Fix SystemFiles)
 
-**Current Completion**: ~75% of identified functionality
+**Windows Completion**: ~85% of identified functionality
 **Tier 1 Status**: COMPLETE (2025-11-30)
 **Tier 2 Status**: COMPLETE (2025-11-30)
 **Tier 3 Status**: COMPLETE (2025-11-30)
-**Target Phase 4**: 90% completion (Tier 4 advanced features)
+**Quick Wins Status**: COMPLETE (2025-12-25)
+**Target Phase 4**: 95% completion (Tier 4 advanced features)
+
+---
+
+## Linux Parity Initiative (2025-12-25)
+
+Closing the gap between Windows and Linux script coverage.
+
+### Completed Linux Scripts
+
+- [x] **Security Hardening** - Linux/security/security-hardening.sh (NEW)
+  - SSH hardening (key-only auth, disable root login, secure ciphers)
+  - Firewall configuration (UFW with sensible defaults)
+  - Kernel hardening (sysctl security parameters)
+  - File permission auditing (sensitive files, SUID/SGID)
+  - User security (password policies, inactive accounts)
+  - Service hardening (disable risky services)
+  - Automatic security updates
+  - Audit mode + apply mode with backups
+
+- [x] **Service Health Monitor** - Linux/monitoring/service-health-monitor.sh (NEW)
+  - Monitor critical services (configurable list)
+  - Auto-restart failed services with retry logic
+  - Multiple alert methods (log, email, Slack)
+  - Prometheus metrics export
+  - Daemon mode with configurable interval
+  - JSON config file support
+
+### Linux Test Coverage
+
+- [x] CommonFunctions.bats - 60+ tests for bash library
+- [x] maintenance.bats - Maintenance script tests
+- [x] SystemHealthCheck.bats - NEW: 40+ tests
+- [x] SecurityHardening.bats - NEW: 60+ tests
+- [x] ServiceHealthMonitor.bats - NEW: 50+ tests
+
+**Linux Test Total**: 5 BATS test files, 200+ test assertions
+
+### CI/CD Improvements
+
+- [x] Strict shellcheck (removed || true, proper exclusions)
+- [x] All BATS tests run in CI
+- [x] Severity threshold: warning level
 
 ---
 
@@ -738,4 +792,6 @@ Track implementation progress:
 **Tier 1 Completed**: 2025-11-30
 **Tier 2 Completed**: 2025-11-30
 **Tier 3 Completed**: 2025-11-30
+**Quick Wins Completed**: 2025-12-25 (Export-SystemState, Test-BackupIntegrity, Compare-SoftwareInventory)
+**Linux Parity**: 2025-12-25 (security-hardening.sh, service-health-monitor.sh)
 **Next Review**: When ready to implement Tier 4 features

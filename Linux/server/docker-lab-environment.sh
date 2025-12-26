@@ -46,12 +46,12 @@ check_docker() {
         exit 1
     fi
     
-    log "✅ Docker is available"
+    log "[+] Docker is available"
 }
 
 # Create directory structure
 create_directories() {
-    log "📁 Creating lab directory structure..."
+    log "[i] Creating lab directory structure..."
     
     mkdir -p "$DOCKER_COMPOSE_DIR"
     mkdir -p "$PORTAINER_DATA_DIR"
@@ -62,12 +62,12 @@ create_directories() {
     mkdir -p "$DOCKER_COMPOSE_DIR/monitoring"
     mkdir -p "$DOCKER_COMPOSE_DIR/networks"
     
-    log "✅ Directory structure created"
+    log "[+] Directory structure created"
 }
 
 # Create Docker networks
 create_networks() {
-    log "🌐 Creating Docker networks..."
+    log "[i] Creating Docker networks..."
     
     # Create development network
     docker network create dev-network --driver bridge --subnet=172.20.0.0/16 2>/dev/null || true
@@ -78,12 +78,12 @@ create_networks() {
     # Create database network
     docker network create db-network --driver bridge --subnet=172.22.0.0/16 2>/dev/null || true
     
-    log "✅ Docker networks created"
+    log "[+] Docker networks created"
 }
 
 # Setup Portainer for container management
 setup_portainer() {
-    log "🐋 Setting up Portainer..."
+    log "[i] Setting up Portainer..."
     
     cat > "$DOCKER_COMPOSE_DIR/portainer.yml" << 'EOF'
 version: '3.8'
@@ -115,12 +115,12 @@ EOF
     cd "$DOCKER_COMPOSE_DIR"
     docker-compose -f portainer.yml up -d
     
-    log "✅ Portainer started on port 9000"
+    log "[+] Portainer started on port 9000"
 }
 
 # Setup development databases
 setup_databases() {
-    log "🗄️ Setting up development databases..."
+    log "[i] Setting up development databases..."
     
     cat > "$DOCKER_COMPOSE_DIR/databases/databases.yml" << 'EOF'
 version: '3.8'
@@ -193,12 +193,12 @@ networks:
     external: true
 EOF
     
-    log "✅ Database services configured"
+    log "[+] Database services configured"
 }
 
 # Setup web servers and reverse proxy
 setup_web_servers() {
-    log "🌐 Setting up web servers..."
+    log "[i] Setting up web servers..."
     
     cat > "$DOCKER_COMPOSE_DIR/web-servers/nginx.yml" << 'EOF'
 version: '3.8'
@@ -267,17 +267,17 @@ EOF
 </head>
 <body>
     <div class="container">
-        <h1>🐋 Docker Lab Environment</h1>
+        <h1>[i] Docker Lab Environment</h1>
         <p>Welcome to your Docker development environment!</p>
         
         <div class="service">
-            <h3>📊 Portainer</h3>
+            <h3>[i] Portainer</h3>
             <p>Container management interface</p>
             <a href="http://localhost:9000" target="_blank">http://localhost:9000</a>
         </div>
         
         <div class="service">
-            <h3>🗄️ Databases</h3>
+            <h3>[i] Databases</h3>
             <ul>
                 <li>PostgreSQL: localhost:5432 (devuser/devpass123)</li>
                 <li>MySQL: localhost:3306 (devuser/devpass123)</li>
@@ -287,7 +287,7 @@ EOF
         </div>
         
         <div class="service">
-            <h3>🛠️ Development Tools</h3>
+            <h3>[i] Development Tools</h3>
             <p>Various development containers and tools available</p>
         </div>
     </div>
@@ -295,12 +295,12 @@ EOF
 </html>
 EOF
     
-    log "✅ Web servers configured"
+    log "[+] Web servers configured"
 }
 
 # Setup development containers
 setup_dev_containers() {
-    log "🛠️ Setting up development containers..."
+    log "[i] Setting up development containers..."
     
     cat > "$DOCKER_COMPOSE_DIR/development/dev-tools.yml" << 'EOF'
 version: '3.8'
@@ -349,12 +349,12 @@ EOF
     mkdir -p "$DOCKER_COMPOSE_DIR/development/node-workspace"
     mkdir -p "$DOCKER_COMPOSE_DIR/development/ubuntu-workspace"
     
-    log "✅ Development containers configured"
+    log "[+] Development containers configured"
 }
 
 # Create management scripts
 create_management_scripts() {
-    log "📝 Creating management scripts..."
+    log "[i] Creating management scripts..."
     
     # Lab control script
     cat > "$DOCKER_COMPOSE_DIR/lab-control.sh" << 'EOF'
@@ -366,31 +366,31 @@ cd "$COMPOSE_DIR"
 
 case "$1" in
     start)
-        echo "🚀 Starting Docker Lab Environment..."
+        echo "[+] Starting Docker Lab Environment..."
         docker-compose -f portainer.yml up -d
         docker-compose -f databases/databases.yml up -d
         docker-compose -f web-servers/nginx.yml up -d
         docker-compose -f development/dev-tools.yml up -d
-        echo "✅ Lab environment started!"
-        echo "📊 Portainer: http://localhost:9000"
-        echo "🌐 Nginx: http://localhost:80"
+        echo "[+] Lab environment started!"
+        echo "[i] Portainer: http://localhost:9000"
+        echo "[i] Nginx: http://localhost:80"
         ;;
     stop)
-        echo "🛑 Stopping Docker Lab Environment..."
+        echo "[!] Stopping Docker Lab Environment..."
         docker-compose -f development/dev-tools.yml down
         docker-compose -f web-servers/nginx.yml down
         docker-compose -f databases/databases.yml down
         docker-compose -f portainer.yml down
-        echo "✅ Lab environment stopped!"
+        echo "[+] Lab environment stopped!"
         ;;
     restart)
-        echo "🔄 Restarting Docker Lab Environment..."
+        echo "[i] Restarting Docker Lab Environment..."
         $0 stop
         sleep 2
         $0 start
         ;;
     status)
-        echo "📊 Docker Lab Status:"
+        echo "[i] Docker Lab Status:"
         docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
         ;;
     logs)
@@ -403,10 +403,10 @@ case "$1" in
         fi
         ;;
     cleanup)
-        echo "🧹 Cleaning up Docker Lab..."
+        echo "[i] Cleaning up Docker Lab..."
         docker system prune -f
         docker volume prune -f
-        echo "✅ Cleanup completed!"
+        echo "[+] Cleanup completed!"
         ;;
     *)
         echo "Docker Lab Control Script"
@@ -452,12 +452,12 @@ EOF
 
     chmod +x "$DOCKER_COMPOSE_DIR/db-connect.sh"
     
-    log "✅ Management scripts created"
+    log "[+] Management scripts created"
 }
 
 # Create useful aliases
 create_aliases() {
-    log "🔗 Creating Docker lab aliases..."
+    log "[i] Creating Docker lab aliases..."
     
     cat > "$HOME/.docker-lab-aliases" << EOF
 # Docker Lab Aliases
@@ -494,12 +494,12 @@ EOF
         echo "source ~/.docker-lab-aliases" >> "$HOME/.bashrc"
     fi
     
-    log "✅ Aliases created (reload shell or run: source ~/.bashrc)"
+    log "[+] Aliases created (reload shell or run: source ~/.bashrc)"
 }
 
 # Main execution function
 main() {
-    log "🚀 Setting up Docker Lab Environment..."
+    log "[+] Setting up Docker Lab Environment..."
     
     check_docker
     create_directories
@@ -511,24 +511,24 @@ main() {
     create_management_scripts
     create_aliases
     
-    log "✅ Docker Lab Environment setup completed!"
+    log "[+] Docker Lab Environment setup completed!"
     
-    info "🎯 Quick Start:"
+    info "[i] Quick Start:"
     info "  • Start lab: $DOCKER_COMPOSE_DIR/lab-control.sh start"
     info "  • Or use alias: lab-start (after reloading shell)"
     info ""
-    info "🌐 Access Points:"
+    info "[i] Access Points:"
     info "  • Portainer: http://localhost:9000"
     info "  • Nginx: http://localhost:80"
     info ""
-    info "🗄️ Database Connections:"
+    info "[i] Database Connections:"
     info "  • PostgreSQL: localhost:5432 (devuser/devpass123)"
     info "  • MySQL: localhost:3306 (devuser/devpass123)"
     info "  • Redis: localhost:6379"
     info "  • MongoDB: localhost:27017 (admin/adminpass123)"
     info ""
-    info "📁 Lab Directory: $DOCKER_COMPOSE_DIR"
-    info "📝 Control Script: $DOCKER_COMPOSE_DIR/lab-control.sh"
+    info "[i] Lab Directory: $DOCKER_COMPOSE_DIR"
+    info "[i] Control Script: $DOCKER_COMPOSE_DIR/lab-control.sh"
 }
 
 # Run main function

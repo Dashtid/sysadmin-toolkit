@@ -28,21 +28,32 @@ windows-linux-sysadmin-toolkit/
 ├── Windows/
 │   ├── lib/                    # Shared modules and functions
 │   │   ├── CommonFunctions.psm1  # Logging, admin checks, utilities
-│   │   └── CommonFunctions.psd1  # Module manifest
+│   │   └── ErrorHandling.psm1    # Advanced error handling
 │   ├── ssh/                    # SSH configuration and tunnel management
 │   │   ├── setup-ssh-agent-access.ps1
 │   │   └── gitea-tunnel-manager.ps1
 │   ├── first-time-setup/       # Windows 11 desktop setup automation
 │   │   ├── export-current-packages.ps1
 │   │   ├── install-from-exported-packages.ps1
-│   │   ├── fresh-windows-setup.ps1
-│   │   ├── work-laptop-setup.ps1
+│   │   ├── fresh-windows-setup.ps1   # Profile-based setup (work/home)
 │   │   ├── winget-packages.json     # Exported package lists
 │   │   └── chocolatey-packages.config
 │   ├── maintenance/            # System maintenance scripts
 │   │   ├── system-updates.ps1
-│   │   ├── update-defender.ps1
+│   │   ├── setup-scheduled-tasks.ps1
+│   │   ├── Restore-PreviousState.ps1
 │   │   └── startup_script.ps1
+│   ├── monitoring/             # System monitoring and health checks
+│   │   ├── Get-SystemPerformance.ps1
+│   │   ├── Watch-ServiceHealth.ps1
+│   │   ├── Test-NetworkHealth.ps1
+│   │   ├── Get-EventLogAnalysis.ps1
+│   │   └── Get-ApplicationHealth.ps1
+│   ├── backup/                 # Data backup and recovery
+│   │   ├── Backup-UserData.ps1
+│   │   └── Backup-BrowserProfiles.ps1
+│   ├── troubleshooting/        # Diagnostic and repair tools
+│   │   └── Repair-CommonIssues.ps1
 │   ├── development/            # Development environment setup
 │   │   └── remote-development-setup.ps1
 │   └── utilities/              # Helper utilities
@@ -50,7 +61,6 @@ windows-linux-sysadmin-toolkit/
 │       └── Manage-ScheduledTask.ps1
 ├── Linux/
 │   ├── server/                 # Ubuntu server scripts
-│   ├── desktop/                # Desktop environment scripts
 │   ├── maintenance/            # System maintenance (updates, log cleanup, rollback)
 │   ├── monitoring/             # System monitoring tools
 │   ├── kubernetes/             # Kubernetes pod/PVC monitoring
@@ -60,7 +70,7 @@ windows-linux-sysadmin-toolkit/
 │   ├── SSH-TUNNEL-SETUP.md    # SSH tunnel configuration guide
 │   ├── CHANGELOG-2025-10-15.md # Release notes and improvements
 │   └── SCRIPT_TEMPLATE.md     # Script templates
-├── tests/                      # Automated test suite (650+ tests)
+├── tests/                      # Automated test suite (1100+ assertions)
 │   ├── TestHelpers.psm1       # Shared test utilities
 │   ├── Windows/               # Windows script tests
 │   └── Linux/                 # Linux script tests
@@ -137,44 +147,34 @@ Automate Windows 11 desktop setup by capturing and reinstalling packages:
 - Gets you back to "tip-top shape" quickly
 - Supports selective installation (skip Winget or Chocolatey)
 
-### Windows: Security Hardening Framework
+### Windows: Security Tools
 
-Comprehensive security hardening based on CIS Benchmark v4.0.0, DISA STIG V2R2, and MS Security Baseline v25H2:
+Currently available security scripts:
 
 ```powershell
-# 1. Audit current security posture (18 checks)
-.\Windows\security\audit-security-posture.ps1
-
-# 2. Create backup before hardening
-.\Windows\security\backup-security-settings.ps1
-
-# 3. Preview changes without applying (RECOMMENDED)
-.\Windows\security\harden-level1-safe.ps1 -WhatIf
-
-# 4. Apply Level 1 hardening (20 safe, non-breaking controls)
-.\Windows\security\harden-level1-safe.ps1
-
-# 5. Apply Level 2 hardening (18 moderate-impact controls)
-.\Windows\security\harden-level2-balanced.ps1
-
-# 6. Apply Level 3 hardening (18 high-impact controls - TEST FIRST!)
-.\Windows\security\harden-level3-maximum.ps1
-
-# 7. Rollback if needed
-.\Windows\security\restore-security-settings.ps1 -BackupPath ".\backups\20250112_143000"
+# Audit user accounts and identify security issues
+.\Windows\security\Get-UserAccountAudit.ps1
 ```
 
-**Hardening Levels:**
-- **Level 1 (Safe)**: Developer-friendly, non-breaking changes (SMBv1 disable, Defender, Firewall, UAC, PowerShell logging)
-- **Level 2 (Balanced)**: Moderate security with potential app impact (Credential Guard, HVCI, ASR rules, TLS 1.2+)
-- **Level 3 (Maximum)**: High-security environments only (AppLocker, Constrained Language Mode, NTLM blocking, all ASR rules)
+**Planned**: A comprehensive security hardening framework based on CIS Benchmark v4.0.0 is on the roadmap. See [ROADMAP.md](docs/ROADMAP.md) for details.
+
+### Windows: Backup & Recovery
+
+Automated backup scripts for user data and browser profiles:
+
+```powershell
+# Backup user data (Documents, Desktop, Downloads, etc.)
+.\Windows\backup\Backup-UserData.ps1 -BackupPath "D:\Backups"
+
+# Backup browser profiles (Chrome, Firefox, Edge, Brave)
+.\Windows\backup\Backup-BrowserProfiles.ps1 -BackupPath "D:\Backups\Browsers"
+```
 
 **Features:**
-- Automatic backups with System Restore Points
-- WhatIf preview mode for all scripts
-- Rollback capability for all changes
-- Detailed impact warnings and compatibility notes
-- Change tracking with success/failure reporting
+- Incremental backup support
+- Compression and timestamped archives
+- Profile-aware browser backups (preserves bookmarks, extensions, settings)
+- Exclude patterns for temp files
 
 ### Linux: Server Maintenance & Monitoring
 
@@ -466,7 +466,7 @@ Comprehensive guides available in the [`docs/`](docs/) directory:
 Additional documentation:
 - **[First-Time Setup](Windows/first-time-setup/README.md)**: Windows 11 desktop setup automation
 - **[Example Scripts](examples/README.md)**: Reference implementations and templates
-- **[Test Suite](tests/README.md)**: Automated testing framework (650+ tests)
+- **[Test Suite](tests/README.md)**: Automated testing framework (1100+ assertions)
 
 ## [!] Troubleshooting
 
@@ -663,4 +663,4 @@ MIT License - Use at your own risk. See [LICENSE](LICENSE) file.
 **Author**: David Dashti
 **Purpose**: Personal sysadmin automation scripts
 **Version**: 2.0.0
-**Last Updated**: 2025-10-18
+**Last Updated**: 2025-12-25

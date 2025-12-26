@@ -140,14 +140,9 @@ Creates Windows Task Scheduler entries for automated updates.
 .\setup-scheduled-tasks.ps1
 ```
 
-#### cleanup-disk.ps1
-Performs disk cleanup operations.
-
-#### update-defender.ps1
-Updates Windows Defender signatures and definitions.
-
-#### system-integrity-check.ps1
-Runs system integrity checks (SFC, DISM).
+**Auto-generated scripts** (created by setup-scheduled-tasks.ps1 at C:\Code\):
+- `cleanup-disk.ps1` - Performs disk cleanup operations
+- `system-integrity-check.ps1` - Runs system integrity checks (SFC, DISM)
 
 ---
 

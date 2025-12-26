@@ -114,6 +114,8 @@ TestResults/
 coverage/
 *.trx
 *.coverage
+test-results*.xml
+test-results*.txt
 
 # Package manager directories
 node_modules/

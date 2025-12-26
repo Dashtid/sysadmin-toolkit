@@ -11,9 +11,11 @@ This directory contains automated workflows for continuous integration, testing,
 **Jobs**:
 1. **PowerShell Script Analysis** - Runs PSScriptAnalyzer on all Windows scripts
 2. **Bash Script Validation** - Runs shellcheck on all Linux scripts
-3. **Windows Pester Tests** - Executes 475+ Windows tests
-4. **Linux Pester Tests** - Executes 158+ Linux tests
+3. **Windows Pester Tests** - Executes 750+ Windows test assertions
+4. **Linux Pester Tests** - Executes Linux .Tests.ps1 files via Pester
 5. **Test Summary** - Aggregates results and generates summary
+
+> Note: Linux scripts are also tested via BATS in `test-scripts.yml` (350+ assertions)
 
 **Features**:
 - Parallel execution for faster feedback
@@ -111,7 +113,7 @@ Recommended for main branch (Settings → Branches → Add rule):
   - PowerShell Script Analysis
   - Bash Script Validation
   - Windows Pester Tests
-  - Linux Pester Tests
+  - Linux BATS Tests
   - Secret Scan
 - ✓ Require branches to be up to date before merging
 - ✓ Do not allow bypassing the above settings

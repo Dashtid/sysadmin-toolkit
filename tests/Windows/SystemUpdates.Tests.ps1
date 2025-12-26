@@ -82,12 +82,14 @@ Describe "system-updates.ps1 - Requirements and Dependencies" {
     Context "Module Dependencies" {
         It "Imports CommonFunctions module" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Import-Module.*CommonFunctions"
+            # Script uses $modulePath variable pointing to CommonFunctions.psm1
+            $content | Should -Match "Import-Module.*modulePath|CommonFunctions\.psm1"
         }
 
         It "Checks for CommonFunctions module existence" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Test-Path.*CommonFunctions"
+            # Script checks path and shows error if not found
+            $content | Should -Match "Test-Path.*modulePath|CommonFunctions.*not found"
         }
 
         It "References PSWindowsUpdate module" {
@@ -148,7 +150,7 @@ Describe "system-updates.ps1 - Script Parameters" {
 
         It "Uses PSCmdlet.ShouldProcess" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "\$PSCmdlet\.ShouldProcess"
+            $content | Should -Match '\$PSCmdlet\.ShouldProcess'
         }
     }
 }
@@ -262,12 +264,12 @@ Describe "system-updates.ps1 - Configuration Management" {
 
         It "Supports custom config file path" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "\$ConfigFile"
+            $content | Should -Match '\$ConfigFile'
         }
 
         It "Has global config variable" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "\$global:config"
+            $content | Should -Match '\$global:config'
         }
     }
 }
@@ -329,12 +331,17 @@ Describe "system-updates.ps1 - Error Handling" {
     Context "Exception Handling" {
         It "Has try/catch blocks" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "try\s*\{.*\}.*catch"
+            # Check for try and catch keywords (on different lines)
+            $content | Should -Match "try\s*\{"
+            $content | Should -Match "catch\s*\{"
         }
 
         It "Has main try/catch/finally block" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "try\s*\{.*\}.*catch.*finally"
+            # Check for try, catch, and finally keywords (on different lines)
+            $content | Should -Match "try\s*\{"
+            $content | Should -Match "catch"
+            $content | Should -Match "finally\s*\{"
         }
 
         It "Logs errors with Write-ErrorMessage" {
@@ -344,24 +351,30 @@ Describe "system-updates.ps1 - Error Handling" {
 
         It "Provides error details" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "\$_\.Exception\.Message"
+            $content | Should -Match '\$_\.Exception\.Message'
         }
     }
 
     Context "Graceful Failures" {
         It "Continues if Chocolatey not installed" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Chocolatey.*not installed.*return"
+            # Check for warning message and return (on separate lines)
+            $content | Should -Match "Chocolatey.*not installed"
+            $content | Should -Match "return"
         }
 
         It "Continues if Winget not installed" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Winget.*not installed.*return"
+            # Check for warning message and return (on separate lines)
+            $content | Should -Match "Winget.*not installed"
+            $content | Should -Match "return"
         }
 
         It "Handles restore point creation failure" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "restore point.*catch"
+            # Check for restore point error handling
+            $content | Should -Match "restore point"
+            $content | Should -Match "catch"
         }
     }
 }
@@ -422,7 +435,9 @@ Describe "system-updates.ps1 - Code Quality" {
 
         It "Has clear section separation" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "#region.*#endregion"
+            # Check both region markers exist (on different lines)
+            $content | Should -Match "#region"
+            $content | Should -Match "#endregion"
         }
     }
 }

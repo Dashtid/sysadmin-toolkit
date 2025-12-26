@@ -41,6 +41,8 @@ jobs:
             if grep -rniE "$pattern" . \
               --exclude-dir=.git \
               --exclude-dir=node_modules \
+              --exclude-dir=tests \
+              --exclude-dir=.githooks \
               --exclude="*.md" \
               --exclude="pr-checks.yml"; then
               echo "[-] Found potential secret: $pattern"
@@ -182,7 +184,7 @@ jobs:
 
             // Check for required sections
             const requiredSections = ['## Summary', '## Changes', '## Testing'];
-            const missingSeconds = requiredSections.filter(section => !pr.body.includes(section));
+            const missingSections = requiredSections.filter(section => !pr.body.includes(section));
 
             if (missingSections.length > 0) {
               core.warning(`PR description is missing recommended sections: ${missingSections.join(', ')}`);

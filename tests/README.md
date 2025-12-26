@@ -95,23 +95,26 @@ tests/
 ├── run-tests.ps1                      # Main test runner (PowerShell/Pester)
 ├── TestHelpers.psm1                   # Shared test utilities
 ├── MockHelpers.psm1                   # NEW v2.1: Reusable mock configurations
-├── CodeCoverage.pester.ps1            # NEW v2.1: Code coverage analysis runner
+├── CodeCoverage.pester.ps1            # Code coverage with HTML/JaCoCo output
+├── full-coverage-analysis.ps1         # Comprehensive per-file coverage breakdown
 ├── Benchmark.ps1                      # Performance benchmarking
 ├── Windows/
 │   ├── CommonFunctions.Tests.ps1      # Core library tests
-│   ├── ErrorHandling.Tests.ps1        # NEW v2.0: Advanced error handling tests
-│   ├── Integration.Advanced.Tests.ps1 # NEW v2.1: Integration tests with mocking
+│   ├── ErrorHandling.Tests.ps1        # Error handling tests
+│   ├── Integration.Advanced.Tests.ps1 # Integration tests with mocking
 │   ├── SystemUpdates.Tests.ps1
-│   ├── SSH.Tests.ps1
-│   ├── Maintenance.Tests.ps1
+│   ├── SSH.Comprehensive.Tests.ps1    # Full SSH suite with edge cases
+│   ├── Maintenance.Comprehensive.Tests.ps1  # Full maintenance suite with mocking
 │   ├── FirstTimeSetup.Tests.ps1
 │   ├── RestorePreviousState.Tests.ps1
 │   ├── StartupScript.Tests.ps1
 │   └── Integration.Tests.ps1
 ├── Linux/
-│   ├── CommonFunctions.Tests.sh       # NEW v2.0: Bash library tests
-│   ├── CommonFunctions.bats           # NEW v2.2: BATS tests for bash library (60+ tests)
-│   ├── Maintenance.Tests.ps1
+│   ├── CommonFunctions.bats           # BATS tests for bash library (60+ tests)
+│   ├── SystemHealthCheck.bats         # System health check tests (40+ tests)
+│   ├── SecurityHardening.bats         # Security hardening tests (60+ tests)
+│   ├── ServiceHealthMonitor.bats      # Service monitor tests (50+ tests)
+│   ├── maintenance.bats               # Maintenance script tests
 │   ├── KubernetesMonitoring.Tests.ps1
 │   ├── GPUMonitoring.Tests.ps1
 │   └── DockerCleanup.Tests.ps1
@@ -189,6 +192,21 @@ Tests run automatically on:
 4. **validate-structure** - Verify repository organization
 5. **markdown-lint** - Lint documentation files
 
+## [*] Test File Hierarchy
+
+**Comprehensive tests** (primary, use for CI and full coverage):
+- `Maintenance.Comprehensive.Tests.ps1` - Full maintenance suite with mocking
+- `SSH.Comprehensive.Tests.ps1` - Full SSH suite with edge cases
+- `Integration.Advanced.Tests.ps1` - Cross-script workflow testing
+
+**Module tests** (Tier-based organization):
+- `Tier2Scripts.Tests.ps1` - Monitoring scripts (Get-SystemPerformance, Watch-ServiceHealth, etc.)
+- `Tier3Scripts.Tests.ps1` - Backup/troubleshooting scripts
+
+**Single-script tests** (focused validation):
+- `StartupScript.Tests.ps1`, `SystemUpdates.Tests.ps1` - Single-script focused
+- `FirstTimeSetup.Tests.ps1`, `RestorePreviousState.Tests.ps1` - Setup/restore tests
+
 ## [*] Test Coverage
 
 ### Currently Tested
@@ -213,7 +231,7 @@ Tests run automatically on:
 **Linux:**
 - [ ] Monitoring scripts (system-health-check, ssl-cert-check)
 - [ ] Server setup scripts (headless-server-setup, docker-lab-environment)
-- [ ] Desktop setup scripts (fresh-desktop-setup)
+- [x] Desktop setup scripts (fresh-desktop-setup) - REMOVED, only headless servers used
 
 ## [+] Writing New Tests
 
@@ -430,13 +448,21 @@ chmod +x tests/Linux/*.bats
 
 ---
 
-**Last Updated:** 2025-10-18
-**Test Framework Version:** 2.2
-**Windows Tests:** 11 files, 750+ assertions (includes ErrorHandling, MockHelpers, Integration.Advanced)
-**Linux Tests:** 6 files, 200+ assertions (includes CommonFunctions.sh + CommonFunctions.bats)
+**Last Updated:** 2025-12-25
+**Test Framework Version:** 2.3
+**Windows Tests:** 13 files, 750+ assertions (includes Comprehensive suites, ErrorHandling, Integration.Advanced)
+**Linux Tests:** 8 files, 350+ assertions (includes CommonFunctions.bats + security + monitoring)
 **Code Coverage:** Enabled with Pester 5+ (minimum 70% threshold, JaCoCo reporting)
-**Total Coverage:** 950+ test assertions across 17 test files
+**Total Coverage:** 1100+ test assertions across 21 test files
 **Integration Test Pass Rate:** 100% (19/19 tests passing)
+
+**NEW in v2.3:**
+
+- [+] SystemHealthCheck.bats - BATS tests for system health monitoring (40+ tests)
+- [+] SecurityHardening.bats - BATS tests for security hardening script (60+ tests)
+- [+] ServiceHealthMonitor.bats - BATS tests for service monitor (50+ tests)
+- [+] Strict shellcheck in CI - Removed || true, proper exclusions for sourced files
+- [+] Linux script parity - security-hardening.sh, service-health-monitor.sh
 
 **NEW in v2.2:**
 - [+] CommonFunctions.bats - Comprehensive BATS tests for Linux bash library (60+ tests)

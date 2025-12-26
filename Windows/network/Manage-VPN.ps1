@@ -567,7 +567,8 @@ function Invoke-VpnTroubleshoot {
 
     # 2. Check network connectivity
     Write-Host "2. Checking network connectivity..." -ForegroundColor Cyan
-    $networkTest = Test-NetConnection -ComputerName "8.8.8.8" -WarningAction SilentlyContinue
+    $testTarget = "8.8.8.8"  # Google DNS for connectivity check
+    $networkTest = Test-NetConnection -ComputerName $testTarget -WarningAction SilentlyContinue
     if ($networkTest.PingSucceeded) {
         $results += [PSCustomObject]@{
             Check   = "Internet Connectivity"

@@ -46,11 +46,13 @@ setup() {
 
 # Test for no emojis (per CLAUDE.md rules)
 @test "disk-cleanup.sh contains no emojis" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/disk-cleanup.sh"
+    # Check for common emoji byte sequences (UTF-8 emoji range)
+    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
 @test "system-update.sh contains no emojis" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]|✅|❌|⚠️|ℹ️' "${LINUX_MAINTENANCE}/system-update.sh"
+    # Check for common emoji byte sequences (UTF-8 emoji range)
+    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/system-update.sh"
 }
 
 # Test for ASCII markers [+] [-] [i] [!]
@@ -116,4 +118,66 @@ setup() {
 # Test for cleanup of package caches
 @test "disk-cleanup.sh cleans package manager caches" {
     grep -q "apt.*clean\|apt.*autoclean\|apt.*autoremove\|yum.*clean" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
+}
+
+# ============================================================================
+# LOG-CLEANUP.SH TESTS
+# ============================================================================
+
+@test "log-cleanup.sh exists" {
+    [ -f "${LINUX_MAINTENANCE}/log-cleanup.sh" ]
+}
+
+@test "log-cleanup.sh is executable" {
+    [ -x "${LINUX_MAINTENANCE}/log-cleanup.sh" ]
+}
+
+@test "log-cleanup.sh has valid bash syntax" {
+    bash -n "${LINUX_MAINTENANCE}/log-cleanup.sh"
+}
+
+@test "log-cleanup.sh has bash shebang" {
+    head -1 "${LINUX_MAINTENANCE}/log-cleanup.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
+}
+
+@test "log-cleanup.sh contains no emojis" {
+    # Check for common emoji byte sequences (UTF-8 emoji range)
+    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/log-cleanup.sh"
+}
+
+@test "log-cleanup.sh has error handling" {
+    grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/log-cleanup.sh"
+}
+
+@test "log-cleanup.sh targets log files" {
+    grep -q "/var/log\|\.log\|journalctl" "${LINUX_MAINTENANCE}/log-cleanup.sh"
+}
+
+# ============================================================================
+# RESTORE-PREVIOUS-STATE.SH TESTS
+# ============================================================================
+
+@test "restore-previous-state.sh exists" {
+    [ -f "${LINUX_MAINTENANCE}/restore-previous-state.sh" ]
+}
+
+@test "restore-previous-state.sh is executable" {
+    [ -x "${LINUX_MAINTENANCE}/restore-previous-state.sh" ]
+}
+
+@test "restore-previous-state.sh has valid bash syntax" {
+    bash -n "${LINUX_MAINTENANCE}/restore-previous-state.sh"
+}
+
+@test "restore-previous-state.sh has bash shebang" {
+    head -1 "${LINUX_MAINTENANCE}/restore-previous-state.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
+}
+
+@test "restore-previous-state.sh contains no emojis" {
+    # Check for common emoji byte sequences (UTF-8 emoji range)
+    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/restore-previous-state.sh"
+}
+
+@test "restore-previous-state.sh has error handling" {
+    grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/restore-previous-state.sh"
 }

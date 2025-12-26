@@ -644,5 +644,5 @@ man ./your-script.sh  # If you create a man page
 
 ---
 
-**Last Updated**: 2025-10-12
+**Last Updated**: 2025-12-25
 **Version**: 1.0.0

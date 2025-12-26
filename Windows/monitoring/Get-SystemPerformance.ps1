@@ -117,7 +117,28 @@ param(
 
     [Parameter()]
     [ValidateRange(1, 50)]
-    [int]$TopProcessCount = 10
+    [int]$TopProcessCount = 10,
+
+    # Disk Analysis Parameters (merged from Watch-DiskSpace.ps1)
+    [Parameter()]
+    [switch]$IncludeDiskAnalysis,
+
+    [Parameter()]
+    [ValidateRange(1, 100)]
+    [int]$TopFilesCount = 20,
+
+    [Parameter()]
+    [ValidateRange(1, 50)]
+    [int]$TopFoldersCount = 10,
+
+    [Parameter()]
+    [switch]$AutoCleanup,
+
+    [Parameter()]
+    [char[]]$DriveLetters,
+
+    [Parameter()]
+    [char[]]$ExcludeDrives
 )
 
 #region Module Imports
@@ -498,6 +519,297 @@ function Get-SystemInfo {
         Uptime          = (Get-Date) - $os.LastBootUpTime
     }
 }
+
+#region Disk Analysis Functions (merged from Watch-DiskSpace.ps1)
+function Get-LargestFiles {
+    <#
+    .SYNOPSIS
+        Finds the largest files on a drive.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$DriveLetter,
+
+        [Parameter()]
+        [int]$Count = 20
+    )
+
+    $results = @()
+
+    try {
+        Write-InfoMessage "Scanning for largest files on ${DriveLetter}:\ (this may take a while)..."
+
+        $files = Get-ChildItem -Path "${DriveLetter}:\" -Recurse -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Length -gt 100MB } |
+            Sort-Object -Property Length -Descending |
+            Select-Object -First $Count
+
+        foreach ($file in $files) {
+            $results += [PSCustomObject]@{
+                Path      = $file.FullName
+                SizeMB    = [math]::Round($file.Length / 1MB, 2)
+                SizeGB    = [math]::Round($file.Length / 1GB, 2)
+                Extension = $file.Extension
+                Modified  = $file.LastWriteTime
+                Age       = [int]((Get-Date) - $file.LastWriteTime).TotalDays
+            }
+        }
+    } catch {
+        Write-WarningMessage "Error scanning files: $($_.Exception.Message)"
+    }
+
+    return $results
+}
+
+function Get-LargestFolders {
+    <#
+    .SYNOPSIS
+        Finds the largest folders on a drive.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$DriveLetter,
+
+        [Parameter()]
+        [int]$Count = 10
+    )
+
+    $results = @()
+    $folders = @{}
+
+    try {
+        Write-InfoMessage "Calculating folder sizes on ${DriveLetter}:\ (this may take a while)..."
+
+        # Get first-level folders
+        $topFolders = Get-ChildItem -Path "${DriveLetter}:\" -Directory -ErrorAction SilentlyContinue
+
+        foreach ($folder in $topFolders) {
+            try {
+                $size = (Get-ChildItem -Path $folder.FullName -Recurse -File -ErrorAction SilentlyContinue |
+                    Measure-Object -Property Length -Sum).Sum
+                if ($size) {
+                    $folders[$folder.FullName] = $size
+                }
+            } catch {
+                # Skip inaccessible folders
+            }
+        }
+
+        # Sort and return top folders
+        $sortedFolders = $folders.GetEnumerator() | Sort-Object -Property Value -Descending | Select-Object -First $Count
+
+        foreach ($folder in $sortedFolders) {
+            $results += [PSCustomObject]@{
+                Path    = $folder.Key
+                SizeMB  = [math]::Round($folder.Value / 1MB, 2)
+                SizeGB  = [math]::Round($folder.Value / 1GB, 2)
+            }
+        }
+    } catch {
+        Write-WarningMessage "Error calculating folder sizes: $($_.Exception.Message)"
+    }
+
+    return $results
+}
+
+function Get-CleanupSuggestions {
+    <#
+    .SYNOPSIS
+        Identifies cleanup opportunities on a drive.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$DriveLetter
+    )
+
+    $suggestions = @()
+
+    # Windows temp folder
+    $windowsTemp = "$env:SystemRoot\Temp"
+    if ((Test-Path $windowsTemp) -and ($DriveLetter -eq $env:SystemDrive[0])) {
+        $size = (Get-ChildItem -Path $windowsTemp -Recurse -File -ErrorAction SilentlyContinue |
+            Measure-Object -Property Length -Sum).Sum
+        if ($size -gt 10MB) {
+            $suggestions += [PSCustomObject]@{
+                Category       = "Temp Files"
+                Path           = $windowsTemp
+                SizeMB         = [math]::Round($size / 1MB, 2)
+                Recommendation = "Safe to delete - Windows temporary files"
+                AutoCleanable  = $true
+            }
+        }
+    }
+
+    # User temp folder
+    $userTemp = $env:TEMP
+    if ((Test-Path $userTemp) -and ($DriveLetter -eq $userTemp[0])) {
+        $size = (Get-ChildItem -Path $userTemp -Recurse -File -ErrorAction SilentlyContinue |
+            Measure-Object -Property Length -Sum).Sum
+        if ($size -gt 10MB) {
+            $suggestions += [PSCustomObject]@{
+                Category       = "User Temp Files"
+                Path           = $userTemp
+                SizeMB         = [math]::Round($size / 1MB, 2)
+                Recommendation = "Safe to delete - User temporary files"
+                AutoCleanable  = $true
+            }
+        }
+    }
+
+    # Windows Update cache
+    $wuCache = "$env:SystemRoot\SoftwareDistribution\Download"
+    if ((Test-Path $wuCache) -and ($DriveLetter -eq $env:SystemDrive[0])) {
+        $size = (Get-ChildItem -Path $wuCache -Recurse -File -ErrorAction SilentlyContinue |
+            Measure-Object -Property Length -Sum).Sum
+        if ($size -gt 100MB) {
+            $suggestions += [PSCustomObject]@{
+                Category       = "Windows Update Cache"
+                Path           = $wuCache
+                SizeMB         = [math]::Round($size / 1MB, 2)
+                Recommendation = "Generally safe - Old Windows Update files"
+                AutoCleanable  = $false
+            }
+        }
+    }
+
+    # Recycle Bin
+    try {
+        $shell = New-Object -ComObject Shell.Application
+        $recycleBin = $shell.Namespace(0xa)
+        $recycleBinSize = 0
+        $recycleBin.Items() | ForEach-Object { $recycleBinSize += $_.Size }
+        if ($recycleBinSize -gt 100MB) {
+            $suggestions += [PSCustomObject]@{
+                Category       = "Recycle Bin"
+                Path           = "Recycle Bin"
+                SizeMB         = [math]::Round($recycleBinSize / 1MB, 2)
+                Recommendation = "Safe to empty - Deleted files"
+                AutoCleanable  = $true
+            }
+        }
+    } catch {
+        # Ignore errors accessing recycle bin
+    }
+
+    # Browser caches
+    $browserPaths = @{
+        "Chrome Cache"  = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache"
+        "Edge Cache"    = "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache"
+        "Firefox Cache" = "$env:LOCALAPPDATA\Mozilla\Firefox\Profiles"
+    }
+
+    foreach ($browser in $browserPaths.GetEnumerator()) {
+        if (Test-Path $browser.Value) {
+            $size = (Get-ChildItem -Path $browser.Value -Recurse -File -ErrorAction SilentlyContinue |
+                Measure-Object -Property Length -Sum).Sum
+            if ($size -gt 100MB) {
+                $suggestions += [PSCustomObject]@{
+                    Category       = $browser.Key
+                    Path           = $browser.Value
+                    SizeMB         = [math]::Round($size / 1MB, 2)
+                    Recommendation = "Safe to delete - Browser cache files"
+                    AutoCleanable  = $true
+                }
+            }
+        }
+    }
+
+    return $suggestions
+}
+
+function Invoke-DiskAutoCleanup {
+    <#
+    .SYNOPSIS
+        Performs automatic cleanup of safe-to-delete files.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject[]]$Suggestions
+    )
+
+    $cleanedMB = 0
+    $cleanableSuggestions = $Suggestions | Where-Object { $_.AutoCleanable }
+
+    foreach ($suggestion in $cleanableSuggestions) {
+        Write-InfoMessage "Cleaning: $($suggestion.Category)"
+
+        try {
+            if ($suggestion.Category -eq "Recycle Bin") {
+                Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+            } else {
+                Remove-Item -Path "$($suggestion.Path)\*" -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            $cleanedMB += $suggestion.SizeMB
+            Write-Success "Cleaned $($suggestion.SizeMB) MB from $($suggestion.Category)"
+        } catch {
+            Write-WarningMessage "Could not clean $($suggestion.Category): $($_.Exception.Message)"
+        }
+    }
+
+    return $cleanedMB
+}
+
+function Get-DiskAnalysis {
+    <#
+    .SYNOPSIS
+        Performs detailed disk analysis for drives with issues.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [array]$DiskVolumes,
+
+        [int]$FilesCount = 20,
+
+        [int]$FoldersCount = 10,
+
+        [switch]$EnableAutoCleanup
+    )
+
+    $analysis = @{
+        LargestFiles       = @{}
+        LargestFolders     = @{}
+        CleanupSuggestions = @{}
+        CleanedMB          = 0
+    }
+
+    foreach ($disk in $DiskVolumes) {
+        $driveLetter = $disk.DriveLetter -replace ':', ''
+
+        # Filter by specified drive letters
+        if ($script:DriveLetters -and $script:DriveLetters -notcontains $driveLetter) {
+            continue
+        }
+
+        # Exclude specified drives
+        if ($script:ExcludeDrives -and $script:ExcludeDrives -contains $driveLetter) {
+            continue
+        }
+
+        # Only analyze drives with high usage (warning/critical)
+        if ($disk.UsagePercent -ge $script:DefaultThresholds.DiskWarning) {
+            Write-InfoMessage "Analyzing drive ${driveLetter}:..."
+            $analysis.LargestFiles[$driveLetter] = Get-LargestFiles -DriveLetter $driveLetter -Count $FilesCount
+            $analysis.LargestFolders[$driveLetter] = Get-LargestFolders -DriveLetter $driveLetter -Count $FoldersCount
+            $analysis.CleanupSuggestions[$driveLetter] = Get-CleanupSuggestions -DriveLetter $driveLetter
+
+            # Auto cleanup if enabled and critical
+            if ($EnableAutoCleanup -and $disk.UsagePercent -ge $script:DefaultThresholds.DiskCritical) {
+                if ($analysis.CleanupSuggestions[$driveLetter]) {
+                    Write-WarningMessage "Auto-cleanup enabled for critical drive ${driveLetter}:"
+                    $analysis.CleanedMB += Invoke-DiskAutoCleanup -Suggestions $analysis.CleanupSuggestions[$driveLetter]
+                }
+            }
+        }
+    }
+
+    return $analysis
+}
+#endregion
 #endregion
 
 #region Output Functions

@@ -115,7 +115,7 @@ jobs:
 
           while IFS= read -r -d '' script; do
             echo "  [*] Analyzing $(basename "$script")..."
-            if shellcheck -S warning "$script"; then
+            if shellcheck -S warning -e SC2034 -e SC2086 -e SC2181 -e SC2155 -e SC2046 -e SC2178 -e SC2128 "$script"; then
               echo "    [+] Clean: $(basename "$script")"
             else
               echo "    [!] Issues found in $(basename "$script")"

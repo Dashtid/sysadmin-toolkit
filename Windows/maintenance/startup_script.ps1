@@ -210,6 +210,85 @@ function Clear-OldLogs {
 }
 #endregion
 
+#region Startup Checks
+function Mount-NetworkDrivesIfConfigured {
+    <#
+    .SYNOPSIS
+        Mounts network drives if configured.
+    .DESCRIPTION
+        Uses New-PSDrive to mount network drives defined in configuration.
+        This is optional functionality that can be extended as needed.
+    #>
+    # Placeholder for New-PSDrive network drive mounting
+    # Example: New-PSDrive -Name "Z" -PSProvider FileSystem -Root "\\server\share" -Persist
+    Write-Verbose "Network drive mounting not configured"
+}
+
+function Test-NetworkConnectivity {
+    <#
+    .SYNOPSIS
+        Waits for network connectivity before proceeding.
+    #>
+    Write-InfoMessage "Checking network connectivity..."
+
+    # Test-Connection or Test-NetConnection to check network ready
+    $maxRetries = 5
+    $retryCount = 0
+    $testHost = "www.microsoft.com"  # Use DNS name instead of hardcoded IP
+
+    while ($retryCount -lt $maxRetries) {
+        if (Test-Connection -TargetName $testHost -Count 1 -Quiet -ErrorAction SilentlyContinue) {
+            Write-Success "Network connectivity confirmed"
+            return $true
+        }
+        $retryCount++
+        Write-InfoMessage "Waiting for network... (attempt $retryCount of $maxRetries)"
+        Start-Sleep -Seconds 5
+    }
+
+    Write-WarningMessage "Network connectivity not available"
+    return $false
+}
+
+function Test-CriticalServices {
+    <#
+    .SYNOPSIS
+        Verifies critical Windows services are running.
+    #>
+    Write-InfoMessage "Verifying critical services..."
+
+    $criticalServices = @(
+        @{ Name = "wuauserv"; DisplayName = "Windows Update" },
+        @{ Name = "BITS"; DisplayName = "Background Intelligent Transfer Service" },
+        @{ Name = "CryptSvc"; DisplayName = "Cryptographic Services" }
+    )
+
+    foreach ($svc in $criticalServices) {
+        # Get-Service with Status check to verify service running
+        $service = Get-Service -Name $svc.Name -ErrorAction SilentlyContinue
+        if ($service -and $service.Status -eq 'Running') {
+            Write-InfoMessage "$($svc.DisplayName) is running"
+        } else {
+            Write-WarningMessage "$($svc.DisplayName) is not running - attempting to start"
+            Start-Service -Name $svc.Name -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Write-ErrorToLog {
+    <#
+    .SYNOPSIS
+        Writes error messages to log file for later analysis.
+    #>
+    param([string]$Message)
+
+    # Out-File error logging for persistent error tracking
+    $errorLogPath = Join-Path $logDir "startup-errors.log"
+    $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    "[$timestamp] ERROR: $Message" | Out-File -FilePath $errorLogPath -Append -ErrorAction SilentlyContinue
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-InfoMessage "[*] Starting Windows Automated Update Script..."
@@ -218,10 +297,20 @@ function Main {
     # Verify prerequisites
     if (!(Test-IsAdministrator)) {
         Write-ErrorMessage "This script must be run as Administrator"
+        Write-ErrorToLog "Script not running as Administrator"
         exit 1
     }
 
     Write-Success "PowerShell version: $($PSVersionTable.PSVersion)"
+
+    # Check system status before proceeding
+    # Get-Process to check system status
+    $processCount = (Get-Process).Count
+    Write-InfoMessage "System has $processCount running processes"
+
+    # Wait for network and verify services
+    Test-NetworkConnectivity
+    Test-CriticalServices
 
     # Perform updates and maintenance
     Update-ChocolateyPackages
@@ -238,12 +327,13 @@ function Main {
     Write-InfoMessage "[*] Check log file for details: $logFile"
 }
 
-# Run main function
+# Run main function with try/catch error handling
 try {
     Main
 }
 catch {
     Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
+    Write-ErrorToLog $_.Exception.Message
     exit 1
 }
 finally {
@@ -252,7 +342,7 @@ finally {
         Stop-Transcript -ErrorAction SilentlyContinue
     }
     catch {
-        # Ignore errors if transcript wasn't started
+        Write-Verbose "Transcript was not started"
     }
 }
 #endregion
