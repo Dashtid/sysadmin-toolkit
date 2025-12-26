@@ -129,7 +129,7 @@ Describe "System Integration Tests" {
 Describe "Script Dependency Chain" {
     Context "Module Import Dependencies" {
         It "PSScriptAnalyzer module check" {
-            $module = Get-Module -ListAvailable -Name "PSScriptAnalyzer"
+            $module = Get-Module -ListAvailable -Name "PSScriptAnalyzer" | Select-Object -First 1
             if ($module) {
                 $module.Name | Should -Be "PSScriptAnalyzer"
             } else {
