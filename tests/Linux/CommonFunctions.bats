@@ -135,7 +135,7 @@ teardown() {
 @test "[+] log_success outputs message with [+] marker" {
     run log_success "Success message"
     [ "$status" -eq 0 ]
-    [[ "$output" =~ \[+\] ]]
+    [[ "$output" =~ \[\+\] ]]
     [[ "$output" =~ "Success message" ]]
 }
 
@@ -363,7 +363,7 @@ SCRIPT
     run bash -c "source '$SCRIPT_PATH' && log_info 'Info test' && log_success 'Success test' && log_warning 'Warning test' && log_error 'Error test'"
     [ "$status" -eq 0 ]
     [[ "$output" =~ \[i\] ]]
-    [[ "$output" =~ \[+\] ]]
+    [[ "$output" =~ \[\+\] ]]
     [[ "$output" =~ \[!\] ]]
     [[ "$output" =~ \[-\] ]]
 }

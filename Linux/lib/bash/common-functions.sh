@@ -1,8 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ============================================================================
 # Common Functions Library for Bash Scripts
 # Provides standardized logging, error handling, validation, and utilities
 # ============================================================================
+# Version: 1.0.0
+# Author: Windows & Linux Sysadmin Toolkit
 #
 # Usage:
 #   source "$(dirname "$0")/../lib/bash/common-functions.sh"
