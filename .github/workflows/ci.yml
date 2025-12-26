@@ -153,6 +153,27 @@ jobs:
           Import-Module Pester -PassThru
           Write-Host "[+] Pester installed successfully"
 
+      - name: Enable SSH Agent Service
+        shell: pwsh
+        run: |
+          Write-Host "[i] Enabling SSH agent service for tests..."
+
+          # Check if OpenSSH is installed
+          $sshAgent = Get-Service -Name "ssh-agent" -ErrorAction SilentlyContinue
+
+          if (-not $sshAgent) {
+            Write-Host "[i] Installing OpenSSH..."
+            Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
+          }
+
+          # Set service to Manual and start it
+          Set-Service -Name "ssh-agent" -StartupType Manual
+          Start-Service -Name "ssh-agent"
+
+          # Verify
+          $service = Get-Service -Name "ssh-agent"
+          Write-Host "[+] SSH agent status: $($service.Status)"
+
       - name: Run Windows tests
         shell: pwsh
         run: |

@@ -682,21 +682,31 @@ Describe "Tier 3 Scripts - Standards Compliance" -Tag "Standards", "Tier3" {
     }
 }
 
-Describe "Tier 3 Scripts - SupportsShouldProcess" -Tag "ShouldProcess", "Tier3" -Skip {
-    # Skipped: SupportsShouldProcess is a future enhancement, not currently implemented
-    $scriptsWithShouldProcess = @('Backup-BrowserProfiles', 'Manage-VPN', 'Manage-WSL', 'Manage-Docker')
+Describe "Tier 3 Scripts - SupportsShouldProcess" -Tag "ShouldProcess", "Tier3" {
+    BeforeDiscovery {
+        # Initialize paths during discovery for -ForEach
+        $testRoot = Split-Path -Parent $PSScriptRoot
+        $repoRoot = Split-Path -Parent $testRoot
+        $windowsRoot = Join-Path $repoRoot "Windows"
 
-    foreach ($scriptName in $scriptsWithShouldProcess) {
-        Context "$scriptName ShouldProcess support" {
-            It "Should have SupportsShouldProcess = `$true" {
-                $content = Get-Content $script:Tier3Scripts[$scriptName] -Raw
-                $content | Should -Match 'SupportsShouldProcess\s*=\s*\$true'
-            }
+        $script:ShouldProcessScripts = @(
+            @{ Name = 'Backup-BrowserProfiles'; Path = (Join-Path $windowsRoot "backup\Backup-BrowserProfiles.ps1") }
+            @{ Name = 'Manage-VPN'; Path = (Join-Path $windowsRoot "network\Manage-VPN.ps1") }
+            @{ Name = 'Manage-WSL'; Path = (Join-Path $windowsRoot "development\Manage-WSL.ps1") }
+            @{ Name = 'Manage-Docker'; Path = (Join-Path $windowsRoot "development\Manage-Docker.ps1") }
+        )
+    }
 
-            It "Should use PSCmdlet.ShouldProcess for destructive operations" {
-                $content = Get-Content $script:Tier3Scripts[$scriptName] -Raw
-                $content | Should -Match '\$PSCmdlet\.ShouldProcess'
-            }
+    # All Tier 3 scripts now implement SupportsShouldProcess
+    Context "<Name> ShouldProcess support" -ForEach $script:ShouldProcessScripts {
+        It "Should have SupportsShouldProcess = `$true" {
+            $content = Get-Content $Path -Raw
+            $content | Should -Match 'SupportsShouldProcess\s*=\s*\$true'
+        }
+
+        It "Should use PSCmdlet.ShouldProcess for destructive operations" {
+            $content = Get-Content $Path -Raw
+            $content | Should -Match '\$PSCmdlet\.ShouldProcess'
         }
     }
 }
