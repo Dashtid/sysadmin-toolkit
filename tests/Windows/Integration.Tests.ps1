@@ -28,7 +28,11 @@ Describe "Cross-Script Integration" {
             $scriptExists | Should -Be $true
         }
 
-        It "SSH setup script can be parsed" -Skip:(-not $scriptExists) {
+        It "SSH setup script can be parsed" {
+            if (-not $scriptExists) {
+                Set-ItResult -Skipped -Because "SSH setup script does not exist"
+                return
+            }
             { [scriptblock]::Create((Get-Content $setupScript -Raw)) } | Should -Not -Throw
         }
 
