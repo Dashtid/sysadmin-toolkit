@@ -54,11 +54,13 @@ teardown() {
 }
 
 @test "[-] Script contains no hardcoded passwords" {
-    ! grep -iE 'password\s*=\s*["\'][^"'\'']+["\']' "$SCRIPT_PATH"
+    # Check for password assignments with quotes
+    ! grep -iE "password\s*=\s*[\"']" "$SCRIPT_PATH"
 }
 
 @test "[-] Script contains no hardcoded API keys" {
-    ! grep -iE 'api[_-]?key\s*=\s*["\'][^"'\'']+["\']' "$SCRIPT_PATH"
+    # Check for API key assignments with quotes
+    ! grep -iE "api[_-]?key\s*=\s*[\"']" "$SCRIPT_PATH"
 }
 
 @test "[-] Script contains no SSH private keys" {
