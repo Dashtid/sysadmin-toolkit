@@ -682,8 +682,8 @@ Describe "Tier 3 Scripts - Standards Compliance" -Tag "Standards", "Tier3" {
     }
 }
 
-Describe "Tier 3 Scripts - SupportsShouldProcess" -Tag "ShouldProcess", "Tier3" -Skip {
-    # Skipped: SupportsShouldProcess is a future enhancement, not currently implemented
+Describe "Tier 3 Scripts - SupportsShouldProcess" -Tag "ShouldProcess", "Tier3" {
+    # All Tier 3 scripts now implement SupportsShouldProcess
     $scriptsWithShouldProcess = @('Backup-BrowserProfiles', 'Manage-VPN', 'Manage-WSL', 'Manage-Docker')
 
     foreach ($scriptName in $scriptsWithShouldProcess) {

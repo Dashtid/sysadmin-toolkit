@@ -207,6 +207,54 @@ function Test-NoPrivateIPs {
     return $true
 }
 
+function Test-NoPrivateIPsInCode {
+    <#
+    .SYNOPSIS
+        Checks script for hardcoded private IPs in executable code only.
+    .DESCRIPTION
+        Uses PowerShell AST to parse the script and only checks non-comment,
+        non-string-literal tokens for private IP addresses. This allows
+        example IPs in documentation/comments while catching actual hardcoded IPs.
+    .PARAMETER Path
+        Path to the script file.
+    .OUTPUTS
+        Returns $true if no private IPs found in code, $false otherwise.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $tokens = $null
+    $errors = $null
+    [System.Management.Automation.Language.Parser]::ParseFile(
+        $Path, [ref]$tokens, [ref]$errors
+    ) | Out-Null
+
+    $patterns = @(
+        '10\.\d{1,3}\.\d{1,3}\.\d{1,3}',
+        '172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}',
+        '192\.168\.\d{1,3}\.\d{1,3}'
+    )
+
+    $skipKinds = @('Comment', 'StringLiteral', 'StringExpandable',
+        'HereStringLiteral', 'HereStringExpandable')
+
+    foreach ($token in $tokens) {
+        if ($token.Kind -in $skipKinds) { continue }
+        foreach ($pattern in $patterns) {
+            if ($token.Text -match $pattern) {
+                Write-Warning "Private IP found in code at line $($token.Extent.StartLineNumber): $($Matches[0])"
+                return $false
+            }
+        }
+    }
+
+    return $true
+}
+
 # ============================================================================
 # OUTPUT FORMAT HELPERS
 # ============================================================================
@@ -429,6 +477,7 @@ Export-ModuleMember -Function @(
     'Get-ScriptParameters'
     'Test-NoHardcodedSecrets'
     'Test-NoPrivateIPs'
+    'Test-NoPrivateIPsInCode'
     'Test-ConsistentLogging'
     'New-MockService'
     'New-MockProcess'

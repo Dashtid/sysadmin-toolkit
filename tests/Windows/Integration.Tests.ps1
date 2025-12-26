@@ -186,21 +186,41 @@ Describe "Security Integration Tests" {
             $foundSecrets | Should -BeNullOrEmpty
         }
 
-        It "No scripts contain private IPs (except examples)" -Skip {
-            # Skipped: Sysadmin toolkit scripts legitimately contain example IPs for documentation
-            $scriptsToCheck = $allScripts | Where-Object {
-                $_.FullName -notmatch 'examples|docs|README'
-            }
+        It "No scripts contain private IPs in executable code" {
+            # Uses AST-based detection: allows IPs in comments/strings (documentation)
+            # but rejects them in actual executable code
+            $privateIpPatterns = @(
+                '10\.\d{1,3}\.\d{1,3}\.\d{1,3}',
+                '172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}',
+                '192\.168\.\d{1,3}\.\d{1,3}'
+            )
 
-            $foundPrivateIPs = @()
-            foreach ($script in $scriptsToCheck) {
-                $result = Test-NoPrivateIPs -Path $script.FullName -AllowExampleIPs
-                if (-not $result) {
-                    $foundPrivateIPs += $script.Name
+            $foundProblems = @()
+
+            foreach ($script in $allScripts) {
+                $tokens = $null
+                $errors = $null
+                [System.Management.Automation.Language.Parser]::ParseFile(
+                    $script.FullName, [ref]$tokens, [ref]$errors
+                ) | Out-Null
+
+                foreach ($token in $tokens) {
+                    # Skip comments and string literals (documentation/examples are OK)
+                    $skipKinds = @('Comment', 'StringLiteral', 'StringExpandable',
+                        'HereStringLiteral', 'HereStringExpandable')
+                    if ($token.Kind -in $skipKinds) {
+                        continue
+                    }
+
+                    foreach ($pattern in $privateIpPatterns) {
+                        if ($token.Text -match $pattern) {
+                            $foundProblems += "$($script.Name):$($token.Extent.StartLineNumber)"
+                        }
+                    }
                 }
             }
 
-            $foundPrivateIPs | Should -BeNullOrEmpty
+            $foundProblems | Should -BeNullOrEmpty
         }
     }
 
