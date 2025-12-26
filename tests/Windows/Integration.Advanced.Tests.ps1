@@ -400,7 +400,7 @@ Describe "Integration Tests - Full Workflow Scenarios" {
             Mock-NetworkCommands -ReachableHosts @('github.com', 'registry.npmjs.org')
         }
 
-        It "Validates environment before starting setup" -Skip:(-not (Get-Service -Name 'ssh-agent' -ErrorAction SilentlyContinue)) {
+        It "Validates environment before starting setup" -Skip:(-not ((Get-Service -Name 'ssh-agent' -ErrorAction SilentlyContinue).Status -eq 'Running')) {
             # Arrange
             $requiredServices = @('ssh-agent')
 
