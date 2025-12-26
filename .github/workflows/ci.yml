@@ -7,6 +7,12 @@ on:
     branches: [ main, develop ]
   workflow_dispatch:
 
+# Required permissions for test result publishing
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 env:
   POWERSHELL_VERSION: '7.4.x'
 
