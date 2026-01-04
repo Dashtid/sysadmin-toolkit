@@ -64,22 +64,6 @@ Describe "First-Time Setup Scripts" {
 
     Context "Package Export Files" {
 
-        It "winget-packages.json exists" {
-            $JsonPath = Join-Path $WindowsScripts "winget-packages.json"
-            Test-Path $JsonPath | Should -Be $true
-        }
-
-        It "winget-packages.json is valid JSON" {
-            $JsonPath = Join-Path $WindowsScripts "winget-packages.json"
-            { Get-Content $JsonPath | ConvertFrom-Json } | Should -Not -Throw
-        }
-
-        It "winget-packages.json contains packages" {
-            $JsonPath = Join-Path $WindowsScripts "winget-packages.json"
-            $Json = Get-Content $JsonPath | ConvertFrom-Json
-            $Json.Sources.Packages.Count | Should -BeGreaterThan 0
-        }
-
         It "chocolatey-packages.config exists" {
             $ConfigPath = Join-Path $WindowsScripts "chocolatey-packages.config"
             Test-Path $ConfigPath | Should -Be $true
@@ -184,27 +168,6 @@ Describe "First-Time Setup Scripts" {
 }
 
 Describe "Package Lists Validation" {
-
-    Context "Winget Package List" {
-
-        It "Contains essential development tools" {
-            $JsonPath = Join-Path $WindowsScripts "winget-packages.json"
-            $Json = Get-Content $JsonPath | ConvertFrom-Json
-            $PackageIds = $Json.Sources.Packages.PackageIdentifier
-
-            $PackageIds | Should -Contain "Git.Git"
-            $PackageIds | Should -Contain "Microsoft.VisualStudioCode"
-            $PackageIds | Should -Contain "Docker.DockerDesktop"
-        }
-
-        It "Contains PowerShell 7" {
-            $JsonPath = Join-Path $WindowsScripts "winget-packages.json"
-            $Json = Get-Content $JsonPath | ConvertFrom-Json
-            $PackageIds = $Json.Sources.Packages.PackageIdentifier
-
-            $PackageIds | Should -Contain "Microsoft.PowerShell"
-        }
-    }
 
     Context "Chocolatey Package List" {
 

@@ -16,7 +16,7 @@
     Output format: Console, JSON, CSV (default: Console).
 
 .EXAMPLE
-    .\Benchmark.ps1 -ScriptPath "..\Windows\ssh\setup-ssh-agent-access.ps1" -Iterations 3
+    .\Benchmark.ps1 -ScriptPath "..\Windows\maintenance\system-updates.ps1" -Iterations 3
 
 .NOTES
     Author: David Dashti

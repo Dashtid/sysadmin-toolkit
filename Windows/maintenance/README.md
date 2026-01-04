@@ -7,9 +7,6 @@ Automated update scripts for Chocolatey, Winget, and Windows Update with restore
 | Script | Purpose |
 |--------|---------|
 | [system-updates.ps1](system-updates.ps1) | Full update automation with state export |
-| [Restore-PreviousState.ps1](Restore-PreviousState.ps1) | Rollback to pre-update package state |
-| [startup_script.ps1](startup_script.ps1) | Simplified updates and cleanup |
-| [setup-scheduled-tasks.ps1](setup-scheduled-tasks.ps1) | Create scheduled update tasks |
 
 ## Quick Start
 
@@ -37,15 +34,6 @@ Copy-Item config.example.json config.json
 .\system-updates.ps1 -AutoReboot           # Reboot after updates
 .\system-updates.ps1 -WhatIf               # Dry-run mode
 .\system-updates.ps1 -ConfigFile "C:\path\to\config.json"
-```
-
-### Restore-PreviousState.ps1
-
-```powershell
-.\Restore-PreviousState.ps1 -List          # List available backups
-.\Restore-PreviousState.ps1 -Latest -ShowDiff  # Preview changes
-.\Restore-PreviousState.ps1 -Latest        # Restore from latest
-.\Restore-PreviousState.ps1 -Latest -WhatIf    # Dry-run restore
 ```
 
 ## Configuration

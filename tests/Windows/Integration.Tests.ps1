@@ -8,43 +8,12 @@ BeforeAll {
     Import-Module $TestHelpers -Force
 
     # Paths
-    $SSHPath = Join-Path $ProjectRoot "Windows\ssh"
     $MaintenancePath = Join-Path $ProjectRoot "Windows\maintenance"
 }
 
 AfterAll {
     # Cleanup any test artifacts
     Remove-Module TestHelpers -ErrorAction SilentlyContinue
-}
-
-Describe "Cross-Script Integration" {
-    Context "SSH Agent Setup Integration" {
-        BeforeAll {
-            $setupScript = Join-Path $SSHPath "setup-ssh-agent-access.ps1"
-            $scriptExists = Test-Path $setupScript
-        }
-
-        It "SSH setup script exists" {
-            $scriptExists | Should -Be $true
-        }
-
-        It "SSH setup script can be parsed" {
-            if (-not $scriptExists) {
-                Set-ItResult -Skipped -Because "SSH setup script does not exist"
-                return
-            }
-            { [scriptblock]::Create((Get-Content $setupScript -Raw)) } | Should -Not -Throw
-        }
-
-        It "SSH agent service is available on Windows" {
-            $service = Get-Service -Name "ssh-agent" -ErrorAction SilentlyContinue
-            if ($service) {
-                $service | Should -Not -BeNullOrEmpty
-            } else {
-                Set-ItResult -Skipped -Because "SSH agent service not installed on this system"
-            }
-        }
-    }
 }
 
 Describe "System Integration Tests" {

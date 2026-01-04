@@ -14,7 +14,6 @@ Automated package export and installation for fresh Windows 11 machines.
 
 | File | Count | Format |
 |------|-------|--------|
-| [winget-packages.json](winget-packages.json) | 57 | JSON |
 | [chocolatey-packages.config](chocolatey-packages.config) | 52 | XML |
 
 ## Quick Start
