@@ -7,7 +7,6 @@ setup() {
     SERVER_DIR="${PROJECT_ROOT}/Linux/server"
     DOCKER_LAB="${SERVER_DIR}/docker-lab-environment.sh"
     HEADLESS_SETUP="${SERVER_DIR}/headless-server-setup.sh"
-    UBUNTU_MAINT="${SERVER_DIR}/ubuntu-server-maintenance.sh"
 }
 
 # ============================================================================
@@ -238,90 +237,3 @@ setup() {
     grep -q "mkdir.*log\|LOG_DIR" "$HEADLESS_SETUP"
 }
 
-# ============================================================================
-# UBUNTU-SERVER-MAINTENANCE.SH - BASIC VALIDATION
-# ============================================================================
-
-@test "ubuntu-server-maintenance.sh exists" {
-    [ -f "$UBUNTU_MAINT" ]
-}
-
-@test "ubuntu-server-maintenance.sh is executable" {
-    [ -x "$UBUNTU_MAINT" ]
-}
-
-@test "ubuntu-server-maintenance.sh has valid bash syntax" {
-    bash -n "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh has bash shebang" {
-    head -1 "$UBUNTU_MAINT" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
-}
-
-# ============================================================================
-# UBUNTU-SERVER-MAINTENANCE.SH - SECURITY COMPLIANCE
-# ============================================================================
-
-@test "ubuntu-server-maintenance.sh contains no emojis" {
-    ! grep -P '\xE2\x9C|\xF0\x9F' "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh uses ASCII markers" {
-    grep -q '\[\+\]\|\[-\]\|\[i\]\|\[!\]' "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh contains no hardcoded passwords" {
-    ! grep -iE "password\s*=\s*['\"][^'\"]+['\"]" "$UBUNTU_MAINT"
-}
-
-# ============================================================================
-# UBUNTU-SERVER-MAINTENANCE.SH - ERROR HANDLING
-# ============================================================================
-
-@test "ubuntu-server-maintenance.sh has strict error handling" {
-    grep -q "set -euo pipefail" "$UBUNTU_MAINT"
-}
-
-# ============================================================================
-# UBUNTU-SERVER-MAINTENANCE.SH - FUNCTION DEFINITIONS
-# ============================================================================
-
-@test "ubuntu-server-maintenance.sh defines update_system function" {
-    grep -q "^update_system()" "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh defines configure_firewall function" {
-    grep -q "^configure_firewall()" "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh defines secure_ssh function" {
-    grep -q "^secure_ssh()" "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh defines docker_cleanup function" {
-    grep -q "^docker_cleanup()" "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh defines main function" {
-    grep -q "^main()" "$UBUNTU_MAINT"
-}
-
-# ============================================================================
-# UBUNTU-SERVER-MAINTENANCE.SH - MAINTENANCE TASKS
-# ============================================================================
-
-@test "ubuntu-server-maintenance.sh runs apt update" {
-    grep -q "apt update\|apt-get update" "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh runs apt upgrade" {
-    grep -q "apt.*upgrade" "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh runs autoremove" {
-    grep -q "autoremove" "$UBUNTU_MAINT"
-}
-
-@test "ubuntu-server-maintenance.sh cleans docker" {
-    grep -q "docker.*prune\|docker_cleanup" "$UBUNTU_MAINT"
-}

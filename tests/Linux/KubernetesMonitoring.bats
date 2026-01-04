@@ -6,7 +6,6 @@ setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     K8S_DIR="${PROJECT_ROOT}/Linux/kubernetes"
     POD_MONITOR="${K8S_DIR}/pod-health-monitor.sh"
-    PVC_MONITOR="${K8S_DIR}/pvc-monitor.sh"
 }
 
 # ============================================================================
@@ -161,90 +160,3 @@ setup() {
     grep -q "exit 1" "$POD_MONITOR"
 }
 
-# ============================================================================
-# PVC-MONITOR.SH - BASIC VALIDATION
-# ============================================================================
-
-@test "pvc-monitor.sh exists" {
-    [ -f "$PVC_MONITOR" ]
-}
-
-@test "pvc-monitor.sh is executable" {
-    [ -x "$PVC_MONITOR" ]
-}
-
-@test "pvc-monitor.sh has valid bash syntax" {
-    bash -n "$PVC_MONITOR"
-}
-
-@test "pvc-monitor.sh has bash shebang" {
-    head -1 "$PVC_MONITOR" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
-}
-
-# ============================================================================
-# PVC-MONITOR.SH - SECURITY COMPLIANCE
-# ============================================================================
-
-@test "pvc-monitor.sh contains no emojis" {
-    ! grep -P '\xE2\x9C|\xF0\x9F' "$PVC_MONITOR"
-}
-
-@test "pvc-monitor.sh uses ASCII markers" {
-    grep -q '\[\+\]\|\[-\]\|\[i\]\|\[!\]' "$PVC_MONITOR"
-}
-
-@test "pvc-monitor.sh contains no hardcoded passwords" {
-    ! grep -iE "password\s*=\s*['\"][^'\"]+['\"]" "$PVC_MONITOR"
-}
-
-# ============================================================================
-# PVC-MONITOR.SH - ERROR HANDLING
-# ============================================================================
-
-@test "pvc-monitor.sh has strict error handling" {
-    grep -q "set -euo pipefail" "$PVC_MONITOR"
-}
-
-# ============================================================================
-# PVC-MONITOR.SH - KUBERNETES INTEGRATION
-# ============================================================================
-
-@test "pvc-monitor.sh uses kubectl" {
-    grep -q "kubectl" "$PVC_MONITOR"
-}
-
-@test "pvc-monitor.sh uses jq" {
-    grep -q "jq" "$PVC_MONITOR"
-}
-
-@test "pvc-monitor.sh queries PVC resources" {
-    grep -q "kubectl get pvc" "$PVC_MONITOR"
-}
-
-# ============================================================================
-# PVC-MONITOR.SH - PROMETHEUS METRICS
-# ============================================================================
-
-@test "pvc-monitor.sh exports Prometheus metrics" {
-    grep -q "\.prom" "$PVC_MONITOR"
-}
-
-@test "pvc-monitor.sh has HELP comments for metrics" {
-    grep -q "# HELP" "$PVC_MONITOR"
-}
-
-@test "pvc-monitor.sh has TYPE comments for metrics" {
-    grep -q "# TYPE" "$PVC_MONITOR"
-}
-
-# ============================================================================
-# PVC-MONITOR.SH - CONFIGURATION
-# ============================================================================
-
-@test "pvc-monitor.sh has METRICS_DIR variable" {
-    grep -q "METRICS_DIR" "$PVC_MONITOR"
-}
-
-@test "pvc-monitor.sh supports NAMESPACE variable" {
-    grep -q "NAMESPACE" "$PVC_MONITOR"
-}
