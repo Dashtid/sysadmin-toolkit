@@ -2,6 +2,9 @@
   // Hide chat from sidebar on startup
   "workbench.secondarySideBar.defaultVisibility": "hidden",
 
+  // GitHub Actions - disable SHA resolution warnings (expected with SHA pinning)
+  "github-actions.workflows.pinned-version-checking.enabled": false,
+
   // Additional workspace settings for clean development
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
