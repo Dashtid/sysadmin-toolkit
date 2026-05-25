@@ -94,7 +94,7 @@ Describe "First-Time Setup Scripts" {
         }
 
         It "QUICKSTART.md exists" {
-            $QuickstartPath = Join-Path $WindowsScripts "QUICKSTART.md"
+            $QuickstartPath = Join-Path $ProjectRoot "QUICKSTART.md"
             Test-Path $QuickstartPath | Should -Be $true
         }
     }

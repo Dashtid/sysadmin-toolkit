@@ -96,8 +96,7 @@ Describe "CommonFunctions Module - Logging Functions" {
 
     Context "Write-Success Function" {
         It "Write-Success function exists" {
-            Get-Command Write-Success -Module CommonFunctions -ErrorAction SilentlyContinue |
-                Should -Not -BeNullOrEmpty
+            (Get-Module CommonFunctions).ExportedCommands.Keys | Should -Contain 'Write-Success'
         }
 
         It "Write-Success accepts Message parameter" {
@@ -362,7 +361,7 @@ Describe "CommonFunctions Module - Integration" {
 
         It "Exported functions are available after import" {
             Import-Module $ModulePath -Force
-            Get-Command Write-Success -Module CommonFunctions | Should -Not -BeNullOrEmpty
+            (Get-Module CommonFunctions).ExportedCommands.Keys | Should -Contain 'Write-Success'
         }
     }
 

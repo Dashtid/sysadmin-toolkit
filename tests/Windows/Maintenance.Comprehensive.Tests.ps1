@@ -265,7 +265,7 @@ Describe "Maintenance Scripts Integration" {
             $scripts = Get-ChildItem $MaintenancePath -Filter "*.ps1"
             foreach ($script in $scripts) {
                 $content = Get-Content $script.FullName -Raw
-                $hasLogging = $content -match 'Write-Host|Write-Output|Write-Verbose'
+                $hasLogging = $content -match 'Write-Host|Write-Output|Write-Verbose|Write-InfoMessage|Write-Success|Write-WarningMessage|Write-ErrorMessage'
                 $hasLogging | Should -Be $true
             }
         }

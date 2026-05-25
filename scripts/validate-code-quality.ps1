@@ -87,7 +87,7 @@ function Write-Result {
     Write-Host "$marker $Message" -ForegroundColor $colors[$Type]
 }
 
-function Test-CommandExists {
+function Test-CommandExist {
     param([string]$Command)
 
     $null = Get-Command $Command -ErrorAction SilentlyContinue
@@ -98,11 +98,11 @@ function Test-CommandExists {
 # POWERSHELL VALIDATION
 # ============================================================================
 
-function Test-PowerShellScripts {
+function Test-PowerShellScript {
     Write-SectionHeader "PowerShell Script Validation"
 
     # Check if PSScriptAnalyzer is installed
-    if (-not (Test-CommandExists 'Invoke-ScriptAnalyzer')) {
+    if (-not (Test-CommandExist 'Invoke-ScriptAnalyzer')) {
         Write-Result "PSScriptAnalyzer not installed. Installing..." -Type Warning
         try {
             Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
@@ -161,11 +161,11 @@ function Test-PowerShellScripts {
 # BASH VALIDATION
 # ============================================================================
 
-function Test-BashScripts {
+function Test-BashScript {
     Write-SectionHeader "Bash Script Validation"
 
     # Check if shellcheck is available
-    if (-not (Test-CommandExists 'shellcheck')) {
+    if (-not (Test-CommandExist 'shellcheck')) {
         Write-Result "shellcheck not found in PATH" -Type Warning
         Write-Result "Install shellcheck for Bash validation: https://github.com/koalaman/shellcheck" -Type Info
         Write-Result "Skipping Bash validation" -Type Warning
@@ -214,11 +214,11 @@ function Test-BashScripts {
 # PYTHON VALIDATION
 # ============================================================================
 
-function Test-PythonScripts {
+function Test-PythonScript {
     Write-SectionHeader "Python Script Validation"
 
     # Check if uv is available
-    if (-not (Test-CommandExists 'uv')) {
+    if (-not (Test-CommandExist 'uv')) {
         Write-Result "uv not found in PATH" -Type Warning
         Write-Result "Install uv: https://docs.astral.sh/uv/" -Type Info
         Write-Result "Skipping Python validation" -Type Warning
@@ -300,15 +300,15 @@ Write-Host "  Sysadmin Toolkit - Code Quality Validation" -ForegroundColor Cyan
 Write-Host ("=" * 80) -ForegroundColor Cyan
 
 if (-not $SkipPowerShell) {
-    Test-PowerShellScripts
+    Test-PowerShellScript
 }
 
 if (-not $SkipBash) {
-    Test-BashScripts
+    Test-BashScript
 }
 
 if (-not $SkipPython) {
-    Test-PythonScripts
+    Test-PythonScript
 }
 
 # Print summary

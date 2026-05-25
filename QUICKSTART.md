@@ -19,11 +19,13 @@ SSH_KEY_PATH=~/.ssh/id_ed25519
 
 ## 2. Run Your First Script
 
-### Windows: SSH Agent
+### Windows: Schedule Weekly Updates
 
 ```powershell
-.\Windows\ssh\setup-ssh-agent-access.ps1 -ServerIP "192.0.2.50" -ServerUser "admin"
-ssh-add $env:USERPROFILE\.ssh\id_ed25519
+# From an elevated pwsh
+.\Windows\maintenance\Install-SystemUpdatesTask.ps1
+# Optional: trigger a one-shot smoke test
+Start-ScheduledTask -TaskName SystemUpdates
 ```
 
 ### Windows: System Monitoring

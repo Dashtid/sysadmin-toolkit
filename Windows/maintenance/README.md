@@ -7,6 +7,7 @@ Automated update scripts for Chocolatey, Winget, and Windows Update with restore
 | Script | Purpose |
 |--------|---------|
 | [system-updates.ps1](system-updates.ps1) | Full update automation with state export |
+| [Install-SystemUpdatesTask.ps1](Install-SystemUpdatesTask.ps1) | Register system-updates.ps1 as a recurring scheduled task |
 
 ## Quick Start
 
@@ -54,14 +55,30 @@ Copy-Item config.example.json config.json
 
 ## Scheduled Updates
 
+### Recommended: Install-SystemUpdatesTask.ps1
+
 ```powershell
-# Weekly Sunday 3 AM
-$action = New-ScheduledTaskAction -Execute "pwsh.exe" `
-    -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$PWD\system-updates.ps1`" -AutoReboot"
-$trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 3am
-$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
-Register-ScheduledTask -TaskName "Weekly System Updates" -Action $action -Trigger $trigger -Principal $principal
+# From an elevated pwsh, in this directory:
+.\Install-SystemUpdatesTask.ps1                                       # Sunday 10:00, current user, no auto-reboot
+.\Install-SystemUpdatesTask.ps1 -DayOfWeek Saturday -Time 06:30 -Force # Replace existing task with new schedule
+.\Install-SystemUpdatesTask.ps1 -AutoReboot -Force                    # Reboot when updates require it
+.\Install-SystemUpdatesTask.ps1 -SystemAccount -Force                 # Run as SYSTEM (see note below)
 ```
+
+The installer registers a task with laptop-friendly defaults: runs as the current user with `RunLevel=Highest`
+(no UAC prompt), weekly on the chosen day/time, `StartWhenAvailable` so a missed window catches up, and
+allows starting/continuing on battery.
+
+### Why not SYSTEM?
+
+`winget upgrade --all` running under the SYSTEM account misses user-scope packages -- a documented limitation
+of winget. For a dev environment toolkit, the current user with elevated rights is the right default. Use
+`-SystemAccount` only for headless server scenarios where no user is interactively logged in.
+
+### Alternative: XML import
+
+For GUI-based installs, see [examples/weekly-updates-task.xml](examples/weekly-updates-task.xml) and
+[examples/README.md](examples/README.md). The XML requires manual placeholder replacement before import.
 
 ## Log Files
 
@@ -90,4 +107,4 @@ Use `Get-Help .\system-updates.ps1 -Full` for detailed parameter info.
 - Chocolatey and/or Winget (optional)
 
 ---
-**Last Updated**: 2025-12-26
+**Last Updated**: 2026-05-15

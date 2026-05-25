@@ -61,36 +61,41 @@ Describe "Monitoring Script Syntax Validation" {
     Context "PowerShell Syntax" {
         It "Get-SystemPerformance.ps1 has valid syntax" {
             $scriptPath = Join-Path $MonitoringPath "Get-SystemPerformance.ps1"
+            $tokens = $null
             $errors = $null
-            $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $scriptPath -Raw), [ref]$errors)
+            $null = [System.Management.Automation.Language.Parser]::ParseInput((Get-Content $scriptPath -Raw), [ref]$tokens, [ref]$errors)
             $errors.Count | Should -Be 0
         }
 
         It "Watch-ServiceHealth.ps1 has valid syntax" {
             $scriptPath = Join-Path $MonitoringPath "Watch-ServiceHealth.ps1"
+            $tokens = $null
             $errors = $null
-            $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $scriptPath -Raw), [ref]$errors)
+            $null = [System.Management.Automation.Language.Parser]::ParseInput((Get-Content $scriptPath -Raw), [ref]$tokens, [ref]$errors)
             $errors.Count | Should -Be 0
         }
 
         It "Test-NetworkHealth.ps1 has valid syntax" {
             $scriptPath = Join-Path $MonitoringPath "Test-NetworkHealth.ps1"
+            $tokens = $null
             $errors = $null
-            $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $scriptPath -Raw), [ref]$errors)
+            $null = [System.Management.Automation.Language.Parser]::ParseInput((Get-Content $scriptPath -Raw), [ref]$tokens, [ref]$errors)
             $errors.Count | Should -Be 0
         }
 
         It "Get-EventLogAnalysis.ps1 has valid syntax" {
             $scriptPath = Join-Path $MonitoringPath "Get-EventLogAnalysis.ps1"
+            $tokens = $null
             $errors = $null
-            $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $scriptPath -Raw), [ref]$errors)
+            $null = [System.Management.Automation.Language.Parser]::ParseInput((Get-Content $scriptPath -Raw), [ref]$tokens, [ref]$errors)
             $errors.Count | Should -Be 0
         }
 
         It "Backup-UserData.ps1 has valid syntax" {
             $scriptPath = Join-Path $BackupPath "Backup-UserData.ps1"
+            $tokens = $null
             $errors = $null
-            $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $scriptPath -Raw), [ref]$errors)
+            $null = [System.Management.Automation.Language.Parser]::ParseInput((Get-Content $scriptPath -Raw), [ref]$tokens, [ref]$errors)
             $errors.Count | Should -Be 0
         }
     }

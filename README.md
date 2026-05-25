@@ -31,15 +31,13 @@ cp .env.example .env.local  # Configure your values
 | | [Backup-DeveloperEnvironment.ps1](Windows/backup/) | VSCode, Terminal, Git, SSH configs |
 | | [Export-SystemState.ps1](Windows/backup/) | Drivers, registry, network, services |
 | | [Test-BackupIntegrity.ps1](Windows/backup/) | Backup validation and restore testing |
-| **SSH** | [setup-ssh-agent-access.ps1](Windows/ssh/) | Windows SSH agent for Git Bash |
-| | [gitea-tunnel-manager.ps1](Windows/ssh/) | Persistent SSH tunnels |
 | **Setup** | [fresh-windows-setup.ps1](Windows/first-time-setup/) | Automated Windows 11 setup |
 | | [export-current-packages.ps1](Windows/first-time-setup/) | Export Winget/Chocolatey packages |
 | **Development** | [Test-DevEnvironment.ps1](Windows/development/) | Validate dev tool installation |
 | | [Manage-Docker.ps1](Windows/development/) | Docker Desktop management |
 | | [Manage-WSL.ps1](Windows/development/) | WSL2 backup and configuration |
 | **Maintenance** | [system-updates.ps1](Windows/maintenance/) | Windows Update automation |
-| | [Restore-PreviousState.ps1](Windows/maintenance/) | System restore from backup |
+| | [Install-SystemUpdatesTask.ps1](Windows/maintenance/) | Register system-updates.ps1 as a scheduled task |
 | **Troubleshooting** | [Repair-CommonIssues.ps1](Windows/troubleshooting/) | Fix DNS, network, update issues |
 | **Security** | [Get-UserAccountAudit.ps1](Windows/security/) | User and admin account audit |
 | **Network** | [Manage-VPN.ps1](Windows/network/) | VPN connection management |
@@ -91,4 +89,4 @@ cp .env.example .env.local  # Configure your values
 MIT License - See [LICENSE](LICENSE)
 
 ---
-**Author**: David Dashti | **Version**: 2.1.0 | **Updated**: 2025-12-26
+**Author**: David Dashti | **Version**: 2.2.0 | **Updated**: 2026-05-15

@@ -1,47 +1,55 @@
 # Scheduled Task Examples
 
-Example XML files for Windows Task Scheduler to automate system maintenance.
+> **Recommended approach:** Use [../Install-SystemUpdatesTask.ps1](../Install-SystemUpdatesTask.ps1) instead.
+> It uses `Register-ScheduledTask` with the toolkit's resolved path, no placeholders, and laptop-friendly
+> defaults. The XML below is for users who prefer the Task Scheduler GUI.
 
 ## weekly-updates-task.xml
 
-**Purpose:** Weekly automated system updates on Sunday at 3:00 AM
+**Purpose:** Weekly automated system updates on Sunday at 10:00.
 
 **Features:**
 - Runs system-updates.ps1 with full update capabilities
 - Creates system restore points before updates
-- Automatically reboots if updates require it
-- Runs as SYSTEM account with highest privileges
+- Runs as the importing user with HighestAvailable privileges (not SYSTEM -- see note below)
 - Only runs if network is available
-- Won't start if on battery power
-- Maximum execution time: 2 hours
+- Battery-friendly: starts and continues on battery power
+- Maximum execution time: 3 hours
+
+### Why not SYSTEM?
+
+`winget upgrade --all` running under the SYSTEM account misses user-scope packages -- a documented winget
+limitation. For dev environments, the importing user with elevated rights is the correct default. The XML
+ships with `LogonType=InteractiveToken` and a `REPLACE_USER_SID` placeholder for that reason.
 
 **Installation:**
 
-1. **Edit the XML file** - Update the paths to match your installation:
-   ```xml
-   <Command>C:\Program Files\PowerShell\7\pwsh.exe</Command>
-   <Arguments>-NoProfile -ExecutionPolicy Bypass -File "C:\path\to\sysadmin-toolkit\Windows\maintenance\system-updates.ps1" -AutoReboot</Arguments>
-   <WorkingDirectory>C:\path\to\sysadmin-toolkit\Windows\maintenance</WorkingDirectory>
+1. **Get your user SID:**
+   ```powershell
+   (New-Object Security.Principal.NTAccount($env:USERNAME)).Translate([Security.Principal.SecurityIdentifier]).Value
    ```
 
-2. **Import the task:**
+2. **Edit the XML file** -- replace `REPLACE_USER_SID` with your SID and `REPLACE_TOOLKIT_PATH` with the
+   absolute path to your sysadmin-toolkit clone. Adjust `StartBoundary` to a date in the future.
+
+3. **Import the task:**
    ```powershell
-   Register-ScheduledTask -Xml (Get-Content weekly-updates-task.xml | Out-String) -TaskName "Weekly System Updates"
+   Register-ScheduledTask -Xml (Get-Content weekly-updates-task.xml -Raw) -TaskName "Weekly System Updates"
    ```
 
    Or use Task Scheduler GUI:
    - Open Task Scheduler (taskschd.msc)
-   - Right-click "Task Scheduler Library" → "Import Task"
+   - Right-click "Task Scheduler Library" -> "Import Task"
    - Select weekly-updates-task.xml
    - Edit paths in the Actions tab
    - Click OK
 
-3. **Test the task:**
+4. **Test the task:**
    ```powershell
    Start-ScheduledTask -TaskName "Weekly System Updates"
    ```
 
-4. **View task history:**
+5. **View task history:**
    ```powershell
    Get-ScheduledTask -TaskName "Weekly System Updates" | Get-ScheduledTaskInfo
    ```
@@ -79,21 +87,21 @@ Edit the `<CalendarTrigger>` section:
 
 Remove `-AutoReboot` from the arguments:
 ```xml
-<Arguments>-NoProfile -ExecutionPolicy Bypass -File "C:\path\to\sysadmin-toolkit\Windows\maintenance\system-updates.ps1"</Arguments>
+<Arguments>-NoProfile -ExecutionPolicy Bypass -File "REPLACE_TOOLKIT_PATH\Windows\maintenance\system-updates.ps1"</Arguments>
 ```
 
 ### Skip Specific Updates
 
 Add parameters to skip certain update types:
 ```xml
-<Arguments>-NoProfile -ExecutionPolicy Bypass -File "C:\path\to\sysadmin-toolkit\Windows\maintenance\system-updates.ps1" -SkipWinget -AutoReboot</Arguments>
+<Arguments>-NoProfile -ExecutionPolicy Bypass -File "REPLACE_TOOLKIT_PATH\Windows\maintenance\system-updates.ps1" -SkipWinget -AutoReboot</Arguments>
 ```
 
 ### Use Configuration File
 
 Instead of command-line parameters, use a config.json file:
 ```xml
-<Arguments>-NoProfile -ExecutionPolicy Bypass -File "C:\path\to\sysadmin-toolkit\Windows\maintenance\system-updates.ps1" -ConfigFile "C:\path\to\config.json"</Arguments>
+<Arguments>-NoProfile -ExecutionPolicy Bypass -File "REPLACE_TOOLKIT_PATH\Windows\maintenance\system-updates.ps1" -ConfigFile "REPLACE_CONFIG_PATH"</Arguments>
 ```
 
 ## Monitoring Scheduled Tasks
@@ -116,16 +124,16 @@ Get-WinEvent -LogName "Microsoft-Windows-TaskScheduler/Operational" | Where-Obje
 ### Check Logs
 ```powershell
 # View latest update log
-Get-ChildItem C:\path\to\sysadmin-toolkit\logs\ -Filter "system-updates_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Get-Content -Tail 50
+Get-ChildItem REPLACE_TOOLKIT_PATH\logs\ -Filter "system-updates_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Get-Content -Tail 50
 ```
 
 ## Security Notes
 
-- Task runs as SYSTEM account (S-1-5-18) with highest privileges
+- Default: task runs as the importing user with HighestAvailable privileges (winget-compatible)
 - Ensure script directory has appropriate NTFS permissions
 - Config files should not be world-readable
 - Log files may contain sensitive information - protect accordingly
-- Consider using a dedicated service account instead of SYSTEM for production
+- If you switch to SYSTEM for headless scenarios, be aware that user-scope winget packages won't upgrade
 
 ## Troubleshooting
 
@@ -147,4 +155,4 @@ Get-ChildItem C:\path\to\sysadmin-toolkit\logs\ -Filter "system-updates_*.log" |
 
 ---
 
-**Last Updated:** 2025-10-15
+**Last Updated:** 2026-05-15

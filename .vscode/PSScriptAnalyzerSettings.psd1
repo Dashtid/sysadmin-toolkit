@@ -6,55 +6,57 @@
     IncludeDefaultRules = $true
 
     # Severity levels to report
-    Severity = @('Error', 'Warning', 'Information')
+    Severity            = @('Error', 'Warning', 'Information')
 
     # Exclude specific rules if needed
-    ExcludeRules = @(
-        # Temporarily exclude rules that may need gradual adoption
-        # 'PSAvoidUsingWriteHost'  # We use Write-Host for colored output
+    ExcludeRules        = @(
+        # Write-Host is used intentionally for colored console output across this toolkit.
+        # Per-script colored output is preferred over CommonFunctions logging for user-facing
+        # messages (see CONTRIBUTING.md "Logging policy"). CommonFunctions is reserved for
+        # cross-script structured logging.
+        'PSAvoidUsingWriteHost'
     )
 
     # Custom rule configuration
-    Rules = @{
-        # Cmdlet design rules
-        PSProvideCommentHelp = @{
-            Enable = $true
-            ExportedOnly = $false
-            BlockComment = $true
+    Rules               = @{
+        PSProvideCommentHelp                        = @{
+            Enable                  = $true
+            ExportedOnly            = $false
+            BlockComment            = $true
             VSCodeSnippetCorrection = $true
-            Placement = 'begin'
+            Placement               = 'begin'
         }
 
-        PSUseConsistentIndentation = @{
-            Enable = $true
-            Kind = 'space'
+        PSUseConsistentIndentation                  = @{
+            Enable              = $true
+            Kind                = 'space'
             PipelineIndentation = 'IncreaseIndentationForFirstPipeline'
-            IndentationSize = 4
+            IndentationSize     = 4
         }
 
-        PSUseConsistentWhitespace = @{
-            Enable = $true
-            CheckInnerBrace = $true
-            CheckOpenBrace = $true
-            CheckOpenParen = $true
-            CheckOperator = $true
-            CheckPipe = $true
+        PSUseConsistentWhitespace                   = @{
+            Enable                          = $true
+            CheckInnerBrace                 = $true
+            CheckOpenBrace                  = $true
+            CheckOpenParen                  = $true
+            CheckOperator                   = $true
+            CheckPipe                       = $true
             CheckPipeForRedundantWhitespace = $false
-            CheckSeparator = $true
-            CheckParameter = $false
+            CheckSeparator                  = $true
+            CheckParameter                  = $false
         }
 
-        PSAlignAssignmentStatement = @{
-            Enable = $true
+        PSAlignAssignmentStatement                  = @{
+            Enable         = $true
             CheckHashtable = $true
         }
 
-        PSUseCorrectCasing = @{
+        PSUseCorrectCasing                          = @{
             Enable = $true
         }
 
         # Security rules
-        PSAvoidUsingPlainTextForPassword = @{
+        PSAvoidUsingPlainTextForPassword            = @{
             Enable = $true
         }
 
@@ -63,58 +65,54 @@
         }
 
         # Performance rules
-        PSAvoidUsingInvokeExpression = @{
+        PSAvoidUsingInvokeExpression                = @{
             Enable = $true
         }
 
-        PSAvoidUsingCmdletAliases = @{
-            Enable = $true
+        PSAvoidUsingCmdletAliases                   = @{
+            Enable    = $true
             Allowlist = @()
         }
 
         # Best practices
-        PSAvoidUsingPositionalParameters = @{
-            Enable = $true
+        PSAvoidUsingPositionalParameters            = @{
+            Enable           = $true
             CommandAllowList = @('Write-Host', 'Write-Output', 'Write-Verbose')
         }
 
-        PSUseApprovedVerbs = @{
+        PSUseApprovedVerbs                          = @{
             Enable = $true
         }
 
-        PSUseDeclaredVarsMoreThanAssignments = @{
+        PSUseDeclaredVarsMoreThanAssignments        = @{
             Enable = $true
         }
 
-        PSAvoidUsingCmdletAliases = @{
+        PSUseSingularNouns                          = @{
             Enable = $true
         }
 
-        PSUseSingularNouns = @{
+        PSUseSupportsShouldProcess                  = @{
             Enable = $true
         }
 
-        PSUseSupportsShouldProcess = @{
+        PSReservedCmdletChar                        = @{
             Enable = $true
         }
 
-        PSReservedCmdletChar = @{
+        PSReservedParams                            = @{
             Enable = $true
         }
 
-        PSReservedParams = @{
+        PSMisleadingBacktick                        = @{
             Enable = $true
         }
 
-        PSMisleadingBacktick = @{
+        PSMissingModuleManifestField                = @{
             Enable = $true
         }
 
-        PSMissingModuleManifestField = @{
-            Enable = $true
-        }
-
-        PSUseBOMForUnicodeEncodedFile = @{
+        PSUseBOMForUnicodeEncodedFile               = @{
             Enable = $true
         }
 
@@ -122,15 +120,15 @@
             Enable = $true
         }
 
-        PSUsePSCredentialType = @{
+        PSUsePSCredentialType                       = @{
             Enable = $true
         }
 
-        PSAvoidDefaultValueSwitchParameter = @{
+        PSAvoidDefaultValueSwitchParameter          = @{
             Enable = $true
         }
 
-        PSUseCmdletCorrectly = @{
+        PSUseCmdletCorrectly                        = @{
             Enable = $true
         }
     }

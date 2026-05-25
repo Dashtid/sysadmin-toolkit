@@ -220,7 +220,7 @@ function Write-LogDebug {
     }
 }
 
-function Test-Prerequisites {
+function Test-Prerequisite {
     <#
     .SYNOPSIS
         Validates that all prerequisites are met.
@@ -457,7 +457,7 @@ function Main {
 
     try {
         # Check prerequisites
-        if (-not (Test-Prerequisites)) {
+        if (-not (Test-Prerequisite)) {
             Write-Log -Level Error -Message "Prerequisites not met. Exiting."
             exit 1
         }

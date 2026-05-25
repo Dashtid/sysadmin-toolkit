@@ -20,7 +20,7 @@ Guidelines for maintaining code quality and consistency.
 | Import modules | `CommonFunctions.psm1`, `ErrorHandling.psm1` |
 | Parameter validation | `[ValidateNotNullOrEmpty()]`, `[ValidateSet()]` |
 | Error handling | `try/catch` with `Write-ContextualError` |
-| Logging | `Write-InfoMessage`, `Write-Success`, `Write-ErrorMessage` |
+| Logging | `Write-Host` for colored user-facing output. `Write-InfoMessage`/`Write-Success`/`Write-ErrorMessage` (from CommonFunctions) when timestamps or structured log files are needed |
 | Output markers | ASCII only: `[+]` `[-]` `[!]` `[i]` (no emojis) |
 
 **Naming**: `Verb-Noun.ps1` for scripts, `$PascalCase` for params, `$camelCase` for locals

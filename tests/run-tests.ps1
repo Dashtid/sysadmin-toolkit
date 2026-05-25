@@ -84,8 +84,9 @@ else {
         if ($PesterVersion.Major -ge 5) {
             $Config = New-PesterConfiguration
             $Config.Run.Path = $TestFile.FullName
+            $Config.Run.PassThru = $true
             $Config.Output.Verbosity = 'Normal'
-            $Result = Invoke-Pester -Configuration $Config -PassThru
+            $Result = Invoke-Pester -Configuration $Config
 
             $TotalTests += $Result.TotalCount
             $PassedTests += $Result.PassedCount

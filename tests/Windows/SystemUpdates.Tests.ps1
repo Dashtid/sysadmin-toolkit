@@ -459,7 +459,7 @@ Describe "system-updates.ps1 - Integration Tests" {
     Context "Module Integration" {
         It "CommonFunctions module is accessible" {
             Import-Module $ModulePath -Force
-            Get-Command Write-Success -Module CommonFunctions | Should -Not -BeNullOrEmpty
+            (Get-Module CommonFunctions).ExportedCommands.Keys | Should -Contain 'Write-Success'
             Remove-Module CommonFunctions
         }
     }

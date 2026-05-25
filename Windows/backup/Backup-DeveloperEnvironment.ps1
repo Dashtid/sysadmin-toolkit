@@ -151,7 +151,7 @@ foreach ($target in $targets) {
     Write-InfoMessage "Processing: $($target.Description)"
 
     if ($target.Path -and (Test-Path $target.Path)) {
-        $destFile = Join-Path $backupDir "$($target.Name)$(Split-Path $target.Path -Extension)"
+        $destFile = Join-Path $backupDir "$($target.Name)$([System.IO.Path]::GetExtension($target.Path))"
 
         if ($PSCmdlet.ShouldProcess($target.Path, "Backup to $destFile")) {
             try {

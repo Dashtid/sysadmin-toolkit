@@ -1,14 +1,32 @@
 <?xml version="1.0" encoding="UTF-16"?>
+<!--
+  Weekly system-updates scheduled task -- XML import alternative.
+
+  RECOMMENDED: Use Install-SystemUpdatesTask.ps1 instead. This XML is provided
+  for users who prefer to import via the Task Scheduler GUI.
+
+  Before importing:
+    1. Replace REPLACE_USER_SID with the SID of the user who should run the task.
+       Get yours via: (New-Object Security.Principal.NTAccount($env:USERNAME)).Translate([Security.Principal.SecurityIdentifier]).Value
+    2. Replace REPLACE_TOOLKIT_PATH with the absolute path to your sysadmin-toolkit clone.
+    3. Adjust StartBoundary to your preferred first run time.
+
+  Defaults are tuned for laptop dev environments:
+    - Runs as user (not SYSTEM) so winget user-scope packages are visible
+    - HighestAvailable run level so no UAC prompt is required
+    - Battery-friendly: starts and continues on battery
+    - StartWhenAvailable catches up a missed weekly slot
+-->
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Date>2025-10-15T10:00:00</Date>
     <Author>SystemAdmin</Author>
-    <Description>Weekly automated system updates using system-updates.ps1. Updates Chocolatey, Winget, and Windows Update. Creates restore points before updates and automatically reboots if needed.</Description>
+    <Description>Weekly automated system updates using system-updates.ps1. Updates Chocolatey, Winget, and Windows Update. Creates restore points before updates.</Description>
     <URI>\Maintenance\Weekly System Updates</URI>
   </RegistrationInfo>
   <Triggers>
     <CalendarTrigger>
-      <StartBoundary>2025-10-20T03:00:00</StartBoundary>
+      <StartBoundary>2025-10-20T10:00:00</StartBoundary>
       <Enabled>true</Enabled>
       <ScheduleByWeek>
         <DaysOfWeek>
@@ -20,13 +38,14 @@
   </Triggers>
   <Principals>
     <Principal id="Author">
-      <UserId>S-1-5-18</UserId>
+      <UserId>REPLACE_USER_SID</UserId>
+      <LogonType>InteractiveToken</LogonType>
       <RunLevel>HighestAvailable</RunLevel>
     </Principal>
   </Principals>
   <Settings>
     <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
-    <DisallowStartIfOnBatteries>true</DisallowStartIfOnBatteries>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
     <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
     <AllowHardTerminate>false</AllowHardTerminate>
     <StartWhenAvailable>true</StartWhenAvailable>
@@ -42,14 +61,14 @@
     <DisallowStartOnRemoteAppSession>false</DisallowStartOnRemoteAppSession>
     <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
     <WakeToRun>false</WakeToRun>
-    <ExecutionTimeLimit>PT2H</ExecutionTimeLimit>
+    <ExecutionTimeLimit>PT3H</ExecutionTimeLimit>
     <Priority>7</Priority>
   </Settings>
   <Actions Context="Author">
     <Exec>
       <Command>C:\Program Files\PowerShell\7\pwsh.exe</Command>
-      <Arguments>-NoProfile -ExecutionPolicy Bypass -File "C:\path\to\sysadmin-toolkit\Windows\maintenance\system-updates.ps1" -AutoReboot</Arguments>
-      <WorkingDirectory>C:\path\to\sysadmin-toolkit\Windows\maintenance</WorkingDirectory>
+      <Arguments>-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "REPLACE_TOOLKIT_PATH\Windows\maintenance\system-updates.ps1"</Arguments>
+      <WorkingDirectory>REPLACE_TOOLKIT_PATH\Windows\maintenance</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>
