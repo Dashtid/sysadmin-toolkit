@@ -5,6 +5,7 @@
 #Requires -Version 7.0
 #Requires -RunAsAdministrator
 
+[CmdletBinding()]
 param(
     [switch]$SkipSSH,
     [switch]$SkipVSCode,

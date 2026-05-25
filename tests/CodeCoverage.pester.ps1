@@ -102,7 +102,6 @@ $Config.Output.Verbosity = 'Detailed'
 $Config.CodeCoverage.Enabled = $true
 $Config.CodeCoverage.Path = @(
     Join-Path $ProjectRoot "Windows\lib\*.psm1"
-    Join-Path $ProjectRoot "Windows\ssh\*.ps1"
     Join-Path $ProjectRoot "Windows\maintenance\*.ps1"
     Join-Path $ProjectRoot "Windows\security\*.ps1"
 )

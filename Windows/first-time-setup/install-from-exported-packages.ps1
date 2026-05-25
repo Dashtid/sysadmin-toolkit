@@ -5,6 +5,7 @@
 #Requires -Version 7.0
 #Requires -RunAsAdministrator
 
+[CmdletBinding()]
 param(
     [string]$PackageDir = "$PSScriptRoot",
     [switch]$SkipWinget,

@@ -7,6 +7,7 @@
 #Requires -Version 7.0
 #Requires -RunAsAdministrator
 
+[CmdletBinding()]
 param(
     [Parameter()]
     [ValidateSet('Work', 'Home')]
@@ -400,11 +401,6 @@ function Show-PostInstallation {
     Write-Info "       - Profile location: $PROFILE"
     Write-Info "       - Customize as needed"
     Write-Info ""
-    Write-Info "3. OPTIONAL: Run additional setup scripts"
-    Write-Info "   - SSH Agent: ..\ssh\setup-ssh-agent-access.ps1"
-    Write-Info "   - Gitea Tunnel: ..\ssh\gitea-tunnel-manager.ps1 -Install"
-    Write-Info ""
-
     Write-Warning "REBOOT REQUIRED - Restart your computer now to complete setup"
 }
 

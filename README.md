@@ -75,7 +75,6 @@ cp .env.example .env.local  # Configure your values
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Coding standards and PR process |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Feature roadmap and progress |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
-| [Windows/ssh/](Windows/ssh/) | SSH agent and tunnel setup |
 
 ## Prerequisites
 
