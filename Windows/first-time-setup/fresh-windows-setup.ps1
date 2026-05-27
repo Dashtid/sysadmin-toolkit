@@ -21,64 +21,39 @@ param(
     [switch]$Minimal                     # Minimal installation
 )
 
-# Colors for output
-$Colors = @{
-    Red    = 'Red'
-    Green  = 'Green'
-    Yellow = 'Yellow'
-    Blue   = 'Blue'
-    Cyan   = 'Cyan'
-    Magenta= 'Magenta'
-}
+# Shared logging via CommonFunctions (Write-InfoMessage / Success / WarningMessage / ErrorMessage / Section)
+Import-Module (Join-Path -Path $PSScriptRoot -ChildPath '..\lib\CommonFunctions.psm1') -Force
 
-# Logging setup
+# Logging setup: mirror all CommonFunctions log lines to a per-run log file.
 $LogDir = "$env:USERPROFILE\.setup-logs"
 $LogFile = "$LogDir\fresh-windows-setup-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
-New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
-
-function Write-Log {
-    param([string]$Message, [string]$Color = 'White')
-    $Timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    $LogMessage = "[$Timestamp] $Message"
-    Write-Host $LogMessage -ForegroundColor $Color
-    Add-Content -Path $LogFile -Value $LogMessage
-}
-
-function Write-Success { param([string]$Message) Write-Log "[+] $Message" -Color $Colors.Green }
-function Write-Info { param([string]$Message) Write-Log "[i] $Message" -Color $Colors.Blue }
-function Write-Warning { param([string]$Message) Write-Log "[!] $Message" -Color $Colors.Yellow }
-function Write-Error { param([string]$Message) Write-Log "[-] $Message" -Color $Colors.Red }
-function Write-Section { param([string]$Message) Write-Log "`n========================================`n$Message`n========================================" -Color $Colors.Cyan }
+Set-LogFile -Path $LogFile
 
 # Display banner
 function Show-Banner {
     $Banner = @"
 
-    ╔══════════════════════════════════════════════════════════╗
-    ║                                                          ║
-    ║        Windows 11 Fresh Installation Setup              ║
-    ║        Automated Package & System Configuration         ║
-    ║                                                          ║
-    ╚══════════════════════════════════════════════════════════╝
+    Windows 11 Fresh Installation Setup
+    Automated Package & System Configuration
 
 "@
-    Write-Host $Banner -ForegroundColor $Colors.Cyan
+    Write-Host $Banner -ForegroundColor Cyan
 }
 
 # Check PowerShell version
 function Test-PowerShellVersion {
-    Write-Info "Checking PowerShell version..."
+    Write-InfoMessage "Checking PowerShell version..."
     if ($PSVersionTable.PSVersion.Major -lt 7) {
-        Write-Error "PowerShell 7+ is required. Current version: $($PSVersionTable.PSVersion)"
-        Write-Info "Install PowerShell 7: https://github.com/PowerShell/PowerShell/releases"
+        Write-ErrorMessage "PowerShell 7+ is required. Current version: $($PSVersionTable.PSVersion)"
+        Write-InfoMessage "Install PowerShell 7: https://github.com/PowerShell/PowerShell/releases"
         exit 1
     }
     Write-Success "PowerShell version: $($PSVersionTable.PSVersion)"
 }
 
 # Check for required files
-function Test-RequiredFiles {
-    Write-Info "Checking for required package files..."
+function Test-RequiredFile {
+    Write-InfoMessage "Checking for required package files..."
 
     $ScriptDir = $PSScriptRoot
     $RequiredFiles = @(
@@ -96,9 +71,9 @@ function Test-RequiredFiles {
     }
 
     if ($MissingFiles.Count -gt 0) {
-        Write-Error "Missing required files:"
-        $MissingFiles | ForEach-Object { Write-Error "  - $_" }
-        Write-Info "Run export-current-packages.ps1 on your working machine first"
+        Write-ErrorMessage "Missing required files:"
+        $MissingFiles | ForEach-Object { Write-ErrorMessage "  - $_" }
+        Write-InfoMessage "Run export-current-packages.ps1 on your working machine first"
         exit 1
     }
 
@@ -109,28 +84,28 @@ function Test-RequiredFiles {
 function Show-SetupSummary {
     Write-Section "Setup Configuration"
 
-    Write-Info "Setup Mode: $(if ($Minimal) { 'Minimal' } else { 'Full' })"
-    Write-Info "Profile: $(if ($SetupProfile) { $SetupProfile } else { 'Exported Packages' })"
-    Write-Info "Package Installation: $(if ($SkipPackageInstall) { 'SKIPPED' } else { 'ENABLED' })"
-    Write-Info "System Configuration: $(if ($SkipSystemConfig) { 'SKIPPED' } else { 'ENABLED' })"
-    Write-Info "WSL2 Setup: $(if ($SkipWSL) { 'SKIPPED' } else { 'ENABLED' })"
+    Write-InfoMessage "Setup Mode: $(if ($Minimal) { 'Minimal' } else { 'Full' })"
+    Write-InfoMessage "Profile: $(if ($SetupProfile) { $SetupProfile } else { 'Exported Packages' })"
+    Write-InfoMessage "Package Installation: $(if ($SkipPackageInstall) { 'SKIPPED' } else { 'ENABLED' })"
+    Write-InfoMessage "System Configuration: $(if ($SkipSystemConfig) { 'SKIPPED' } else { 'ENABLED' })"
+    Write-InfoMessage "WSL2 Setup: $(if ($SkipWSL) { 'SKIPPED' } else { 'ENABLED' })"
     if ($SetupProfile -eq 'Home') {
-        Write-Info "Gaming Packages: $(if ($SkipGaming) { 'SKIPPED' } else { 'ENABLED' })"
+        Write-InfoMessage "Gaming Packages: $(if ($SkipGaming) { 'SKIPPED' } else { 'ENABLED' })"
     }
-    Write-Info "Log File: $LogFile"
+    Write-InfoMessage "Log File: $LogFile"
 
-    Write-Info ""
+    Write-InfoMessage ""
 
     if (!$SkipPackageInstall) {
         if ($SetupProfile) {
-            Write-Info "Package source: Profile-based ($SetupProfile)"
+            Write-InfoMessage "Package source: Profile-based ($SetupProfile)"
             if ($SetupProfile -eq 'Work') {
-                Write-Info "  - Includes: Teams, Azure CLI, WatchGuard VPN"
-                Write-Info "  - Dev directory: $env:USERPROFILE\Development"
+                Write-InfoMessage "  - Includes: Teams, Azure CLI, WatchGuard VPN"
+                Write-InfoMessage "  - Dev directory: $env:USERPROFILE\Development"
             } else {
-                Write-Info "  - Includes: Discord, Spotify, ProtonVPN, Ollama"
-                if (-not $SkipGaming) { Write-Info "  - Includes: Steam" }
-                Write-Info "  - Dev directory: C:\Code"
+                Write-InfoMessage "  - Includes: Discord, Spotify, ProtonVPN, Ollama"
+                if (-not $SkipGaming) { Write-InfoMessage "  - Includes: Steam" }
+                Write-InfoMessage "  - Dev directory: C:\Code"
             }
         } else {
             $WingetFile = Join-Path $PSScriptRoot "winget-packages.json"
@@ -138,26 +113,26 @@ function Show-SetupSummary {
 
             if (Test-Path $WingetFile) {
                 $WingetCount = (Get-Content $WingetFile | ConvertFrom-Json).Sources.Packages.Count
-                Write-Info "  - Winget: $WingetCount packages"
+                Write-InfoMessage "  - Winget: $WingetCount packages"
             }
             if (Test-Path $ChocoFile) {
                 [xml]$ChocoXml = Get-Content $ChocoFile
                 $ChocoCount = $ChocoXml.packages.package.Count
-                Write-Info "  - Chocolatey: $ChocoCount packages"
+                Write-InfoMessage "  - Chocolatey: $ChocoCount packages"
             }
         }
     }
 
-    Write-Info ""
-    Write-Warning "This process will take 30-60 minutes depending on internet speed"
-    Write-Info "Press Ctrl+C to cancel, or any other key to continue..."
+    Write-InfoMessage ""
+    Write-WarningMessage "This process will take 30-60 minutes depending on internet speed"
+    Write-InfoMessage "Press Ctrl+C to cancel, or any other key to continue..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
 # Install packages
-function Install-Packages {
+function Install-Package {
     if ($SkipPackageInstall) {
-        Write-Info "Skipping package installation (as requested)"
+        Write-InfoMessage "Skipping package installation (as requested)"
         return
     }
 
@@ -173,13 +148,13 @@ function Install-Packages {
         $InstallArgs['UseLatestVersions'] = $true
     }
 
-    Write-Info "Running package installation script..."
-    Write-Info "Script: $ScriptPath"
+    Write-InfoMessage "Running package installation script..."
+    Write-InfoMessage "Script: $ScriptPath"
 
     & $ScriptPath @InstallArgs
 
     if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
-        Write-Warning "Package installation completed with warnings"
+        Write-WarningMessage "Package installation completed with warnings"
     } else {
         Write-Success "Package installation completed"
     }
@@ -188,14 +163,14 @@ function Install-Packages {
 # Configure system based on profile
 function Set-SystemConfiguration {
     if ($SkipSystemConfig) {
-        Write-Info "Skipping system configuration (as requested)"
+        Write-InfoMessage "Skipping system configuration (as requested)"
         return
     }
 
     Write-Section "Configuring System Settings"
 
     # Configure Windows settings (common to all profiles)
-    Write-Info "Applying Windows settings..."
+    Write-InfoMessage "Applying Windows settings..."
     try {
         # Show file extensions
         Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0 -ErrorAction SilentlyContinue
@@ -208,11 +183,11 @@ function Set-SystemConfiguration {
         Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value 0 -ErrorAction SilentlyContinue
         Write-Success "Windows settings applied"
     } catch {
-        Write-Warning "Some Windows settings could not be applied: $($_.Exception.Message)"
+        Write-WarningMessage "Some Windows settings could not be applied: $($_.Exception.Message)"
     }
 
     # Setup development directories based on profile
-    Write-Info "Setting up development directories..."
+    Write-InfoMessage "Setting up development directories..."
     if ($SetupProfile -eq 'Work') {
         $DevDir = "$env:USERPROFILE\Development"
         $Directories = @("$DevDir\Projects", "$DevDir\Scripts", "$DevDir\Tools", "$DevDir\Documentation")
@@ -229,7 +204,7 @@ function Set-SystemConfiguration {
     Write-Success "Development directories created at: $DevDir"
 
     # Configure Git
-    Write-Info "Configuring Git..."
+    Write-InfoMessage "Configuring Git..."
     if (Get-Command git -ErrorAction SilentlyContinue) {
         git config --global init.defaultBranch main
         git config --global pull.rebase false
@@ -237,19 +212,19 @@ function Set-SystemConfiguration {
         git config --global core.editor "code --wait"
         Write-Success "Git configured with VS Code as default editor"
     } else {
-        Write-Warning "Git not found. Install Git first, then configure manually."
+        Write-WarningMessage "Git not found. Install Git first, then configure manually."
     }
 
     # WSL2 setup (Work profile or if not skipped)
     if (-not $SkipWSL -and ($SetupProfile -eq 'Work' -or $null -eq $SetupProfile)) {
-        Write-Info "Setting up WSL2..."
+        Write-InfoMessage "Setting up WSL2..."
         try {
             Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction SilentlyContinue | Out-Null
             Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart -ErrorAction SilentlyContinue | Out-Null
             wsl --set-default-version 2 2>$null
             Write-Success "WSL2 enabled (run 'wsl --install -d Ubuntu' after reboot)"
         } catch {
-            Write-Warning "WSL2 setup failed: $($_.Exception.Message)"
+            Write-WarningMessage "WSL2 setup failed: $($_.Exception.Message)"
         }
     }
 
@@ -257,7 +232,7 @@ function Set-SystemConfiguration {
 }
 
 # Install profile-specific packages
-function Install-ProfilePackages {
+function Install-ProfilePackage {
     if ($SkipPackageInstall -or $null -eq $SetupProfile) {
         return
     }
@@ -319,21 +294,21 @@ function Install-ProfilePackages {
             winget source update --accept-source-agreements 2>$null
 
             foreach ($Package in $AllWinget) {
-                Write-Info "Installing $Package..."
+                Write-InfoMessage "Installing $Package..."
                 try {
                     winget install --id $Package --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
                 }
                 catch {
-                    Write-Warning "Failed to install winget package $Package : $($_.Exception.Message)"
+                    Write-WarningMessage "Failed to install winget package $Package : $($_.Exception.Message)"
                 }
             }
             Write-Success "Winget packages installed"
         }
         catch {
-            Write-Error "Winget installation error: $($_.Exception.Message)"
+            Write-ErrorMessage "Winget installation error: $($_.Exception.Message)"
         }
     } else {
-        Write-Warning "Winget not available. Install packages manually."
+        Write-WarningMessage "Winget not available. Install packages manually."
     }
 
     # Common Chocolatey packages with error handling
@@ -343,18 +318,18 @@ function Install-ProfilePackages {
         # try choco installations with error handling
         try {
             foreach ($Package in $ChocoPackages) {
-                Write-Info "Installing $Package via Chocolatey..."
+                Write-InfoMessage "Installing $Package via Chocolatey..."
                 try {
                     choco install $Package -y --no-progress 2>&1 | Out-Null
                 }
                 catch {
-                    Write-Warning "Failed to install choco package $Package : $($_.Exception.Message)"
+                    Write-WarningMessage "Failed to install choco package $Package : $($_.Exception.Message)"
                 }
             }
             Write-Success "Chocolatey packages installed"
         }
         catch {
-            Write-Error "Chocolatey installation error: $($_.Exception.Message)"
+            Write-ErrorMessage "Chocolatey installation error: $($_.Exception.Message)"
         }
     }
 }
@@ -364,63 +339,63 @@ function Show-PostInstallation {
     Write-Section "Setup Complete!"
 
     Write-Success "Windows 11 setup has been completed successfully"
-    Write-Info "Log file: $LogFile"
-    Write-Info ""
+    Write-InfoMessage "Log file: $LogFile"
+    Write-InfoMessage ""
 
-    Write-Info "NEXT STEPS:"
-    Write-Info ""
-    Write-Info "1. REBOOT YOUR COMPUTER"
-    Write-Info "   - Many changes require a restart to take effect"
-    Write-Info ""
-    Write-Info "2. After reboot, complete these tasks:"
-    Write-Info ""
-    Write-Info "   [*] Configure Docker Desktop"
-    Write-Info "       - Open Docker Desktop and complete initial setup"
-    Write-Info "       - Enable WSL2 integration"
-    Write-Info ""
-    Write-Info "   [*] Setup WSL2 Ubuntu"
-    Write-Info "       - Run: wsl --install -d Ubuntu"
-    Write-Info "       - Create username and password"
-    Write-Info ""
-    Write-Info "   [*] Generate SSH Keys"
-    Write-Info "       - Run: ssh-keygen -t ed25519 -C 'your_email@example.com'"
-    Write-Info "       - Add to GitHub/Gitea"
-    Write-Info ""
-    Write-Info "   [*] Configure Git"
-    Write-Info "       - Set global name: git config --global user.name 'Your Name'"
-    Write-Info "       - Set global email: git config --global user.email 'your@email.com'"
-    Write-Info ""
-    Write-Info "   [*] Sign in to applications"
-    Write-Info "       - Browsers (Chrome, Brave, Edge)"
-    Write-Info "       - VS Code (sync settings)"
-    Write-Info "       - Microsoft Teams"
-    Write-Info "       - OneDrive"
-    Write-Info "       - ProtonVPN"
-    Write-Info ""
-    Write-Info "   [*] Configure PowerShell profile"
-    Write-Info "       - Profile location: $PROFILE"
-    Write-Info "       - Customize as needed"
-    Write-Info ""
-    Write-Warning "REBOOT REQUIRED - Restart your computer now to complete setup"
+    Write-InfoMessage "NEXT STEPS:"
+    Write-InfoMessage ""
+    Write-InfoMessage "1. REBOOT YOUR COMPUTER"
+    Write-InfoMessage "   - Many changes require a restart to take effect"
+    Write-InfoMessage ""
+    Write-InfoMessage "2. After reboot, complete these tasks:"
+    Write-InfoMessage ""
+    Write-InfoMessage "   [*] Configure Docker Desktop"
+    Write-InfoMessage "       - Open Docker Desktop and complete initial setup"
+    Write-InfoMessage "       - Enable WSL2 integration"
+    Write-InfoMessage ""
+    Write-InfoMessage "   [*] Setup WSL2 Ubuntu"
+    Write-InfoMessage "       - Run: wsl --install -d Ubuntu"
+    Write-InfoMessage "       - Create username and password"
+    Write-InfoMessage ""
+    Write-InfoMessage "   [*] Generate SSH Keys"
+    Write-InfoMessage "       - Run: ssh-keygen -t ed25519 -C 'your_email@example.com'"
+    Write-InfoMessage "       - Add to GitHub/Gitea"
+    Write-InfoMessage ""
+    Write-InfoMessage "   [*] Configure Git"
+    Write-InfoMessage "       - Set global name: git config --global user.name 'Your Name'"
+    Write-InfoMessage "       - Set global email: git config --global user.email 'your@email.com'"
+    Write-InfoMessage ""
+    Write-InfoMessage "   [*] Sign in to applications"
+    Write-InfoMessage "       - Browsers (Chrome, Brave, Edge)"
+    Write-InfoMessage "       - VS Code (sync settings)"
+    Write-InfoMessage "       - Microsoft Teams"
+    Write-InfoMessage "       - OneDrive"
+    Write-InfoMessage "       - ProtonVPN"
+    Write-InfoMessage ""
+    Write-InfoMessage "   [*] Configure PowerShell profile"
+    Write-InfoMessage "       - Profile location: $PROFILE"
+    Write-InfoMessage "       - Customize as needed"
+    Write-InfoMessage ""
+    Write-WarningMessage "REBOOT REQUIRED - Restart your computer now to complete setup"
 }
 
 # Main execution
 function Main {
     Show-Banner
 
-    Write-Info "Starting Fresh Windows 11 Setup..."
-    Write-Info "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+    Write-InfoMessage "Starting Fresh Windows 11 Setup..."
+    Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
     if ($SetupProfile) {
-        Write-Info "Profile: $SetupProfile"
+        Write-InfoMessage "Profile: $SetupProfile"
     }
-    Write-Info ""
+    Write-InfoMessage ""
 
     # Pre-flight checks
     Test-PowerShellVersion
 
     # Only check for exported package files if no profile specified
     if (-not $SetupProfile) {
-        Test-RequiredFiles
+        Test-RequiredFile
     }
 
     # Show configuration and confirm
@@ -431,9 +406,9 @@ function Main {
 
     # Use profile-based packages if profile specified, otherwise use exported packages
     if ($SetupProfile) {
-        Install-ProfilePackages
+        Install-ProfilePackage
     } else {
-        Install-Packages
+        Install-Package
     }
 
     Set-SystemConfiguration
@@ -442,8 +417,8 @@ function Main {
     $Duration = $EndTime - $StartTime
 
     # Completion
-    Write-Info ""
-    Write-Info "Setup duration: $($Duration.ToString('hh\:mm\:ss'))"
+    Write-InfoMessage ""
+    Write-InfoMessage "Setup duration: $($Duration.ToString('hh\:mm\:ss'))"
 
     Show-PostInstallation
 }
@@ -453,8 +428,8 @@ try {
     Main
 }
 catch {
-    Write-Error "Setup failed with error: $($_.Exception.Message)"
-    Write-Error "Stack trace: $($_.ScriptStackTrace)"
-    Write-Info "Check log file for details: $LogFile"
+    Write-ErrorMessage "Setup failed with error: $($_.Exception.Message)"
+    Write-ErrorMessage "Stack trace: $($_.ScriptStackTrace)"
+    Write-InfoMessage "Check log file for details: $LogFile"
     exit 1
 }

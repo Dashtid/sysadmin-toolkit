@@ -144,10 +144,12 @@ Describe "First-Time Setup Scripts" {
             $Content | Should -Not -Match '✅|❌|⚠️|ℹ️|🚀|📁|🔧'
         }
 
-        It "Scripts use ASCII markers [+] [-] [i] [!]" {
+        It "Scripts use CommonFunctions for ASCII-marker logging" {
+            # Markers ([+] [-] [i] [!]) now live in CommonFunctions.psm1 (Write-Success/Write-ErrorMessage/etc).
+            # Verify the script imports the module rather than redefining markers locally.
             $ScriptPath = Join-Path $WindowsScripts "export-current-packages.ps1"
             $Content = Get-Content $ScriptPath -Raw
-            $Content | Should -Match '\[\+\]|\[-\]|\[i\]|\[!\]'
+            $Content | Should -Match 'Import-Module.*CommonFunctions\.psm1'
         }
     }
 
@@ -193,15 +195,14 @@ Describe "Script Functions" {
 
     Context "Logging Functions" {
 
-        It "Scripts define logging functions" {
+        It "Scripts source logging from CommonFunctions instead of redefining" {
+            # Setup scripts previously redefined Write-Log/Info/Success/Warning/Error locally,
+            # which shadowed built-in cmdlets. They now import CommonFunctions.psm1.
             $ScriptPath = Join-Path $WindowsScripts "install-from-exported-packages.ps1"
             $Content = Get-Content $ScriptPath -Raw
 
-            $Content | Should -Match 'function Write-Log'
-            $Content | Should -Match 'function Write-Success'
-            $Content | Should -Match 'function Write-Info'
-            $Content | Should -Match 'function Write-Warning'
-            $Content | Should -Match 'function Write-Error'
+            $Content | Should -Match 'Import-Module.*CommonFunctions\.psm1'
+            $Content | Should -Not -Match '(?m)^function\s+Write-(Log|Info|Warning|Error)\s'
         }
     }
 

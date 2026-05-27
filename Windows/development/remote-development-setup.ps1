@@ -12,43 +12,25 @@ param(
     [switch]$SkipPortForwarding
 )
 
-# Colors for output
-$Colors = @{
-    Red    = 'Red'
-    Green  = 'Green'
-    Yellow = 'Yellow'
-    Blue   = 'Blue'
-    Cyan   = 'Cyan'
-}
-
-function Write-Log {
-    param([string]$Message, [string]$Color = 'White')
-    $Timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    $LogMessage = "[$Timestamp] $Message"
-    Write-Host $LogMessage -ForegroundColor $Color
-}
-
-function Write-Success { param([string]$Message) Write-Log "[+] $Message" -Color $Colors.Green }
-function Write-Info { param([string]$Message) Write-Log "[i] $Message" -Color $Colors.Blue }
-function Write-Warning { param([string]$Message) Write-Log "[!] $Message" -Color $Colors.Yellow }
-function Write-Error { param([string]$Message) Write-Log "[-] $Message" -Color $Colors.Red }
+# Shared logging via CommonFunctions (Write-InfoMessage / Success / WarningMessage / ErrorMessage / Section)
+Import-Module (Join-Path -Path $PSScriptRoot -ChildPath '..\lib\CommonFunctions.psm1') -Force
 
 # Setup SSH client and keys
 function Setup-SSHClient {
     if ($SkipSSH) {
-        Write-Info "Skipping SSH setup"
+        Write-InfoMessage "Skipping SSH setup"
         return
     }
 
-    Write-Info "Setting up SSH client for remote development..."
-    
+    Write-InfoMessage "Setting up SSH client for remote development..."
+
     # Enable OpenSSH Client (should be available on Windows 11)
     $sshClient = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Client*'
     if ($sshClient.State -ne "Installed") {
-        Write-Info "Installing OpenSSH Client..."
+        Write-InfoMessage "Installing OpenSSH Client..."
         Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
     }
-    
+
     # Create SSH directory if it doesn't exist
     $sshDir = "$env:USERPROFILE\.ssh"
     if (!(Test-Path $sshDir)) {
@@ -56,47 +38,47 @@ function Setup-SSHClient {
         # Set proper permissions
         icacls $sshDir /inheritance:r /grant:r "$env:USERNAME:(OI)(CI)F"
     }
-    
+
     # Check if SSH key exists
     $sshKeyPath = "$sshDir\id_ed25519"
     if (!(Test-Path $sshKeyPath)) {
-        Write-Info "SSH key not found. Generating new ED25519 key..."
+        Write-InfoMessage "SSH key not found. Generating new ED25519 key..."
         $email = Read-Host "Enter your email for SSH key"
         ssh-keygen -t ed25519 -C $email -f $sshKeyPath -N `"`"
         Write-Success "SSH key generated at: $sshKeyPath"
-        Write-Info "Public key content:"
+        Write-InfoMessage "Public key content:"
         Get-Content "$sshKeyPath.pub"
-        Write-Warning "Copy the public key above to your Ubuntu server's ~/.ssh/authorized_keys"
+        Write-WarningMessage "Copy the public key above to your Ubuntu server's ~/.ssh/authorized_keys"
     }
     else {
         Write-Success "SSH key already exists at: $sshKeyPath"
     }
-    
+
     # Start SSH agent and add key
     Start-Service ssh-agent
     Set-Service ssh-agent -StartupType Automatic
     ssh-add $sshKeyPath
-    
+
     Write-Success "SSH client configured"
 }
 
 # Setup VS Code for remote development
 function Setup-VSCodeRemote {
     if ($SkipVSCode) {
-        Write-Info "Skipping VS Code remote setup"
+        Write-InfoMessage "Skipping VS Code remote setup"
         return
     }
 
-    Write-Info "Setting up VS Code for remote development..."
-    
+    Write-InfoMessage "Setting up VS Code for remote development..."
+
     # Check if VS Code is installed
     if (!(Get-Command code -ErrorAction SilentlyContinue)) {
-        Write-Warning "VS Code not found. Installing via Winget..."
+        Write-WarningMessage "VS Code not found. Installing via Winget..."
         winget install --id Microsoft.VisualStudioCode --silent
         # Refresh PATH
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
     }
-    
+
     # Install essential remote development extensions
     $RemoteExtensions = @(
         'ms-vscode-remote.remote-ssh',
@@ -106,18 +88,18 @@ function Setup-VSCodeRemote {
         'ms-vscode.remote-explorer',
         'ms-vscode.remote-server'
     )
-    
+
     foreach ($Extension in $RemoteExtensions) {
         try {
-            Write-Info "Installing VS Code extension: $Extension"
+            Write-InfoMessage "Installing VS Code extension: $Extension"
             code --install-extension $Extension --force
             Write-Success "$Extension installed"
         }
         catch {
-            Write-Warning "Failed to install $Extension"
+            Write-WarningMessage "Failed to install $Extension"
         }
     }
-    
+
     # Create VS Code SSH config template
     $sshConfigPath = "$env:USERPROFILE\.ssh\config"
     if (!(Test-Path $sshConfigPath)) {
@@ -147,25 +129,25 @@ function Setup-VSCodeRemote {
 "@
         Set-Content -Path $sshConfigPath -Value $sshConfigContent -Encoding UTF8
         Write-Success "SSH config template created at: $sshConfigPath"
-        Write-Info "Edit the SSH config file to add your server details"
+        Write-InfoMessage "Edit the SSH config file to add your server details"
     }
-    
+
     Write-Success "VS Code remote development configured"
 }
 
 # Setup port forwarding utilities
 function Setup-PortForwarding {
     if ($SkipPortForwarding) {
-        Write-Info "Skipping port forwarding setup"
+        Write-InfoMessage "Skipping port forwarding setup"
         return
     }
 
-    Write-Info "Setting up port forwarding utilities..."
-    
+    Write-InfoMessage "Setting up port forwarding utilities..."
+
     # Create port forwarding helper scripts
     $scriptsDir = "$env:USERPROFILE\Development\Scripts"
     New-Item -ItemType Directory -Path $scriptsDir -Force | Out-Null
-    
+
     # SSH tunnel script
     $tunnelScript = @'
 # SSH Tunnel Helper Script
@@ -174,13 +156,13 @@ function Setup-PortForwarding {
 param(
     [Parameter(Mandatory=$true)]
     [string]$Server,
-    
+
     [Parameter(Mandatory=$true)]
     [int]$LocalPort,
-    
+
     [Parameter(Mandatory=$true)]
     [int]$RemotePort,
-    
+
     [string]$RemoteHost = "localhost"
 )
 
@@ -189,9 +171,9 @@ Write-Host "Press Ctrl+C to stop the tunnel" -ForegroundColor Yellow
 
 ssh -L ${LocalPort}:${RemoteHost}:${RemotePort} $Server -N
 '@
-    
+
     Set-Content -Path "$scriptsDir\ssh-tunnel.ps1" -Value $tunnelScript -Encoding UTF8
-    
+
     # Multiple tunnels script
     $multiTunnelScript = @'
 # Multiple SSH Tunnels Helper Script
@@ -241,16 +223,16 @@ finally {
     Write-Host "All tunnels stopped." -ForegroundColor Green
 }
 '@
-    
+
     Set-Content -Path "$scriptsDir\ssh-multi-tunnel.ps1" -Value $multiTunnelScript -Encoding UTF8
-    
+
     Write-Success "Port forwarding utilities created in: $scriptsDir"
 }
 
 # Install additional remote development tools
 function Install-RemoteDevTools {
-    Write-Info "Installing additional remote development tools..."
-    
+    Write-InfoMessage "Installing additional remote development tools..."
+
     # Install useful tools via Chocolatey if available
     if (Get-Command choco -ErrorAction SilentlyContinue) {
         $tools = @(
@@ -260,38 +242,38 @@ function Install-RemoteDevTools {
             'terminus',
             'mobaxterm'
         )
-        
+
         foreach ($tool in $tools) {
             try {
-                Write-Info "Installing $tool..."
+                Write-InfoMessage "Installing $tool..."
                 choco install $tool -y --no-progress
                 Write-Success "$tool installed"
             }
             catch {
-                Write-Warning "Failed to install $tool"
+                Write-WarningMessage "Failed to install $tool"
             }
         }
     }
-    
+
     # Install Windows Terminal if not present
     if (!(Get-Command wt -ErrorAction SilentlyContinue)) {
-        Write-Info "Installing Windows Terminal..."
+        Write-InfoMessage "Installing Windows Terminal..."
         winget install --id Microsoft.WindowsTerminal --silent
     }
-    
+
     Write-Success "Remote development tools installed"
 }
 
 # Configure Windows Terminal for remote development
 function Configure-WindowsTerminal {
-    Write-Info "Configuring Windows Terminal for remote development..."
-    
+    Write-InfoMessage "Configuring Windows Terminal for remote development..."
+
     $terminalSettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
-    
+
     if (Test-Path $terminalSettingsPath) {
-        Write-Info "Windows Terminal settings found. Consider adding SSH profiles manually."
-        Write-Info "Settings location: $terminalSettingsPath"
-        
+        Write-InfoMessage "Windows Terminal settings found. Consider adding SSH profiles manually."
+        Write-InfoMessage "Settings location: $terminalSettingsPath"
+
         # Create example SSH profile
         $exampleProfile = @"
 Example SSH profile for Windows Terminal settings.json:
@@ -307,20 +289,20 @@ Example SSH profile for Windows Terminal settings.json:
 
 Add this to the "profiles" -> "list" array in your Windows Terminal settings.
 "@
-        
-        Write-Info $exampleProfile
+
+        Write-InfoMessage $exampleProfile
     }
     else {
-        Write-Warning "Windows Terminal settings not found. Install Windows Terminal first."
+        Write-WarningMessage "Windows Terminal settings not found. Install Windows Terminal first."
     }
-    
+
     Write-Success "Windows Terminal configuration guidance provided"
 }
 
 # Create development workspace structure
 function Setup-DevelopmentWorkspace {
-    Write-Info "Setting up development workspace structure..."
-    
+    Write-InfoMessage "Setting up development workspace structure..."
+
     $workspaceDir = "$env:USERPROFILE\Development\Remote"
     $directories = @(
         "$workspaceDir\Projects",
@@ -328,11 +310,11 @@ function Setup-DevelopmentWorkspace {
         "$workspaceDir\Configs",
         "$workspaceDir\Logs"
     )
-    
+
     foreach ($dir in $directories) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
     }
-    
+
     # Create remote development guide
     $guideContent = @"
 # Remote Development Workspace
@@ -376,15 +358,15 @@ code --remote ssh-remote+server-name /path/to/project
 - Use VS Code Remote-Containers for consistent development environments
 - Keep sensitive data on remote servers, not local machine
 "@
-    
+
     Set-Content -Path "$workspaceDir\README.md" -Value $guideContent -Encoding UTF8
-    
+
     Write-Success "Development workspace created at: $workspaceDir"
 }
 
 # Main execution function
 function Main {
-    Write-Log "[*] Starting Remote Development Setup..." -Color $Colors.Cyan
+    Write-Section "Starting Remote Development Setup"
 
     Setup-SSHClient
     Setup-VSCodeRemote
@@ -395,16 +377,16 @@ function Main {
 
     Write-Success "Remote development setup completed successfully!"
 
-    Write-Info "[*] Next steps:"
-    Write-Info "  1. Copy your SSH public key to remote servers"
-    Write-Info "  2. Edit ~/.ssh/config to add your server configurations"
-    Write-Info "  3. Test SSH connection: ssh server-name"
-    Write-Info "  4. Open VS Code and use Remote-SSH extension"
-    Write-Info "  5. Use port forwarding scripts for accessing remote services"
+    Write-InfoMessage "[*] Next steps:"
+    Write-InfoMessage "  1. Copy your SSH public key to remote servers"
+    Write-InfoMessage "  2. Edit ~/.ssh/config to add your server configurations"
+    Write-InfoMessage "  3. Test SSH connection: ssh server-name"
+    Write-InfoMessage "  4. Open VS Code and use Remote-SSH extension"
+    Write-InfoMessage "  5. Use port forwarding scripts for accessing remote services"
 
-    Write-Info "[*] Development workspace: $env:USERPROFILE\Development\Remote"
-    Write-Info "[*] SSH config: $env:USERPROFILE\.ssh\config"
-    Write-Info "[*] Helper scripts: $env:USERPROFILE\Development\Scripts"
+    Write-InfoMessage "[*] Development workspace: $env:USERPROFILE\Development\Remote"
+    Write-InfoMessage "[*] SSH config: $env:USERPROFILE\.ssh\config"
+    Write-InfoMessage "[*] Helper scripts: $env:USERPROFILE\Development\Scripts"
 }
 
 # Run main function

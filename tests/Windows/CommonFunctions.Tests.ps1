@@ -40,6 +40,10 @@ Describe "CommonFunctions Module - Basic Validation" {
                 'Write-InfoMessage',
                 'Write-WarningMessage',
                 'Write-ErrorMessage',
+                'Write-Section',
+                'Set-LogFile',
+                'Clear-LogFile',
+                'Get-LogFile',
                 'Test-IsAdministrator',
                 'Assert-Administrator',
                 'Test-PowerShell7',
@@ -58,7 +62,7 @@ Describe "CommonFunctions Module - Basic Validation" {
     Context "Module Metadata" {
         It "Has version information in comments" {
             $content = Get-Content $ModulePath -Raw
-            $content | Should -Match "Version:\s*1\.1\.0"
+            $content | Should -Match "Version:\s*1\.2\.0"
         }
 
         It "Has changelog information" {
@@ -390,6 +394,97 @@ Describe "CommonFunctions Module - Integration" {
                 $logDir | Should -Not -BeNullOrEmpty
             } | Should -Not -Throw
         }
+    }
+}
+
+Describe "CommonFunctions Module - File Logging (Set-LogFile)" {
+    BeforeEach {
+        $script:TestLogDir = Join-Path $TestDrive "logs"
+        $script:TestLogPath = Join-Path $TestLogDir "tee-test.log"
+        Clear-LogFile
+    }
+
+    AfterEach {
+        Clear-LogFile
+    }
+
+    Context "Set-LogFile" {
+        It "Creates parent directory if missing" {
+            Set-LogFile -Path $script:TestLogPath
+            Test-Path $script:TestLogDir | Should -Be $true
+        }
+
+        It "Records the configured path so Get-LogFile returns it" {
+            Set-LogFile -Path $script:TestLogPath
+            Get-LogFile | Should -Be $script:TestLogPath
+        }
+
+        It "Does not create the file itself (only the parent directory)" {
+            Set-LogFile -Path $script:TestLogPath
+            Test-Path $script:TestLogPath | Should -Be $false
+        }
+    }
+
+    Context "Tee behavior" {
+        It "Write-Log appends to the file when Set-LogFile is active" {
+            Set-LogFile -Path $script:TestLogPath
+            Write-Log "tee-line-one"
+            Test-Path $script:TestLogPath | Should -Be $true
+            (Get-Content $script:TestLogPath -Raw) | Should -Match 'tee-line-one'
+        }
+
+        It "Write-Success/Info/Warning/Error all mirror to the file" {
+            Set-LogFile -Path $script:TestLogPath
+            Write-Success "ok"
+            Write-InfoMessage "info"
+            Write-WarningMessage "warn"
+            Write-ErrorMessage "err"
+            $content = Get-Content $script:TestLogPath -Raw
+            $content | Should -Match '\[\+\] ok'
+            $content | Should -Match '\[i\] info'
+            $content | Should -Match '\[!\] warn'
+            $content | Should -Match '\[-\] err'
+        }
+
+        It "Write-Section mirrors a banner to the file" {
+            Set-LogFile -Path $script:TestLogPath
+            Write-Section "Phase 1"
+            (Get-Content $script:TestLogPath -Raw) | Should -Match 'Phase 1'
+        }
+
+        It "Each log line carries a timestamp" {
+            Set-LogFile -Path $script:TestLogPath
+            Write-InfoMessage "timestamped"
+            (Get-Content $script:TestLogPath -Raw) | Should -Match '\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]'
+        }
+    }
+
+    Context "Clear-LogFile" {
+        It "Disables file mirroring on subsequent calls" {
+            Set-LogFile -Path $script:TestLogPath
+            Write-InfoMessage "before-clear"
+            Clear-LogFile
+            Write-InfoMessage "after-clear"
+            $content = Get-Content $script:TestLogPath -Raw
+            $content | Should -Match 'before-clear'
+            $content | Should -Not -Match 'after-clear'
+        }
+
+        It "Get-LogFile returns null after Clear-LogFile" {
+            Set-LogFile -Path $script:TestLogPath
+            Clear-LogFile
+            Get-LogFile | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe "CommonFunctions Module - Write-Section" {
+    It "Renders a cyan-banner section header without throwing" {
+        { Write-Section "Header" } | Should -Not -Throw
+    }
+
+    It "Requires the Message parameter" {
+        { Write-Section } | Should -Throw
     }
 }
 

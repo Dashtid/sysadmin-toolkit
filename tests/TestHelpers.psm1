@@ -277,11 +277,16 @@ function Test-ConsistentLogging {
 
     $content = Get-Content $Path -Raw
 
+    # A script that imports CommonFunctions delegates marker output to the module,
+    # so it satisfies the marker requirements transitively even if the literal
+    # marker strings ([+] [-] [i] [!]) are not present in the source.
+    $importsCommonFunctions = $content -match 'Import-Module.*CommonFunctions\.psm1'
+
     return @{
-        HasSuccessMarker = ($content -match '\[\+\]')
-        HasErrorMarker   = ($content -match '\[-\]')
-        HasInfoMarker    = ($content -match '\[i\]')
-        HasWarningMarker = ($content -match '\[!\]')
+        HasSuccessMarker = ($content -match '\[\+\]') -or $importsCommonFunctions
+        HasErrorMarker   = ($content -match '\[-\]') -or $importsCommonFunctions
+        HasInfoMarker    = ($content -match '\[i\]') -or $importsCommonFunctions
+        HasWarningMarker = ($content -match '\[!\]') -or $importsCommonFunctions
         HasEmojis        = ($content -match '✅|❌|⚠️|ℹ️|🚀|📁|🔧')
     }
 }

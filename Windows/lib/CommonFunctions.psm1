@@ -12,10 +12,16 @@
 
 .NOTES
     Author: Windows & Linux Sysadmin Toolkit
-    Version: 1.1.0
+    Version: 1.2.0
     Requires: PowerShell 5.1+
 
 .CHANGELOG
+    1.2.0 - 2026-05-27
+        - Added Set-LogFile / Clear-LogFile / Get-LogFile to mirror Write-Log
+          output to a file. Lets caller scripts share a single logging stack
+          instead of redefining wrappers locally.
+        - Added Write-Section for section-banner output.
+
     1.1.0 - 2025-10-15
         - Fixed hardcoded PowerShell 7 path to support multiple installation locations
         - Added Get-LogDirectory function for centralized log management
@@ -31,6 +37,9 @@ $script:Colors = @{
     Cyan   = 'Cyan'
     White  = 'White'
 }
+
+# Optional log-file mirror; configured via Set-LogFile, cleared via Clear-LogFile.
+$script:LogFilePath = $null
 
 <#
 .SYNOPSIS
@@ -56,7 +65,84 @@ function Write-Log {
     )
 
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    Write-Host "[$timestamp] $Message" -ForegroundColor $Color
+    $line = "[$timestamp] $Message"
+    Write-Host $line -ForegroundColor $Color
+    if ($script:LogFilePath) {
+        Add-Content -LiteralPath $script:LogFilePath -Value $line -ErrorAction SilentlyContinue
+    }
+}
+
+<#
+.SYNOPSIS
+    Configures Write-Log (and derivatives) to also append timestamped output to a file.
+
+.DESCRIPTION
+    After Set-LogFile is called, every subsequent Write-Log, Write-Success, Write-InfoMessage,
+    Write-WarningMessage, and Write-ErrorMessage call appends its timestamped line to the
+    specified file in addition to writing to the console. The parent directory is created if
+    it does not already exist. Call Clear-LogFile to disable file mirroring.
+
+.PARAMETER Path
+    Absolute or relative path to the log file. Parent directory is created if missing.
+
+.EXAMPLE
+    Set-LogFile "$env:USERPROFILE\.setup-logs\install.log"
+    Write-InfoMessage "Starting"   # written to console and to the log file
+#>
+function Set-LogFile {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $dir = Split-Path -Parent $Path
+    if ($dir -and -not (Test-Path $dir)) {
+        if ($PSCmdlet.ShouldProcess($dir, 'Create log directory')) {
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        }
+    }
+    $script:LogFilePath = $Path
+}
+
+<#
+.SYNOPSIS
+    Stops mirroring Write-Log output to a file. Console output continues unchanged.
+#>
+function Clear-LogFile {
+    [CmdletBinding()]
+    param()
+    $script:LogFilePath = $null
+}
+
+<#
+.SYNOPSIS
+    Returns the path configured by Set-LogFile, or $null if file mirroring is disabled.
+#>
+function Get-LogFile {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param()
+    $script:LogFilePath
+}
+
+<#
+.SYNOPSIS
+    Writes a banner-style section header in cyan.
+
+.PARAMETER Message
+    The section title to display.
+
+.EXAMPLE
+    Write-Section "Installing packages"
+#>
+function Write-Section {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Message
+    )
+    Write-Log "`n========================================`n$Message`n========================================" -Color $script:Colors.Cyan
 }
 
 <#
@@ -434,6 +520,10 @@ Export-ModuleMember -Function @(
     'Write-InfoMessage',
     'Write-WarningMessage',
     'Write-ErrorMessage',
+    'Write-Section',
+    'Set-LogFile',
+    'Clear-LogFile',
+    'Get-LogFile',
     'Test-IsAdministrator',
     'Assert-Administrator',
     'Test-PowerShell7',
