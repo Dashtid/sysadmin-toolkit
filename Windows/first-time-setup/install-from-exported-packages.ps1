@@ -70,7 +70,15 @@ function Install-Chocolatey {
         Write-Info "Installing Chocolatey package manager..."
         Set-ExecutionPolicy Bypass -Scope Process -Force
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+        $installScript = Join-Path $env:TEMP "chocolatey-install-$(Get-Date -Format 'yyyyMMddHHmmss').ps1"
+        try {
+            Invoke-WebRequest -Uri 'https://community.chocolatey.org/install.ps1' -OutFile $installScript -UseBasicParsing
+            & $installScript
+        }
+        finally {
+            Remove-Item $installScript -Force -ErrorAction SilentlyContinue
+        }
 
         # Refresh environment variables
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
@@ -84,7 +92,7 @@ function Install-Chocolatey {
 }
 
 # Install packages from Winget export
-function Install-WingetPackages {
+function Install-WingetPackage {
     if ($SkipWinget) {
         Write-Info "Skipping Winget package installation"
         return
@@ -138,7 +146,7 @@ function Install-WingetPackages {
 }
 
 # Install packages from Chocolatey export
-function Install-ChocolateyPackages {
+function Install-ChocolateyPackage {
     if ($SkipChocolatey) {
         Write-Info "Skipping Chocolatey package installation"
         return
@@ -203,10 +211,14 @@ function Install-ChocolateyPackages {
 }
 
 # Refresh environment variables
-function Refresh-Environment {
-    Write-Info "Refreshing environment variables..."
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-    Write-Success "Environment refreshed"
+function Update-Environment {
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
+    if ($PSCmdlet.ShouldProcess('$env:Path (current process)', 'Refresh from machine + user PATH')) {
+        Write-Info "Refreshing environment variables..."
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+        Write-Success "Environment refreshed"
+    }
 }
 
 # Main execution function
@@ -217,9 +229,9 @@ function Main {
 
     Test-PowerShellVersion
     Install-Chocolatey
-    Install-ChocolateyPackages
-    Install-WingetPackages
-    Refresh-Environment
+    Install-ChocolateyPackage
+    Install-WingetPackage
+    Update-Environment
 
     Write-Success "Package installation completed!"
     Write-Info "Log saved to: $LogFile"
