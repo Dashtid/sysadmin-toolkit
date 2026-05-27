@@ -8,14 +8,11 @@ Items are sized S (under an hour), M (1-3 hours), L (half-day or more) and order
 
 | # | Item | Notes | Size |
 |---|------|-------|------|
-| 1 | Setup scripts: use CommonFunctions logging | `fresh-windows-setup.ps1`, `install-from-exported-packages.ps1`, `export-current-packages.ps1`, `remote-development-setup.ps1` each redefine `Write-Info`/`Write-Success`/`Write-Warning`/`Write-Error`. The last two shadow built-in PowerShell cmdlets (`PSAvoidOverwritingBuiltInCmdlets`). Import `Windows/lib/CommonFunctions.psm1` and drop the wrappers. | M |
-| 2 | Refresh `docs/ROADMAP.md` | Add `Install-SystemUpdatesTask.ps1` to completed Tier 5 list. Update "Last Updated" stamp. Reassess "Linux Parity: Achieved" claim against actual file counts (14 Linux vs 26 Windows scripts). | S |
-| 3 | Singular-noun renames in `install-from-exported-packages.ps1` | `Install-WingetPackages` -> `Install-WingetPackage`, `Install-ChocolateyPackages` -> `Install-ChocolateyPackage`, `Refresh-Environment` -> `Update-Environment` (unapproved verb). PSScriptAnalyzer flags all three. Touch the call sites too. | S |
-| 4 | Behavioral tests for setup scripts | Current `FirstTimeSetup.Tests.ps1` is structural only (file exists, syntax valid, param declared). Add Pester tests with mocks for the actual install/export flows. These are the highest-risk scripts (admin-required, system-wide changes). | L |
-| 5 | Replace `Invoke-Expression` in Chocolatey bootstrap | `install-from-exported-packages.ps1:73` uses the standard `iex (DownloadString ...)` pattern. The toolkit's own `Maintenance.Comprehensive.Tests.ps1:223` flags this as insecure. Download script to temp, optionally verify, then run. | M |
+| 1 | Behavioral tests for setup scripts | Current `FirstTimeSetup.Tests.ps1` is structural only (file exists, syntax valid, param declared, imports CommonFunctions). Add Pester tests with mocks for the actual install/export flows (winget/choco/Invoke-WebRequest/etc.). These are the highest-risk scripts (admin-required, system-wide changes). | L |
+
 ## Linux coverage gaps (deferred; potential future work)
 
-Drop-the-parity-claim is done in `docs/ROADMAP.md`. The real gaps below are not committed to but kept here for visibility. Linux scope is headless server (q-lab) so several Windows categories are intentionally out of scope.
+The "parity achieved" claim was dropped in `docs/ROADMAP.md` on 2026-05-27. The real gaps below are not committed to but kept here for visibility. Linux scope is headless server (q-lab) so several Windows categories are intentionally out of scope.
 
 | Gap | Linux script needed | Effort |
 |-----|---------------------|--------|
@@ -37,7 +34,9 @@ Drop-the-parity-claim is done in `docs/ROADMAP.md`. The real gaps below are not 
 
 ## Recently closed
 
-- 2026-05-27: `docs: refresh ROADMAP, drop Linux parity claim, document coverage honestly` (this commit)
+- 2026-05-27: `refactor(setup): use CommonFunctions for logging instead of local wrappers` (commit 42a1dbd) - Item 1 from prior list. Added `Set-LogFile`/`Clear-LogFile`/`Get-LogFile`/`Write-Section` to CommonFunctions (v1.2.0), ripped local wrappers out of 4 setup scripts, also did the singular-noun renames inside `fresh-windows-setup.ps1` as a bonus.
+- 2026-05-27: `refactor(setup): singular-noun renames + drop Invoke-Expression` (commit 28607cd) - Items 3 + 5 from prior list.
+- 2026-05-27: `docs: refresh ROADMAP, drop Linux parity claim, document coverage honestly` (commit 6a963db) - Items 2 + 6-audit from prior list.
 - 2026-05-25: `feat: add Install-SystemUpdatesTask.ps1` (commit a42ed8e)
 - 2026-05-25: `chore: remove dotfiles/claude-config + Windows/ssh, add CmdletBinding to 4 setup scripts` (commit 02a7709)
 
