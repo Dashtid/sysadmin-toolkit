@@ -167,6 +167,20 @@ Describe "First-Time Setup Scripts" {
             $Content | Should -Not -Match "api[_-]?key\s*=\s*[`"'].*[`"']"
         }
     }
+
+    Context "No Invoke-Expression with URLs" {
+        # Mirrors the check in Maintenance.Comprehensive.Tests.ps1:223 but covers the
+        # first-time-setup surface, so the iex-curl-pipe-to-shell anti-pattern can't
+        # silently come back to install-from-exported-packages.ps1 or its siblings.
+
+        It "No setup script downloads-then-iex" {
+            $setupScripts = Get-ChildItem $WindowsScripts -Filter '*.ps1'
+            foreach ($script in $setupScripts) {
+                $content = Get-Content $script.FullName -Raw
+                $content | Should -Not -Match 'Invoke-Expression.*http'
+            }
+        }
+    }
 }
 
 Describe "Package Lists Validation" {

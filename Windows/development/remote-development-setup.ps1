@@ -16,7 +16,7 @@ param(
 Import-Module (Join-Path -Path $PSScriptRoot -ChildPath '..\lib\CommonFunctions.psm1') -Force
 
 # Setup SSH client and keys
-function Setup-SSHClient {
+function Initialize-SSHClient {
     if ($SkipSSH) {
         Write-InfoMessage "Skipping SSH setup"
         return
@@ -63,7 +63,7 @@ function Setup-SSHClient {
 }
 
 # Setup VS Code for remote development
-function Setup-VSCodeRemote {
+function Initialize-VSCodeRemote {
     if ($SkipVSCode) {
         Write-InfoMessage "Skipping VS Code remote setup"
         return
@@ -136,7 +136,7 @@ function Setup-VSCodeRemote {
 }
 
 # Setup port forwarding utilities
-function Setup-PortForwarding {
+function Initialize-PortForwarding {
     if ($SkipPortForwarding) {
         Write-InfoMessage "Skipping port forwarding setup"
         return
@@ -230,7 +230,7 @@ finally {
 }
 
 # Install additional remote development tools
-function Install-RemoteDevTools {
+function Install-RemoteDevTool {
     Write-InfoMessage "Installing additional remote development tools..."
 
     # Install useful tools via Chocolatey if available
@@ -265,7 +265,7 @@ function Install-RemoteDevTools {
 }
 
 # Configure Windows Terminal for remote development
-function Configure-WindowsTerminal {
+function Initialize-WindowsTerminal {
     Write-InfoMessage "Configuring Windows Terminal for remote development..."
 
     $terminalSettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
@@ -300,7 +300,7 @@ Add this to the "profiles" -> "list" array in your Windows Terminal settings.
 }
 
 # Create development workspace structure
-function Setup-DevelopmentWorkspace {
+function Initialize-DevelopmentWorkspace {
     Write-InfoMessage "Setting up development workspace structure..."
 
     $workspaceDir = "$env:USERPROFILE\Development\Remote"
@@ -368,12 +368,12 @@ code --remote ssh-remote+server-name /path/to/project
 function Main {
     Write-Section "Starting Remote Development Setup"
 
-    Setup-SSHClient
-    Setup-VSCodeRemote
-    Setup-PortForwarding
-    Install-RemoteDevTools
-    Configure-WindowsTerminal
-    Setup-DevelopmentWorkspace
+    Initialize-SSHClient
+    Initialize-VSCodeRemote
+    Initialize-PortForwarding
+    Install-RemoteDevTool
+    Initialize-WindowsTerminal
+    Initialize-DevelopmentWorkspace
 
     Write-Success "Remote development setup completed successfully!"
 
