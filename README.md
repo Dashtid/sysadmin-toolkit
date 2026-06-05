@@ -88,4 +88,4 @@ cp .env.example .env.local  # Configure your values
 MIT License - See [LICENSE](LICENSE)
 
 ---
-**Author**: David Dashti | **Version**: 2.2.0 | **Updated**: 2026-05-15
+**Author**: David Dashti | **Version**: 2.3.0 | **Updated**: 2026-06-05

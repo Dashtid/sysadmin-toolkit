@@ -8,9 +8,9 @@ Items are sized S (under an hour), M (1-3 hours), L (half-day or more) and order
 
 | # | Item | Notes | Size |
 |---|------|-------|------|
-| 1 | Behavioral tests for setup scripts | Current `FirstTimeSetup.Tests.ps1` is structural only. Add Pester tests with mocks for the actual install/export flows (winget/choco/Invoke-WebRequest/etc.) covering `fresh-windows-setup.ps1`, `install-from-exported-packages.ps1`, `export-current-packages.ps1`, `remote-development-setup.ps1`. Highest-risk scripts (admin-required, system-wide changes). | L |
-| 2 | Behavioral tests for `Restore-DeveloperEnvironment.ps1` | Backup side has full Pester coverage. Restore side has none. Asymmetric coverage where data-loss bugs hide. | M |
-| 3 | Polish pass | README version bump, CHANGELOG.md bootstrap, optional PR template, unify `tests/run-tests.ps1` to invoke BATS when available. | M |
+| 1 | Unify `tests/run-tests.ps1` to invoke BATS when available | Currently runs Pester (Windows) only. Linux BATS tests are invoked by CI separately. Single-command local test runner would be a quality-of-life win. | S |
+| 2 | `.github/PULL_REQUEST_TEMPLATE.md` (optional) | Toolkit has no PR template. Decide whether one would actually help (single-author repo, mostly direct commits) before adding. | S |
+| 3 | Add `Restore-VsCodeExtension` retry/backoff | When a vscode-marketplace install times out, retry once with backoff. Low priority -- current behavior just logs and continues. | M |
 
 ## Linux coverage gaps (deferred; potential future work)
 
@@ -36,12 +36,18 @@ The "parity achieved" claim was dropped in `docs/ROADMAP.md` on 2026-05-27. The 
 
 ## Recently closed
 
-- 2026-05-27: `refactor(setup): approved verbs + lock down iex regression` (commit 20affe7) - Renamed 6 functions in remote-development-setup.ps1 to use PowerShell-approved verbs; added FirstTimeSetup test to prevent iex-with-URL regression.
-- 2026-05-27: `refactor(setup): use CommonFunctions for logging instead of local wrappers` (commit 42a1dbd) - CommonFunctions v1.2.0 (Set-LogFile/Tee-Log/Write-Section); 4 setup scripts deduplicated.
+- 2026-06-05: `test(backup): behavioral coverage for Restore-DeveloperEnvironment` (commit 7d9b2aa) - closed Item 2 from the prior list. Refactored straight-line script into four functions; 20 new behavioral tests.
+- 2026-06-05: `test(setup): behavioral coverage for remote-development-setup` (commit b7cd047) - closed Item 1 from the prior list (final setup script). 17 tests.
+- 2026-06-05: `test(setup): behavioral coverage for fresh-windows-setup` (commit 616643a) - 23 tests; Work/Home profile branching covered.
+- 2026-06-05: `test(setup): behavioral coverage for install-from-exported-packages` (commit 4948960) - 26 tests including the iex-free Chocolatey bootstrap.
+- 2026-06-05: `test(setup): behavioral coverage for export-current-packages + empty-Message fix` (commit 08b9022) - 19 tests + uncovered a real production bug (CommonFunctions Mandatory rejecting empty strings).
+- 2026-06-05: `test(setup): make setup scripts testable via dot-source` (commit 0612b7e) - testability infrastructure; removed #Requires -RunAsAdministrator from 3 scripts (replaced by runtime Assert-Administrator).
+- 2026-05-27: `refactor(setup): approved verbs + lock down iex regression` (commit 20affe7)
+- 2026-05-27: `refactor(setup): use CommonFunctions for logging instead of local wrappers` (commit 42a1dbd)
 - 2026-05-27: `refactor(setup): singular-noun renames + drop Invoke-Expression` (commit 28607cd)
-- 2026-05-27: `docs: refresh ROADMAP, drop Linux parity claim, document coverage honestly` (commit 6a963db)
+- 2026-05-27: `docs: refresh ROADMAP, drop Linux parity claim` (commit 6a963db)
 - 2026-05-25: `feat: add Install-SystemUpdatesTask.ps1` (commit a42ed8e)
 - 2026-05-25: `chore: remove dotfiles/claude-config + Windows/ssh, add CmdletBinding to 4 setup scripts` (commit 02a7709)
 
 ---
-**Last Updated**: 2026-05-27
+**Last Updated**: 2026-06-05
