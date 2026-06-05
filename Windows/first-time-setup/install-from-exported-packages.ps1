@@ -3,7 +3,10 @@
 # Run as Administrator in PowerShell 7+
 
 #Requires -Version 7.0
-#Requires -RunAsAdministrator
+
+# Note: admin privileges are enforced at runtime via Assert-Administrator in Main()
+# rather than via #Requires, so this script can be dot-sourced for behavioral testing
+# without a forced elevation.
 
 [CmdletBinding()]
 param(
@@ -205,6 +208,8 @@ function Update-Environment {
 
 # Main execution function
 function Main {
+    Assert-Administrator
+
     Write-InfoMessage "Starting package installation from exported lists..."
     Write-InfoMessage "Package directory: $PackageDir"
     Write-InfoMessage "Log file: $LogFile"
@@ -225,5 +230,8 @@ function Main {
     Write-InfoMessage "  4. Or run fresh-windows-setup.ps1 -Profile Work for complete setup"
 }
 
-# Run main function
-Main
+# Run Main when invoked as a script. When dot-sourced for testing, skip auto-run
+# so test files can load function definitions into scope and exercise them with mocks.
+if ($MyInvocation.InvocationName -ne '.') {
+    Main
+}

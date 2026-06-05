@@ -8,7 +8,9 @@ Items are sized S (under an hour), M (1-3 hours), L (half-day or more) and order
 
 | # | Item | Notes | Size |
 |---|------|-------|------|
-| 1 | Behavioral tests for setup scripts | Current `FirstTimeSetup.Tests.ps1` is structural only (file exists, syntax valid, param declared, imports CommonFunctions). Add Pester tests with mocks for the actual install/export flows (winget/choco/Invoke-WebRequest/etc.). These are the highest-risk scripts (admin-required, system-wide changes). | L |
+| 1 | Behavioral tests for setup scripts | Current `FirstTimeSetup.Tests.ps1` is structural only. Add Pester tests with mocks for the actual install/export flows (winget/choco/Invoke-WebRequest/etc.) covering `fresh-windows-setup.ps1`, `install-from-exported-packages.ps1`, `export-current-packages.ps1`, `remote-development-setup.ps1`. Highest-risk scripts (admin-required, system-wide changes). | L |
+| 2 | Behavioral tests for `Restore-DeveloperEnvironment.ps1` | Backup side has full Pester coverage. Restore side has none. Asymmetric coverage where data-loss bugs hide. | M |
+| 3 | Polish pass | README version bump, CHANGELOG.md bootstrap, optional PR template, unify `tests/run-tests.ps1` to invoke BATS when available. | M |
 
 ## Linux coverage gaps (deferred; potential future work)
 
@@ -34,9 +36,10 @@ The "parity achieved" claim was dropped in `docs/ROADMAP.md` on 2026-05-27. The 
 
 ## Recently closed
 
-- 2026-05-27: `refactor(setup): use CommonFunctions for logging instead of local wrappers` (commit 42a1dbd) - Item 1 from prior list. Added `Set-LogFile`/`Clear-LogFile`/`Get-LogFile`/`Write-Section` to CommonFunctions (v1.2.0), ripped local wrappers out of 4 setup scripts, also did the singular-noun renames inside `fresh-windows-setup.ps1` as a bonus.
-- 2026-05-27: `refactor(setup): singular-noun renames + drop Invoke-Expression` (commit 28607cd) - Items 3 + 5 from prior list.
-- 2026-05-27: `docs: refresh ROADMAP, drop Linux parity claim, document coverage honestly` (commit 6a963db) - Items 2 + 6-audit from prior list.
+- 2026-05-27: `refactor(setup): approved verbs + lock down iex regression` (commit 20affe7) - Renamed 6 functions in remote-development-setup.ps1 to use PowerShell-approved verbs; added FirstTimeSetup test to prevent iex-with-URL regression.
+- 2026-05-27: `refactor(setup): use CommonFunctions for logging instead of local wrappers` (commit 42a1dbd) - CommonFunctions v1.2.0 (Set-LogFile/Tee-Log/Write-Section); 4 setup scripts deduplicated.
+- 2026-05-27: `refactor(setup): singular-noun renames + drop Invoke-Expression` (commit 28607cd)
+- 2026-05-27: `docs: refresh ROADMAP, drop Linux parity claim, document coverage honestly` (commit 6a963db)
 - 2026-05-25: `feat: add Install-SystemUpdatesTask.ps1` (commit a42ed8e)
 - 2026-05-25: `chore: remove dotfiles/claude-config + Windows/ssh, add CmdletBinding to 4 setup scripts` (commit 02a7709)
 

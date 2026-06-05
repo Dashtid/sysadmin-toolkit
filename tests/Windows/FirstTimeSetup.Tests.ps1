@@ -107,10 +107,13 @@ Describe "First-Time Setup Scripts" {
             $Content | Should -Match "#Requires -Version 7"
         }
 
-        It "Admin scripts require RunAsAdministrator" {
+        It "Admin scripts enforce admin via Assert-Administrator in Main" {
+            # Admin enforcement was moved from #Requires (static) to Assert-Administrator
+            # (runtime, from CommonFunctions) so the script can be dot-sourced for
+            # behavioral testing without a forced elevation. Same real-world safety.
             $ScriptPath = Join-Path $WindowsScripts "install-from-exported-packages.ps1"
             $Content = Get-Content $ScriptPath -Raw
-            $Content | Should -Match "#Requires -RunAsAdministrator"
+            $Content | Should -Match '(?ms)^function Main\b.*?Assert-Administrator'
         }
     }
 

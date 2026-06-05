@@ -3,7 +3,10 @@
 # Run as Administrator in PowerShell 7+
 
 #Requires -Version 7.0
-#Requires -RunAsAdministrator
+
+# Note: admin privileges are enforced at runtime via Assert-Administrator in Main()
+# rather than via #Requires, so this script can be dot-sourced for behavioral testing
+# without a forced elevation.
 
 [CmdletBinding()]
 param(
@@ -366,6 +369,8 @@ code --remote ssh-remote+server-name /path/to/project
 
 # Main execution function
 function Main {
+    Assert-Administrator
+
     Write-Section "Starting Remote Development Setup"
 
     Initialize-SSHClient
@@ -389,5 +394,8 @@ function Main {
     Write-InfoMessage "[*] Helper scripts: $env:USERPROFILE\Development\Scripts"
 }
 
-# Run main function
-Main
+# Run Main when invoked as a script. When dot-sourced for testing, skip auto-run
+# so test files can load function definitions into scope and exercise them with mocks.
+if ($MyInvocation.InvocationName -ne '.') {
+    Main
+}

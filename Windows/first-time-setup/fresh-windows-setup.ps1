@@ -5,7 +5,10 @@
 # Run as Administrator in PowerShell 7+
 
 #Requires -Version 7.0
-#Requires -RunAsAdministrator
+
+# Note: admin privileges are enforced at runtime via Assert-Administrator in Main()
+# rather than via #Requires, so this script can be dot-sourced for behavioral testing
+# without a forced elevation.
 
 [CmdletBinding()]
 param(
@@ -381,6 +384,8 @@ function Show-PostInstallation {
 
 # Main execution
 function Main {
+    Assert-Administrator
+
     Show-Banner
 
     Write-InfoMessage "Starting Fresh Windows 11 Setup..."
@@ -423,13 +428,16 @@ function Main {
     Show-PostInstallation
 }
 
-# Error handling
-try {
-    Main
-}
-catch {
-    Write-ErrorMessage "Setup failed with error: $($_.Exception.Message)"
-    Write-ErrorMessage "Stack trace: $($_.ScriptStackTrace)"
-    Write-InfoMessage "Check log file for details: $LogFile"
-    exit 1
+# Run Main when invoked as a script. When dot-sourced for testing, skip auto-run
+# so test files can load function definitions into scope and exercise them with mocks.
+if ($MyInvocation.InvocationName -ne '.') {
+    try {
+        Main
+    }
+    catch {
+        Write-ErrorMessage "Setup failed with error: $($_.Exception.Message)"
+        Write-ErrorMessage "Stack trace: $($_.ScriptStackTrace)"
+        Write-InfoMessage "Check log file for details: $LogFile"
+        exit 1
+    }
 }
