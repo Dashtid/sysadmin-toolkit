@@ -134,7 +134,13 @@ function Show-SetupSummary {
 
 # Install packages
 function Install-Package {
-    if ($SkipPackageInstall) {
+    [CmdletBinding()]
+    param(
+        [bool]$Skip = $SkipPackageInstall.IsPresent,
+        [bool]$UseLatest = $UseLatestVersions.IsPresent
+    )
+
+    if ($Skip) {
         Write-InfoMessage "Skipping package installation (as requested)"
         return
     }
@@ -147,7 +153,7 @@ function Install-Package {
         PackageDir = $PSScriptRoot
     }
 
-    if ($UseLatestVersions) {
+    if ($UseLatest) {
         $InstallArgs['UseLatestVersions'] = $true
     }
 
@@ -165,7 +171,14 @@ function Install-Package {
 
 # Configure system based on profile
 function Set-SystemConfiguration {
-    if ($SkipSystemConfig) {
+    [CmdletBinding()]
+    param(
+        [bool]$Skip = $SkipSystemConfig.IsPresent,
+        [string]$ProfileName = $SetupProfile,
+        [bool]$SkipWslSetup = $SkipWSL.IsPresent
+    )
+
+    if ($Skip) {
         Write-InfoMessage "Skipping system configuration (as requested)"
         return
     }
@@ -191,7 +204,7 @@ function Set-SystemConfiguration {
 
     # Setup development directories based on profile
     Write-InfoMessage "Setting up development directories..."
-    if ($SetupProfile -eq 'Work') {
+    if ($ProfileName -eq 'Work') {
         $DevDir = "$env:USERPROFILE\Development"
         $Directories = @("$DevDir\Projects", "$DevDir\Scripts", "$DevDir\Tools", "$DevDir\Documentation")
     } else {
@@ -219,7 +232,7 @@ function Set-SystemConfiguration {
     }
 
     # WSL2 setup (Work profile or if not skipped)
-    if (-not $SkipWSL -and ($SetupProfile -eq 'Work' -or $null -eq $SetupProfile)) {
+    if (-not $SkipWslSetup -and ($ProfileName -eq 'Work' -or [string]::IsNullOrEmpty($ProfileName))) {
         Write-InfoMessage "Setting up WSL2..."
         try {
             Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction SilentlyContinue | Out-Null
@@ -236,11 +249,18 @@ function Set-SystemConfiguration {
 
 # Install profile-specific packages
 function Install-ProfilePackage {
-    if ($SkipPackageInstall -or $null -eq $SetupProfile) {
+    [CmdletBinding()]
+    param(
+        [string]$ProfileName = $SetupProfile,
+        [bool]$Skip = $SkipPackageInstall.IsPresent,
+        [bool]$SkipGamingPackages = $SkipGaming.IsPresent
+    )
+
+    if ($Skip -or [string]::IsNullOrEmpty($ProfileName)) {
         return
     }
 
-    Write-Section "Installing $SetupProfile Profile Packages"
+    Write-Section "Installing $ProfileName Profile Packages"
 
     # Common Winget packages for both profiles
     $CommonWinget = @(
@@ -262,7 +282,7 @@ function Install-ProfilePackage {
 
     # Profile-specific Winget packages
     $ProfileWinget = @()
-    if ($SetupProfile -eq 'Work') {
+    if ($ProfileName -eq 'Work') {
         $ProfileWinget = @(
             'Microsoft.AzureCLI',
             'JohnMacFarlane.Pandoc',
@@ -283,7 +303,7 @@ function Install-ProfilePackage {
             'Logitech.OptionsPlus',
             'Zoom.Zoom.EXE'
         )
-        if (-not $SkipGaming) {
+        if (-not $SkipGamingPackages) {
             $ProfileWinget += 'Valve.Steam'
         }
     }
@@ -384,14 +404,20 @@ function Show-PostInstallation {
 
 # Main execution
 function Main {
+    [CmdletBinding()]
+    param(
+        [string]$ProfileName = $SetupProfile,
+        [bool]$Interactive = $true
+    )
+
     Assert-Administrator
 
     Show-Banner
 
     Write-InfoMessage "Starting Fresh Windows 11 Setup..."
     Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-    if ($SetupProfile) {
-        Write-InfoMessage "Profile: $SetupProfile"
+    if ($ProfileName) {
+        Write-InfoMessage "Profile: $ProfileName"
     }
     Write-InfoMessage ""
 
@@ -399,24 +425,26 @@ function Main {
     Test-PowerShellVersion
 
     # Only check for exported package files if no profile specified
-    if (-not $SetupProfile) {
+    if (-not $ProfileName) {
         Test-RequiredFile
     }
 
-    # Show configuration and confirm
-    Show-SetupSummary
+    # Show configuration and confirm (skipped in non-interactive / test mode)
+    if ($Interactive) {
+        Show-SetupSummary
+    }
 
     # Execute setup steps
     $StartTime = Get-Date
 
     # Use profile-based packages if profile specified, otherwise use exported packages
-    if ($SetupProfile) {
-        Install-ProfilePackage
+    if ($ProfileName) {
+        Install-ProfilePackage -ProfileName $ProfileName
     } else {
         Install-Package
     }
 
-    Set-SystemConfiguration
+    Set-SystemConfiguration -ProfileName $ProfileName
 
     $EndTime = Get-Date
     $Duration = $EndTime - $StartTime
