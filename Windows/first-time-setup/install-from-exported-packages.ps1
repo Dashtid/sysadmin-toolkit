@@ -37,7 +37,12 @@ function Test-PowerShellVersion {
 
 # Install Chocolatey if needed
 function Install-Chocolatey {
-    if ($SkipChocolatey) {
+    [CmdletBinding()]
+    param(
+        [bool]$Skip = $SkipChocolatey.IsPresent
+    )
+
+    if ($Skip) {
         Write-InfoMessage "Skipping Chocolatey installation"
         return
     }
@@ -78,12 +83,19 @@ function Install-Chocolatey {
 
 # Install packages from Winget export
 function Install-WingetPackage {
-    if ($SkipWinget) {
+    [CmdletBinding()]
+    param(
+        [string]$PackageDirectory = $PackageDir,
+        [bool]$Skip = $SkipWinget.IsPresent,
+        [bool]$UseLatest = $UseLatestVersions.IsPresent
+    )
+
+    if ($Skip) {
         Write-InfoMessage "Skipping Winget package installation"
         return
     }
 
-    $WingetFile = Join-Path $PackageDir "winget-packages.json"
+    $WingetFile = Join-Path $PackageDirectory "winget-packages.json"
 
     if (!(Test-Path $WingetFile)) {
         Write-WarningMessage "Winget package file not found: $WingetFile"
@@ -112,7 +124,7 @@ function Install-WingetPackage {
             '--accept-source-agreements'
         )
 
-        if ($UseLatestVersions) {
+        if ($UseLatest) {
             Write-InfoMessage "Installing latest versions (ignoring version pins)..."
             $ImportArgs += '--ignore-versions'
         }
@@ -132,12 +144,19 @@ function Install-WingetPackage {
 
 # Install packages from Chocolatey export
 function Install-ChocolateyPackage {
-    if ($SkipChocolatey) {
+    [CmdletBinding()]
+    param(
+        [string]$PackageDirectory = $PackageDir,
+        [bool]$Skip = $SkipChocolatey.IsPresent,
+        [bool]$UseLatest = $UseLatestVersions.IsPresent
+    )
+
+    if ($Skip) {
         Write-InfoMessage "Skipping Chocolatey package installation"
         return
     }
 
-    $ChocoFile = Join-Path $PackageDir "chocolatey-packages.config"
+    $ChocoFile = Join-Path $PackageDirectory "chocolatey-packages.config"
 
     if (!(Test-Path $ChocoFile)) {
         Write-WarningMessage "Chocolatey package file not found: $ChocoFile"
@@ -175,7 +194,7 @@ function Install-ChocolateyPackage {
             Write-InfoMessage "[$Current/$TotalPackages] Installing $PackageId..."
 
             try {
-                if ($UseLatestVersions) {
+                if ($UseLatest) {
                     choco install $PackageId -y --no-progress
                 }
                 else {
@@ -208,11 +227,20 @@ function Update-Environment {
 
 # Main execution function
 function Main {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackageDirectory,
+
+        [Parameter()]
+        [string]$LogPath
+    )
+
     Assert-Administrator
 
     Write-InfoMessage "Starting package installation from exported lists..."
-    Write-InfoMessage "Package directory: $PackageDir"
-    Write-InfoMessage "Log file: $LogFile"
+    Write-InfoMessage "Package directory: $PackageDirectory"
+    if ($LogPath) { Write-InfoMessage "Log file: $LogPath" }
 
     Test-PowerShellVersion
     Install-Chocolatey
@@ -221,7 +249,7 @@ function Main {
     Update-Environment
 
     Write-Success "Package installation completed!"
-    Write-InfoMessage "Log saved to: $LogFile"
+    if ($LogPath) { Write-InfoMessage "Log saved to: $LogPath" }
     Write-InfoMessage ""
     Write-InfoMessage "Next steps:"
     Write-InfoMessage "  1. Review the log file for any errors"
@@ -233,5 +261,5 @@ function Main {
 # Run Main when invoked as a script. When dot-sourced for testing, skip auto-run
 # so test files can load function definitions into scope and exercise them with mocks.
 if ($MyInvocation.InvocationName -ne '.') {
-    Main
+    Main -PackageDirectory $PackageDir -LogPath $LogFile
 }

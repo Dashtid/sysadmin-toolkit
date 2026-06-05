@@ -236,8 +236,8 @@ Describe "Script Functions" {
             $ScriptPath = Join-Path $WindowsScripts "install-from-exported-packages.ps1"
             $Content = Get-Content $ScriptPath
 
-            # Check if "Main" is called at the end of the script
-            $Content | Where-Object { $_ -match '^\s*Main\s*$' } | Should -Not -BeNullOrEmpty
+            # Main is called from inside the testability guard, with args.
+            $Content | Where-Object { $_ -match '^\s*Main(\s|$)' } | Should -Not -BeNullOrEmpty
         }
     }
 }
