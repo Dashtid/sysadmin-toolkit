@@ -20,7 +20,10 @@ Import-Module (Join-Path -Path $PSScriptRoot -ChildPath '..\lib\CommonFunctions.
 
 # Setup SSH client and keys
 function Initialize-SSHClient {
-    if ($SkipSSH) {
+    [CmdletBinding()]
+    param([bool]$Skip = $SkipSSH.IsPresent)
+
+    if ($Skip) {
         Write-InfoMessage "Skipping SSH setup"
         return
     }
@@ -67,7 +70,10 @@ function Initialize-SSHClient {
 
 # Setup VS Code for remote development
 function Initialize-VSCodeRemote {
-    if ($SkipVSCode) {
+    [CmdletBinding()]
+    param([bool]$Skip = $SkipVSCode.IsPresent)
+
+    if ($Skip) {
         Write-InfoMessage "Skipping VS Code remote setup"
         return
     }
@@ -140,7 +146,10 @@ function Initialize-VSCodeRemote {
 
 # Setup port forwarding utilities
 function Initialize-PortForwarding {
-    if ($SkipPortForwarding) {
+    [CmdletBinding()]
+    param([bool]$Skip = $SkipPortForwarding.IsPresent)
+
+    if ($Skip) {
         Write-InfoMessage "Skipping port forwarding setup"
         return
     }
