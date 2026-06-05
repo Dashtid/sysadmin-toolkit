@@ -158,11 +158,14 @@ Describe "Restore-DeveloperEnvironment.ps1" {
             "[user]`nname = Test User" | Out-File (Join-Path $MockBackupPath "GitConfig")
         }
 
-        It "Should check for manifest.json and exit on error" {
-            # Verify the script contains logic to check for manifest.json
+        It "Should check for manifest.json and surface a clear error" {
+            # Verify the script contains logic to check for manifest.json.
+            # v1.1.0 refactor replaced 'exit 1' with 'throw' so callers
+            # (including tests) can catch the failure instead of being
+            # terminated.
             $content = Get-Content $RestoreScript -Raw
             $content | Should -Match 'manifest\.json'
-            $content | Should -Match 'exit 1'
+            $content | Should -Match '\bthrow\b'
             $content | Should -Match 'Manifest not found'
         }
 

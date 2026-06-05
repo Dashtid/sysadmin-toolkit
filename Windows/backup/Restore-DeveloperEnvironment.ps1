@@ -49,7 +49,7 @@
 
 .NOTES
     Author: Windows & Linux Sysadmin Toolkit
-    Version: 1.0.0
+    Version: 1.1.0
     Requires: PowerShell 5.1+
 
 .LINK
@@ -87,64 +87,55 @@ else {
     function Write-ErrorMessage { param($Message) Write-Host "[-] $Message" -ForegroundColor Red }
 }
 
-# ============================================================================
-# VALIDATION
-# ============================================================================
+function Read-RestoreManifest {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Source
+    )
 
-$manifestPath = Join-Path $BackupPath "manifest.json"
-if (-not (Test-Path $manifestPath)) {
-    Write-ErrorMessage "Manifest not found: $manifestPath"
-    Write-ErrorMessage "This does not appear to be a valid developer environment backup."
-    exit 1
-}
-
-# Load manifest
-try {
-    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-}
-catch {
-    Write-ErrorMessage "Failed to parse manifest: $($_.Exception.Message)"
-    exit 1
-}
-
-Write-InfoMessage "Developer Environment Restore"
-Write-InfoMessage "Backup from: $($manifest.BackupDate)"
-Write-InfoMessage "Computer: $($manifest.ComputerName)"
-Write-InfoMessage "User: $($manifest.UserName)"
-Write-Host ""
-
-# ============================================================================
-# RESTORE LOGIC
-# ============================================================================
-
-$successCount = 0
-$skipCount = 0
-$errorCount = 0
-
-foreach ($item in $manifest.Items) {
-    # Skip VSCode extensions (handled separately)
-    if ($item.Name -eq "VSCode-Extensions") {
-        continue
+    $manifestPath = Join-Path $Source "manifest.json"
+    if (-not (Test-Path $manifestPath)) {
+        Write-ErrorMessage "Manifest not found: $manifestPath"
+        Write-ErrorMessage "This does not appear to be a valid developer environment backup."
+        throw "Manifest not found at $manifestPath"
     }
 
-    Write-InfoMessage "Processing: $($item.Name)"
+    try {
+        return Get-Content $manifestPath -Raw | ConvertFrom-Json
+    }
+    catch {
+        Write-ErrorMessage "Failed to parse manifest: $($_.Exception.Message)"
+        throw "Failed to parse manifest: $($_.Exception.Message)"
+    }
+}
 
-    # Check if backup file exists
-    if (-not (Test-Path $item.BackupFile)) {
-        Write-WarningMessage "Backup file not found: $($item.BackupFile)"
-        $skipCount++
-        continue
+function Restore-ManifestItem {
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        $Item,
+
+        [bool]$BackupCurrentFirst = $true
+    )
+
+    # Returns @{ Outcome = 'Restored'|'Skipped'|'Error'; Reason = '...' }
+
+    Write-InfoMessage "Processing: $($Item.Name)"
+
+    if (-not (Test-Path $Item.BackupFile)) {
+        Write-WarningMessage "Backup file not found: $($Item.BackupFile)"
+        return @{ Outcome = 'Skipped'; Reason = 'BackupFileMissing' }
     }
 
-    # Check if original path is valid
-    if (-not $item.OriginalPath) {
-        Write-WarningMessage "No original path specified for $($item.Name)"
-        $skipCount++
-        continue
+    if (-not $Item.OriginalPath) {
+        Write-WarningMessage "No original path specified for $($Item.Name)"
+        return @{ Outcome = 'Skipped'; Reason = 'NoOriginalPath' }
     }
 
     # Create parent directory if needed
-    $parentDir = Split-Path $item.OriginalPath -Parent
+    $parentDir = Split-Path $Item.OriginalPath -Parent
     if (-not (Test-Path $parentDir)) {
         if ($PSCmdlet.ShouldProcess($parentDir, "Create directory")) {
             try {
@@ -153,18 +144,17 @@ foreach ($item in $manifest.Items) {
             }
             catch {
                 Write-ErrorMessage "Failed to create directory: $($_.Exception.Message)"
-                $errorCount++
-                continue
+                return @{ Outcome = 'Error'; Reason = 'CreateParentFailed' }
             }
         }
     }
 
     # Backup current file before overwriting
-    if ($CreateBackupFirst -and (Test-Path $item.OriginalPath)) {
-        $backupFile = "$($item.OriginalPath).bak"
-        if ($PSCmdlet.ShouldProcess($item.OriginalPath, "Create backup at $backupFile")) {
+    if ($BackupCurrentFirst -and (Test-Path $Item.OriginalPath)) {
+        $backupFile = "$($Item.OriginalPath).bak"
+        if ($PSCmdlet.ShouldProcess($Item.OriginalPath, "Create backup at $backupFile")) {
             try {
-                Copy-Item -Path $item.OriginalPath -Destination $backupFile -Force
+                Copy-Item -Path $Item.OriginalPath -Destination $backupFile -Force
                 Write-InfoMessage "Created backup: $backupFile"
             }
             catch {
@@ -174,85 +164,152 @@ foreach ($item in $manifest.Items) {
     }
 
     # Restore file
-    if ($PSCmdlet.ShouldProcess($item.OriginalPath, "Restore from $($item.BackupFile)")) {
+    if ($PSCmdlet.ShouldProcess($Item.OriginalPath, "Restore from $($Item.BackupFile)")) {
         try {
-            Copy-Item -Path $item.BackupFile -Destination $item.OriginalPath -Force
-            Write-Success "Restored: $($item.Name)"
-            $successCount++
+            Copy-Item -Path $Item.BackupFile -Destination $Item.OriginalPath -Force
+            Write-Success "Restored: $($Item.Name)"
+            return @{ Outcome = 'Restored'; Reason = $null }
         }
         catch {
-            Write-ErrorMessage "Failed to restore $($item.Name): $($_.Exception.Message)"
-            $errorCount++
+            Write-ErrorMessage "Failed to restore $($Item.Name): $($_.Exception.Message)"
+            return @{ Outcome = 'Error'; Reason = 'CopyFailed' }
         }
     }
+
+    return @{ Outcome = 'Skipped'; Reason = 'WhatIf' }
 }
 
-# Restore VSCode extensions
-if ($RestoreExtensions) {
-    $extensionsItem = $manifest.Items | Where-Object { $_.Name -eq "VSCode-Extensions" }
+function Restore-VsCodeExtension {
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        $ExtensionsItem
+    )
 
-    if ($extensionsItem -and (Test-Path $extensionsItem.BackupFile)) {
-        Write-Host ""
-        Write-InfoMessage "Restoring VSCode extensions..."
+    if (-not (Test-Path $ExtensionsItem.BackupFile)) {
+        Write-InfoMessage "No VSCode extensions backup file"
+        return @{ Installed = 0; Total = 0; Skipped = $true }
+    }
 
-        $codeCmd = Get-Command code -ErrorAction SilentlyContinue
-        if ($codeCmd) {
-            $extensions = Get-Content $extensionsItem.BackupFile
+    Write-Host ""
+    Write-InfoMessage "Restoring VSCode extensions..."
 
-            if ($extensions) {
-                $totalExtensions = ($extensions | Measure-Object).Count
-                $installedCount = 0
+    $codeCmd = Get-Command code -ErrorAction SilentlyContinue
+    if (-not $codeCmd) {
+        Write-WarningMessage "VSCode CLI (code) not found in PATH - skipping extension restore"
+        return @{ Installed = 0; Total = 0; Skipped = $true }
+    }
 
-                foreach ($extension in $extensions) {
-                    $extension = $extension.Trim()
-                    if ([string]::IsNullOrWhiteSpace($extension)) {
-                        continue
-                    }
+    $extensions = Get-Content $ExtensionsItem.BackupFile
+    if (-not $extensions) {
+        return @{ Installed = 0; Total = 0; Skipped = $false }
+    }
 
-                    if ($PSCmdlet.ShouldProcess($extension, "Install VSCode extension")) {
-                        try {
-                            Write-InfoMessage "Installing: $extension"
-                            $result = & code --install-extension $extension --force 2>&1
-                            if ($LASTEXITCODE -eq 0) {
-                                $installedCount++
-                            }
-                            else {
-                                Write-WarningMessage "Failed to install: $extension"
-                            }
-                        }
-                        catch {
-                            Write-WarningMessage "Error installing $extension : $($_.Exception.Message)"
-                        }
-                    }
+    $totalExtensions = ($extensions | Measure-Object).Count
+    $installedCount = 0
+
+    foreach ($extension in $extensions) {
+        $extension = $extension.Trim()
+        if ([string]::IsNullOrWhiteSpace($extension)) {
+            continue
+        }
+
+        if ($PSCmdlet.ShouldProcess($extension, "Install VSCode extension")) {
+            try {
+                Write-InfoMessage "Installing: $extension"
+                $null = & code --install-extension $extension --force 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    $installedCount++
                 }
-
-                Write-Success "Installed $installedCount of $totalExtensions VSCode extensions"
+                else {
+                    Write-WarningMessage "Failed to install: $extension"
+                }
+            }
+            catch {
+                Write-WarningMessage "Error installing $extension : $($_.Exception.Message)"
             }
         }
-        else {
-            Write-WarningMessage "VSCode CLI (code) not found in PATH - skipping extension restore"
-            $skipCount++
+    }
+
+    Write-Success "Installed $installedCount of $totalExtensions VSCode extensions"
+    return @{ Installed = $installedCount; Total = $totalExtensions; Skipped = $false }
+}
+
+function Invoke-Restore {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Source,
+
+        [bool]$RestoreVsCodeExtensions = $true,
+
+        [bool]$BackupCurrentFirst = $true
+    )
+
+    $manifest = Read-RestoreManifest -Source $Source
+
+    Write-InfoMessage "Developer Environment Restore"
+    Write-InfoMessage "Backup from: $($manifest.BackupDate)"
+    Write-InfoMessage "Computer: $($manifest.ComputerName)"
+    Write-InfoMessage "User: $($manifest.UserName)"
+    Write-Host ""
+
+    $successCount = 0
+    $skipCount = 0
+    $errorCount = 0
+
+    foreach ($item in $manifest.Items) {
+        # Skip VSCode extensions (handled separately)
+        if ($item.Name -eq "VSCode-Extensions") {
+            continue
+        }
+
+        $result = Restore-ManifestItem -Item $item -BackupCurrentFirst $BackupCurrentFirst
+        switch ($result.Outcome) {
+            'Restored' { $successCount++ }
+            'Skipped'  { $skipCount++ }
+            'Error'    { $errorCount++ }
         }
     }
-    else {
-        Write-InfoMessage "No VSCode extensions backup found"
+
+    if ($RestoreVsCodeExtensions) {
+        $extensionsItem = $manifest.Items | Where-Object { $_.Name -eq "VSCode-Extensions" }
+        if ($extensionsItem) {
+            $extResult = Restore-VsCodeExtension -ExtensionsItem $extensionsItem
+            if ($extResult.Skipped) { $skipCount++ }
+        }
+        else {
+            Write-InfoMessage "No VSCode extensions backup found"
+        }
     }
+
+    Write-Host ""
+    Write-InfoMessage "Restore Summary"
+    Write-Host "  Restored: $successCount items"
+    Write-Host "  Skipped:  $skipCount items"
+    Write-Host "  Errors:   $errorCount items"
+    Write-Host ""
+
+    if ($successCount -gt 0 -and $errorCount -eq 0) {
+        Write-Success "Restore complete"
+    }
+    elseif ($errorCount -gt 0) {
+        Write-WarningMessage "Restore completed with errors"
+    }
+    else {
+        Write-WarningMessage "No items were restored"
+    }
+
+    return @{ Restored = $successCount; Skipped = $skipCount; Errors = $errorCount }
 }
 
-# Summary
-Write-Host ""
-Write-InfoMessage "Restore Summary"
-Write-Host "  Restored: $successCount items"
-Write-Host "  Skipped:  $skipCount items"
-Write-Host "  Errors:   $errorCount items"
-Write-Host ""
-
-if ($successCount -gt 0 -and $errorCount -eq 0) {
-    Write-Success "Restore complete"
-}
-elseif ($errorCount -gt 0) {
-    Write-WarningMessage "Restore completed with errors"
-}
-else {
-    Write-WarningMessage "No items were restored"
+# Run Invoke-Restore when invoked as a script. When dot-sourced for testing, skip
+# auto-run so test files can load function definitions into scope and exercise
+# them with mocks.
+if ($MyInvocation.InvocationName -ne '.') {
+    $null = Invoke-Restore `
+        -Source $BackupPath `
+        -RestoreVsCodeExtensions:$RestoreExtensions `
+        -BackupCurrentFirst:$CreateBackupFirst
 }
