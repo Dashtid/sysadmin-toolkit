@@ -12,10 +12,16 @@
 
 .NOTES
     Author: Windows & Linux Sysadmin Toolkit
-    Version: 1.2.0
+    Version: 1.2.1
     Requires: PowerShell 5.1+
 
 .CHANGELOG
+    1.2.1 - 2026-06-05
+        - Write-Log / Write-Section / Write-Success / Write-InfoMessage /
+          Write-WarningMessage / Write-ErrorMessage now accept an empty Message
+          string ([AllowEmptyString()]). Caller scripts use blank Write-* calls
+          for visual spacing; v1.2.0 erroneously threw ParameterBindingValidationException.
+
     1.2.0 - 2026-05-27
         - Added Set-LogFile / Clear-LogFile / Get-LogFile to mirror Write-Log
           output to a file. Lets caller scripts share a single logging stack
@@ -58,6 +64,7 @@ function Write-Log {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Message,
 
         [Parameter()]
@@ -140,6 +147,7 @@ function Write-Section {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Message
     )
     Write-Log "`n========================================`n$Message`n========================================" -Color $script:Colors.Cyan
@@ -159,6 +167,7 @@ function Write-Success {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Message
     )
 
@@ -179,6 +188,7 @@ function Write-InfoMessage {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Message
     )
 
@@ -199,6 +209,7 @@ function Write-WarningMessage {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Message
     )
 
@@ -219,6 +230,7 @@ function Write-ErrorMessage {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Message
     )
 

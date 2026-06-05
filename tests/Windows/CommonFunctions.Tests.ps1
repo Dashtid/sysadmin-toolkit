@@ -62,7 +62,7 @@ Describe "CommonFunctions Module - Basic Validation" {
     Context "Module Metadata" {
         It "Has version information in comments" {
             $content = Get-Content $ModulePath -Raw
-            $content | Should -Match "Version:\s*1\.2\.0"
+            $content | Should -Match "Version:\s*1\.2\.1"
         }
 
         It "Has changelog information" {
@@ -485,6 +485,36 @@ Describe "CommonFunctions Module - Write-Section" {
 
     It "Requires the Message parameter" {
         { Write-Section } | Should -Throw
+    }
+}
+
+Describe "CommonFunctions Module - Empty-string tolerance" {
+    # Setup scripts and other callers use blank Write-* calls (e.g. Write-InfoMessage "")
+    # for visual spacing. The Mandatory parameter must allow empty strings via
+    # [AllowEmptyString()] so blank-line spacing does not throw a binding exception.
+
+    It "Write-Log accepts an empty message" {
+        { Write-Log "" } | Should -Not -Throw
+    }
+
+    It "Write-Success accepts an empty message" {
+        { Write-Success "" } | Should -Not -Throw
+    }
+
+    It "Write-InfoMessage accepts an empty message" {
+        { Write-InfoMessage "" } | Should -Not -Throw
+    }
+
+    It "Write-WarningMessage accepts an empty message" {
+        { Write-WarningMessage "" } | Should -Not -Throw
+    }
+
+    It "Write-ErrorMessage accepts an empty message" {
+        { Write-ErrorMessage "" } | Should -Not -Throw
+    }
+
+    It "Write-Section accepts an empty message" {
+        { Write-Section "" } | Should -Not -Throw
     }
 }
 

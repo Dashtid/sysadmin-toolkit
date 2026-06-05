@@ -108,19 +108,25 @@ function Write-ExportTimestamp {
 }
 
 function Main {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Destination
+    )
+
     Write-InfoMessage "Exporting current package installations..."
-    Write-InfoMessage "Output directory: $OutputDir"
+    Write-InfoMessage "Output directory: $Destination"
 
     # Create output directory if it doesn't exist
-    New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $Destination -Force | Out-Null
 
-    Export-WingetPackage -Destination $OutputDir
-    Export-ChocolateyPackage -Destination $OutputDir
-    Export-InstalledProgram -Destination $OutputDir
-    Write-ExportTimestamp -Destination $OutputDir
+    Export-WingetPackage -Destination $Destination
+    Export-ChocolateyPackage -Destination $Destination
+    Export-InstalledProgram -Destination $Destination
+    Write-ExportTimestamp -Destination $Destination
 
     Write-Success "Package export completed!"
-    Write-InfoMessage "Files created in: $OutputDir"
+    Write-InfoMessage "Files created in: $Destination"
     Write-InfoMessage ""
     Write-InfoMessage "Next steps:"
     Write-InfoMessage "  1. Review the exported package lists"
@@ -131,5 +137,5 @@ function Main {
 # Run Main when invoked as a script. When dot-sourced for testing, skip auto-run
 # so test files can load function definitions into scope and exercise them with mocks.
 if ($MyInvocation.InvocationName -ne '.') {
-    Main
+    Main -Destination $OutputDir
 }
