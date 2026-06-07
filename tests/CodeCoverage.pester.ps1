@@ -99,11 +99,21 @@ $Config.Run.PassThru = $true
 $Config.Output.Verbosity = 'Detailed'
 
 # Code Coverage settings
+# Updated 2026-06-05: measure every Windows script directory we have tests for,
+# not just lib/maintenance/security. The setup-script behavioral test work
+# wasn't being counted before this.
 $Config.CodeCoverage.Enabled = $true
 $Config.CodeCoverage.Path = @(
     Join-Path $ProjectRoot "Windows\lib\*.psm1"
+    Join-Path $ProjectRoot "Windows\backup\*.ps1"
+    Join-Path $ProjectRoot "Windows\development\*.ps1"
+    Join-Path $ProjectRoot "Windows\first-time-setup\*.ps1"
     Join-Path $ProjectRoot "Windows\maintenance\*.ps1"
+    Join-Path $ProjectRoot "Windows\monitoring\*.ps1"
+    Join-Path $ProjectRoot "Windows\network\*.ps1"
+    Join-Path $ProjectRoot "Windows\reporting\*.ps1"
     Join-Path $ProjectRoot "Windows\security\*.ps1"
+    Join-Path $ProjectRoot "Windows\troubleshooting\*.ps1"
 )
 
 if ($ExcludeTests) {
