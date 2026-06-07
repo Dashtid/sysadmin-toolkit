@@ -36,6 +36,8 @@ The "parity achieved" claim was dropped in `docs/ROADMAP.md` on 2026-05-27. The 
 
 ## Recently closed
 
+- 2026-06-07: `test(monitoring): behavioral coverage for Test-NetworkHealth` - 27 new tests, +3.37 pp overall coverage (8.58% -> 11.95%). Fixed three pre-existing bugs uncovered by the tests: `$host` automatic-variable in alert messages (used in place of `$targetHost`); empty-string `$DNSServer` not defaulting to 'System Default' due to `??` only triggering on null; and AAAA records lost because `IPAddresses` was a single string not an array (`+=` did string concat). Test refactor pattern matches Watch-ServiceHealth proof.
+- 2026-06-06: `test(monitoring): behavioral coverage for Watch-ServiceHealth` (commit 9f0e941) - 23 new tests; Watch-ServiceHealth.ps1 0% -> 41.9%; overall coverage 6.68% -> 8.58%. Established the "wrap main in Invoke-X + testability guard + explicit params" pattern for monitoring scripts.
 - 2026-06-05: `test(backup): behavioral coverage for Restore-DeveloperEnvironment` (commit 7d9b2aa) - closed Item 2 from the prior list. Refactored straight-line script into four functions; 20 new behavioral tests.
 - 2026-06-05: `test(setup): behavioral coverage for remote-development-setup` (commit b7cd047) - closed Item 1 from the prior list (final setup script). 17 tests.
 - 2026-06-05: `test(setup): behavioral coverage for fresh-windows-setup` (commit 616643a) - 23 tests; Work/Home profile branching covered.
@@ -50,4 +52,4 @@ The "parity achieved" claim was dropped in `docs/ROADMAP.md` on 2026-05-27. The 
 - 2026-05-25: `chore: remove dotfiles/claude-config + Windows/ssh, add CmdletBinding to 4 setup scripts` (commit 02a7709)
 
 ---
-**Last Updated**: 2026-06-05
+**Last Updated**: 2026-06-07

@@ -494,7 +494,7 @@ function Test-DNSResolution {
         Success     = $false
         IPAddresses = @()
         ResponseMs  = $null
-        DNSServer   = $DNSServer ?? 'System Default'
+        DNSServer   = if ([string]::IsNullOrEmpty($DNSServer)) { 'System Default' } else { $DNSServer }
         RecordType  = 'A'
         Error       = $null
     }
@@ -519,12 +519,13 @@ function Test-DNSResolution {
         if ($dnsResult) {
             $result.Success = $true
             $result.ResponseMs = $stopwatch.ElapsedMilliseconds
-            $result.IPAddresses = ($dnsResult | Where-Object { $_.Type -eq 'A' } | Select-Object -ExpandProperty IPAddress)
+            # @() coerces single-element results to arrays so += appends (not concatenates).
+            $result.IPAddresses = @($dnsResult | Where-Object { $_.Type -eq 'A' } | Select-Object -ExpandProperty IPAddress)
 
             # Also check for AAAA records
             $ipv6Results = $dnsResult | Where-Object { $_.Type -eq 'AAAA' }
             if ($ipv6Results) {
-                $result.IPAddresses += ($ipv6Results | Select-Object -ExpandProperty IPAddress)
+                $result.IPAddresses += @($ipv6Results | Select-Object -ExpandProperty IPAddress)
             }
         }
     }
@@ -606,9 +607,25 @@ function Get-NetworkHealthReport {
     <#
     .SYNOPSIS
         Generates comprehensive network health report.
+    .DESCRIPTION
+        Parameters default to script-scope variables (set from the script's own
+        param block / defaults). They are explicit here so Pester tests can
+        invoke this function directly without relying on script-scope mutation,
+        which Pester's dot-source scope does not let test BeforeEach blocks
+        reach.
     #>
     [CmdletBinding()]
-    param()
+    param(
+        [string[]]$HostList = $Hosts,
+        [int[]]$PortList = $Ports,
+        [string[]]$DomainList = $DomainsToResolve,
+        [string[]]$DNSServerList = $DNSServers,
+        [string[]]$TraceTargets = $TracerouteTargets,
+        [bool]$DoSkipPortScan = $SkipPortScan.IsPresent,
+        [bool]$DoSkipDNS = $SkipDNS.IsPresent,
+        [bool]$DoSkipTraceroute = $SkipTraceroute.IsPresent,
+        [bool]$DoQuickTest = $QuickTest.IsPresent
+    )
 
     $report = @{
         Timestamp         = Get-Date -Format 'o'
@@ -655,7 +672,7 @@ function Get-NetworkHealthReport {
 
     # Connectivity tests (ping)
     Write-InfoMessage "Testing host connectivity..."
-    foreach ($targetHost in $Hosts) {
+    foreach ($targetHost in $HostList) {
         $connectResult = Test-HostConnectivity -HostName $targetHost
         $report.ConnectivityTests += $connectResult
         $report.Summary.TotalTests++
@@ -669,7 +686,7 @@ function Get-NetworkHealthReport {
                 $report.Alerts += @{
                     Level   = 'Warning'
                     Type    = 'HighLatency'
-                    Message = "High latency to $host`: $($connectResult.AvgTime)ms"
+                    Message = "High latency to $targetHost`: $($connectResult.AvgTime)ms"
                 }
             }
 
@@ -679,7 +696,7 @@ function Get-NetworkHealthReport {
                 $report.Alerts += @{
                     Level   = 'Warning'
                     Type    = 'PacketLoss'
-                    Message = "Packet loss to $host`: $($connectResult.PacketLoss)%"
+                    Message = "Packet loss to $targetHost`: $($connectResult.PacketLoss)%"
                 }
             }
         }
@@ -688,16 +705,16 @@ function Get-NetworkHealthReport {
             $report.Alerts += @{
                 Level   = 'Critical'
                 Type    = 'ConnectivityFailed'
-                Message = "Cannot reach $host`: $($connectResult.Error)"
+                Message = "Cannot reach $targetHost`: $($connectResult.Error)"
             }
         }
     }
 
     # Port connectivity tests
-    if (-not $SkipPortScan) {
+    if (-not $DoSkipPortScan) {
         Write-InfoMessage "Testing port connectivity..."
-        foreach ($targetHost in $Hosts) {
-            foreach ($port in $Ports) {
+        foreach ($targetHost in $HostList) {
+            foreach ($port in $PortList) {
                 $portResult = Test-PortConnectivity -HostName $targetHost -Port $port
                 $report.PortTests += $portResult
                 $report.Summary.TotalTests++
@@ -710,7 +727,7 @@ function Get-NetworkHealthReport {
                     $report.Alerts += @{
                         Level   = 'Warning'
                         Type    = 'PortBlocked'
-                        Message = "Port $port ($($portResult.ServiceName)) blocked on $host"
+                        Message = "Port $port ($($portResult.ServiceName)) blocked on $targetHost"
                     }
                 }
             }
@@ -718,9 +735,9 @@ function Get-NetworkHealthReport {
     }
 
     # DNS resolution tests
-    if (-not $SkipDNS) {
+    if (-not $DoSkipDNS) {
         Write-InfoMessage "Testing DNS resolution..."
-        foreach ($domain in $DomainsToResolve) {
+        foreach ($domain in $DomainList) {
             $dnsResult = Test-DNSResolution -Domain $domain
             $report.DNSTests += $dnsResult
             $report.Summary.TotalTests++
@@ -739,9 +756,9 @@ function Get-NetworkHealthReport {
         }
 
         # Test with custom DNS servers if specified
-        if ($DNSServers) {
-            foreach ($dnsServer in $DNSServers) {
-                $testDomain = $DomainsToResolve | Select-Object -First 1
+        if ($DNSServerList) {
+            foreach ($dnsServer in $DNSServerList) {
+                $testDomain = $DomainList | Select-Object -First 1
                 $dnsResult = Test-DNSResolution -Domain $testDomain -DNSServer $dnsServer
                 $dnsResult.DNSServer = $dnsServer
                 $report.DNSTests += $dnsResult
@@ -763,9 +780,9 @@ function Get-NetworkHealthReport {
     }
 
     # Traceroute tests
-    if (-not $SkipTraceroute -and -not $QuickTest) {
+    if (-not $DoSkipTraceroute -and -not $DoQuickTest) {
         Write-InfoMessage "Running traceroute tests..."
-        foreach ($target in $TracerouteTargets) {
+        foreach ($target in $TraceTargets) {
             $traceResult = Invoke-Traceroute -Target $target
             $report.TracerouteResults += $traceResult
 
@@ -1118,39 +1135,61 @@ function Export-JSONReport {
 #endregion
 
 #region Main Execution
-try {
-    Write-InfoMessage "=== Network Health Diagnostics v$script:ScriptVersion ==="
-    Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+function Invoke-NetworkHealthCheck {
+    <#
+    .SYNOPSIS
+        Runs the full network-health workflow and returns an exit code.
+    .OUTPUTS
+        [int] 0 on success, 1 if any test failed or a fatal error occurred.
+    #>
+    [CmdletBinding()]
+    [OutputType([int])]
+    param()
 
-    if ($QuickTest) {
-        Write-InfoMessage "Running quick test mode"
-    }
+    try {
+        Write-InfoMessage "=== Network Health Diagnostics v$script:ScriptVersion ==="
+        Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 
-    # Generate report
-    $report = Get-NetworkHealthReport
-
-    # Output based on format
-    switch ($OutputFormat) {
-        'Console' { Write-ConsoleReport -Report $report }
-        'HTML'    { Export-HTMLReport -Report $report -Path $OutputPath }
-        'JSON'    { Export-JSONReport -Report $report -Path $OutputPath }
-        'All' {
-            Write-ConsoleReport -Report $report
-            Export-HTMLReport -Report $report -Path $OutputPath
-            Export-JSONReport -Report $report -Path $OutputPath
+        if ($QuickTest) {
+            Write-InfoMessage "Running quick test mode"
         }
+
+        # Generate report
+        $report = Get-NetworkHealthReport
+
+        # Output based on format
+        switch ($OutputFormat) {
+            'Console' { Write-ConsoleReport -Report $report }
+            'HTML'    { Export-HTMLReport -Report $report -Path $OutputPath }
+            'JSON'    { Export-JSONReport -Report $report -Path $OutputPath }
+            'All' {
+                Write-ConsoleReport -Report $report
+                Export-HTMLReport -Report $report -Path $OutputPath
+                Export-JSONReport -Report $report -Path $OutputPath
+            }
+        }
+
+        $duration = (Get-Date) - $script:StartTime
+        Write-Success "=== Network diagnostics completed in $($duration.TotalSeconds.ToString('0.00'))s ==="
+
+        # Return exit code based on results
+        if ($report.Summary.FailedTests -gt 0) {
+            return 1
+        }
+        return 0
     }
-
-    $duration = (Get-Date) - $script:StartTime
-    Write-Success "=== Network diagnostics completed in $($duration.TotalSeconds.ToString('0.00'))s ==="
-
-    # Return exit code based on results
-    if ($report.Summary.FailedTests -gt 0) {
-        exit 1
+    catch {
+        Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
+        return 1
     }
 }
-catch {
-    Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
-    exit 1
+
+# Run Invoke-NetworkHealthCheck when invoked as a script. When dot-sourced for
+# testing, skip auto-run so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    $exitCode = Invoke-NetworkHealthCheck
+    if ($exitCode -ne 0) {
+        exit 1
+    }
 }
 #endregion
