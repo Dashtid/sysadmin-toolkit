@@ -248,6 +248,11 @@ function Get-FilteredEvents {
     <#
     .SYNOPSIS
         Retrieves filtered events from specified event log.
+    .DESCRIPTION
+        EventIds / SourceFilter / ExcludeSources default to the script-level
+        param values but are explicit here so Pester tests can drive them
+        without script-scope monkey-patching (which Pester BeforeEach cannot
+        propagate into dot-sourced functions).
     #>
     [CmdletBinding()]
     param(
@@ -258,7 +263,13 @@ function Get-FilteredEvents {
 
         [int]$MaxEvents = 1000,
 
-        [int[]]$LevelValues
+        [int[]]$LevelValues,
+
+        [int[]]$EventIds = $script:EventIds,
+
+        [string]$SourceFilter = $script:SourceFilter,
+
+        [string[]]$ExcludeSources = $script:ExcludeSources
     )
 
     $events = @()
@@ -340,6 +351,7 @@ function Get-SecurityAnalysis {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
         [array]$Events
     )
 
@@ -422,6 +434,7 @@ function Get-FailedLogonDetails {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
         [array]$Events
     )
 
@@ -507,6 +520,7 @@ function Get-SystemIssues {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
         [array]$Events
     )
 
@@ -558,6 +572,7 @@ function Get-ApplicationIssues {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
+        [AllowEmptyCollection()]
         [array]$Events
     )
 
@@ -601,9 +616,21 @@ function Get-EventLogReport {
     <#
     .SYNOPSIS
         Generates comprehensive event log analysis report.
+    .DESCRIPTION
+        Parameters default to the script-level param values. They are explicit
+        here so Pester tests can drive scope/level/admin/security toggles
+        without monkey-patching script-scope variables.
     #>
     [CmdletBinding()]
-    param()
+    param(
+        [int]$Hours = $script:Hours,
+        [string]$Level = $script:Level,
+        [string[]]$LogNames = $script:LogNames,
+        [int]$MaxEvents = $script:MaxEvents,
+        [bool]$IsAdmin = [bool]$script:IsAdmin,
+        [bool]$IncludeSecurityAnalysis = [bool]$script:IncludeSecurityAnalysis,
+        [bool]$IncludeFailedLogons = [bool]$script:IncludeFailedLogons
+    )
 
     $report = @{
         Timestamp          = Get-Date -Format 'o'
@@ -647,7 +674,7 @@ function Get-EventLogReport {
     # Collect events from each log
     foreach ($logName in $LogNames) {
         # Skip Security log if not admin and not explicitly requested
-        if ($logName -eq 'Security' -and -not $script:IsAdmin) {
+        if ($logName -eq 'Security' -and -not $IsAdmin) {
             if (-not $IncludeSecurityAnalysis) {
                 Write-WarningMessage "Skipping Security log (requires administrator privileges)"
                 continue
@@ -664,11 +691,13 @@ function Get-EventLogReport {
     }
 
     # Calculate summary
-    $report.Summary.TotalEvents = $report.AllEvents.Count
-    $report.Summary.Critical = ($report.AllEvents | Where-Object { $_.Level -eq 'Critical' }).Count
-    $report.Summary.Error = ($report.AllEvents | Where-Object { $_.Level -eq 'Error' }).Count
-    $report.Summary.Warning = ($report.AllEvents | Where-Object { $_.Level -eq 'Warning' }).Count
-    $report.Summary.Information = ($report.AllEvents | Where-Object { $_.Level -eq 'Information' }).Count
+    # @() coerces single-match Where-Object to a one-element array so .Count is 1,
+    # not the matched hashtable's key count (a classic PowerShell unwrap trap).
+    $report.Summary.TotalEvents = @($report.AllEvents).Count
+    $report.Summary.Critical = @($report.AllEvents | Where-Object { $_.Level -eq 'Critical' }).Count
+    $report.Summary.Error = @($report.AllEvents | Where-Object { $_.Level -eq 'Error' }).Count
+    $report.Summary.Warning = @($report.AllEvents | Where-Object { $_.Level -eq 'Warning' }).Count
+    $report.Summary.Information = @($report.AllEvents | Where-Object { $_.Level -eq 'Information' }).Count
 
     # Group by source
     $sourceGroups = $report.AllEvents | Group-Object -Property Source | Sort-Object -Property Count -Descending
@@ -698,13 +727,13 @@ function Get-EventLogReport {
     }
 
     # Security analysis
-    if ($IncludeSecurityAnalysis -and $script:IsAdmin) {
+    if ($IncludeSecurityAnalysis -and $IsAdmin) {
         Write-InfoMessage "Performing security analysis..."
         $report.SecurityAnalysis = Get-SecurityAnalysis -Events $report.AllEvents
     }
 
     # Failed logon details
-    if ($IncludeFailedLogons -and $script:IsAdmin) {
+    if ($IncludeFailedLogons -and $IsAdmin) {
         Write-InfoMessage "Analyzing failed logon attempts..."
         $report.FailedLogons = Get-FailedLogonDetails -Events $report.AllEvents
     }
@@ -1181,45 +1210,67 @@ function Export-CSVReport {
 #endregion
 
 #region Main Execution
-try {
-    Write-InfoMessage "=== Event Log Analyzer v$script:ScriptVersion ==="
-    Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-    Write-InfoMessage "Analyzing last $Hours hours"
+function Invoke-EventLogAnalysis {
+    <#
+    .SYNOPSIS
+        Runs the full event-log analysis workflow and returns an exit code.
+    .OUTPUTS
+        [int] 0 on success, 1 if any critical events were detected or a fatal error occurred.
+    #>
+    [CmdletBinding()]
+    [OutputType([int])]
+    param()
 
-    if ($script:IsAdmin) {
-        Write-Success "Running with administrator privileges"
-    }
-    else {
-        Write-WarningMessage "Running without administrator privileges - Security log access limited"
-    }
+    try {
+        Write-InfoMessage "=== Event Log Analyzer v$script:ScriptVersion ==="
+        Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+        Write-InfoMessage "Analyzing last $Hours hours"
 
-    # Generate report
-    $report = Get-EventLogReport
-
-    # Output based on format
-    switch ($OutputFormat) {
-        'Console' { Write-ConsoleReport -Report $report }
-        'HTML'    { Export-HTMLReport -Report $report -Path $OutputPath }
-        'JSON'    { Export-JSONReport -Report $report -Path $OutputPath }
-        'CSV'     { Export-CSVReport -Report $report -Path $OutputPath }
-        'All' {
-            Write-ConsoleReport -Report $report
-            Export-HTMLReport -Report $report -Path $OutputPath
-            Export-JSONReport -Report $report -Path $OutputPath
-            Export-CSVReport -Report $report -Path $OutputPath
+        if ($script:IsAdmin) {
+            Write-Success "Running with administrator privileges"
         }
+        else {
+            Write-WarningMessage "Running without administrator privileges - Security log access limited"
+        }
+
+        # Generate report
+        $report = Get-EventLogReport
+
+        # Output based on format
+        switch ($OutputFormat) {
+            'Console' { Write-ConsoleReport -Report $report }
+            'HTML'    { Export-HTMLReport -Report $report -Path $OutputPath }
+            'JSON'    { Export-JSONReport -Report $report -Path $OutputPath }
+            'CSV'     { Export-CSVReport -Report $report -Path $OutputPath }
+            'All' {
+                Write-ConsoleReport -Report $report
+                Export-HTMLReport -Report $report -Path $OutputPath
+                Export-JSONReport -Report $report -Path $OutputPath
+                Export-CSVReport -Report $report -Path $OutputPath
+            }
+        }
+
+        $duration = (Get-Date) - $script:StartTime
+        Write-Success "=== Event log analysis completed in $($duration.TotalSeconds.ToString('0.00'))s ==="
+
+        # Return exit code based on critical events
+        if ($report.Summary.Critical -gt 0) {
+            return 1
+        }
+        return 0
     }
-
-    $duration = (Get-Date) - $script:StartTime
-    Write-Success "=== Event log analysis completed in $($duration.TotalSeconds.ToString('0.00'))s ==="
-
-    # Return exit code based on critical events
-    if ($report.Summary.Critical -gt 0) {
-        exit 1
+    catch {
+        Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
+        return 1
     }
 }
-catch {
-    Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
-    exit 1
+
+# Run Invoke-EventLogAnalysis when invoked as a script. When dot-sourced for
+# testing, skip auto-run so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    $exitCode = Invoke-EventLogAnalysis
+    if ($exitCode -ne 0) {
+        exit 1
+    }
 }
 #endregion
