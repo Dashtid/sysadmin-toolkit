@@ -444,7 +444,10 @@ function Get-ServiceHealthReport {
         Generates a comprehensive service health report.
     #>
     [CmdletBinding()]
-    param()
+    param(
+        [string[]]$ServiceList = $Services,
+        [bool]$AutoRestartOnStopped = $AutoRestart.IsPresent
+    )
 
     $report = @{
         Timestamp       = Get-Date -Format 'o'
@@ -459,7 +462,7 @@ function Get-ServiceHealthReport {
         RestartHistory  = $script:RestartHistory
     }
 
-    foreach ($serviceName in $Services) {
+    foreach ($serviceName in $ServiceList) {
         $serviceInfo = Get-ServiceStatus -ServiceName $serviceName
         $report.TotalServices++
 
@@ -533,7 +536,7 @@ function Get-ServiceHealthReport {
                 }
 
                 # Attempt restart if enabled
-                if ($AutoRestart) {
+                if ($AutoRestartOnStopped) {
                     $restartResult = Restart-ServiceWithRetry -ServiceName $serviceName
                     $serviceReport.RestartAttempted = $true
                     $serviceReport.RestartSuccess = $restartResult.Success
@@ -886,7 +889,11 @@ function Export-JSONReport {
 #endregion
 
 #region Main Execution
-try {
+function Invoke-ServiceHealthCheck {
+    [CmdletBinding()]
+    param()
+
+    try {
     Write-InfoMessage "=== Service Health Monitor v$script:ScriptVersion ==="
     Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 
@@ -968,12 +975,21 @@ try {
 
     $duration = (Get-Date) - $script:StartTime
     Write-Success "=== Service health monitoring completed in $($duration.TotalSeconds.ToString('0.00'))s ==="
-}
-catch {
-    Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
-    if (Get-Command Write-ContextualError -ErrorAction SilentlyContinue) {
-        Write-ContextualError -ErrorRecord $_ -Context "running service health monitor" -Suggestion "Check permissions and service access"
     }
-    exit 1
+    catch {
+        Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
+        if (Get-Command Write-ContextualError -ErrorAction SilentlyContinue) {
+            Write-ContextualError -ErrorRecord $_ -Context "running service health monitor" -Suggestion "Check permissions and service access"
+        }
+        exit 1
+    }
+}
+
+# Run Invoke-ServiceHealthCheck when invoked as a script. When dot-sourced for
+# testing, skip auto-run so test files can load function definitions into scope
+# and exercise the helpers (Get-ServiceStatus / Test-ServiceShouldMonitor /
+# Restart-ServiceWithRetry / Get-ServiceHealthReport / etc.) with mocks.
+if ($MyInvocation.InvocationName -ne '.') {
+    Invoke-ServiceHealthCheck
 }
 #endregion
