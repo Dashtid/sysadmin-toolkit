@@ -268,11 +268,6 @@ function Test-PendingReboot {
             Name     = 'RebootRequired'
             Path     = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update'
             Property = 'RebootRequired'
-        },
-        @{
-            Name     = 'PendingFileRename'
-            Path     = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager'
-            Property = 'PendingFileRenameOperations'
         }
     )
 
@@ -283,6 +278,13 @@ function Test-PendingReboot {
             Write-WarningMessage "Pending reboot detected: $($test.Name)"
             $pendingReboot = $true
         }
+    }
+
+    # PendingFileRenameOperations is informational only: it is populated near-constantly
+    # by routine app updates (Office, Edge, OneDrive, etc.) and on its own is NOT a
+    # reliable signal that updates must be deferred. Log it, but do not block updates on it.
+    if (Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager' -Name 'PendingFileRenameOperations' -ErrorAction SilentlyContinue) {
+        Write-InfoMessage "Pending file-rename operations are queued (clear on next reboot); not treating as a blocking pending reboot"
     }
 
     return $pendingReboot
@@ -735,9 +737,16 @@ try {
     # Check for pending reboots
     $pendingReboot = Test-PendingReboot
     if ($pendingReboot) {
-        Write-WarningMessage "System has pending reboot from previous updates"
-        Invoke-Reboot
-        exit 0
+        Write-WarningMessage "System has a pending reboot from previous updates"
+        if ($global:config.AutoReboot) {
+            # AutoReboot is on: reboot now, updates run on the next scheduled cycle
+            Write-WarningMessage "AutoReboot is enabled - rebooting before applying updates"
+            Invoke-Reboot
+            exit 0
+        }
+        # AutoReboot is off: do NOT skip updates. Warn and continue so the scheduled run
+        # is not silently a no-op every time a reboot happens to be pending.
+        Write-WarningMessage "Continuing with updates; a reboot is recommended afterward to finalize"
     }
 
     # Create system restore point

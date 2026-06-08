@@ -6,6 +6,25 @@ not strictly adhere to semantic versioning (it is a personal toolkit, not a
 published library) but minor bumps signal new public surface and patch bumps
 signal bug fixes only.
 
+## [2.3.1] - 2026-06-08
+
+### Fixed
+
+- `system-updates.ps1`: a pending reboot no longer silently turns the whole
+  scheduled run into a no-op. Previously, when a reboot was pending and
+  `AutoReboot` was off (the default), the script logged a warning and
+  `exit 0`ed *before* running winget/Chocolatey/Windows Update -- yet the
+  scheduled task still reported success. On a daily-driver laptop this stalled
+  all updates indefinitely. The early `exit 0` is now gated behind `AutoReboot`;
+  with `AutoReboot` off the run warns and continues.
+- `Test-PendingReboot`: `PendingFileRenameOperations` is no longer a blocking
+  signal. It is populated near-constantly by routine app updates (Office, Edge,
+  OneDrive, etc.) and on its own does not mean updates must be deferred; it is
+  now logged informationally. `Component Based Servicing\RebootPending` and
+  `WindowsUpdate\Auto Update\RebootRequired` remain the blocking signals.
+- Added two regression tests in `tests/Windows/SystemUpdates.Tests.ps1` covering
+  both behaviors.
+
 ## [2.3.0] - 2026-06-05
 
 ### Added

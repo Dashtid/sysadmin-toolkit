@@ -403,6 +403,22 @@ Describe "system-updates.ps1 - Security and Best Practices" {
             $content | Should -Match "Test-PendingReboot"
         }
 
+        It "Continues with updates on a pending reboot when AutoReboot is off (no silent no-op)" {
+            $content = Get-Content $ScriptPath -Raw
+            # Regression guard: a pending reboot must not silently skip the whole run.
+            # The early 'exit 0' is now gated behind AutoReboot; otherwise the run continues.
+            $content | Should -Match 'AutoReboot is enabled - rebooting before applying updates'
+            $content | Should -Match 'Continuing with updates'
+        }
+
+        It "Treats PendingFileRenameOperations as informational, not a blocking reboot signal" {
+            $content = Get-Content $ScriptPath -Raw
+            # PendingFileRename is near-constantly populated by routine app updates and must
+            # not be a blocking $pendingRebootTests entry, or the run stalls indefinitely.
+            $content | Should -Not -Match "Name\s*=\s*'PendingFileRename'"
+            $content | Should -Match 'not treating as a blocking pending reboot'
+        }
+
         It "Uses ShouldProcess for destructive operations" {
             $content = Get-Content $ScriptPath -Raw
             $content | Should -Match "ShouldProcess"
