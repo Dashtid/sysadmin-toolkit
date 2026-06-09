@@ -6,7 +6,7 @@ not strictly adhere to semantic versioning (it is a personal toolkit, not a
 published library) but minor bumps signal new public surface and patch bumps
 signal bug fixes only.
 
-## [2.3.1] - 2026-06-08
+## [2.3.1] - 2026-06-09
 
 ### Fixed
 
@@ -22,8 +22,18 @@ signal bug fixes only.
   OneDrive, etc.) and on its own does not mean updates must be deferred; it is
   now logged informationally. `Component Based Servicing\RebootPending` and
   `WindowsUpdate\Auto Update\RebootRequired` remain the blocking signals.
-- Added two regression tests in `tests/Windows/SystemUpdates.Tests.ps1` covering
-  both behaviors.
+- `system-updates.ps1` now disables Windows Fast Startup (`HiberbootEnabled = 0`)
+  on every run via the new `Disable-FastStartup` helper. Fast Startup's hybrid
+  shutdown hibernates the kernel session instead of fully booting, so a plain
+  "Shut down" never runs the boot-time pass that processes
+  `PendingFileRenameOperations` / finalizes servicing -- only "Restart" does
+  (Microsoft KB 4011287). On a machine that is shut down rather than restarted,
+  this stranded in-use updates (e.g. PowerShell) indefinitely. The value is
+  re-applied each run because feature updates can silently reset it; hibernation
+  is unaffected.
+- Added three regression tests in `tests/Windows/SystemUpdates.Tests.ps1` covering
+  the continue-on-pending-reboot, informational-file-rename, and
+  Fast-Startup-disable behaviors.
 
 ## [2.3.0] - 2026-06-05
 

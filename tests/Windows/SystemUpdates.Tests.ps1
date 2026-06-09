@@ -419,6 +419,14 @@ Describe "system-updates.ps1 - Security and Best Practices" {
             $content | Should -Match 'not treating as a blocking pending reboot'
         }
 
+        It "Disables Fast Startup so shutdown-only usage still finalizes updates" {
+            $content = Get-Content $ScriptPath -Raw
+            # Fast Startup (hybrid shutdown) skips the boot-time pass that finalizes pending
+            # file renames/servicing; on a shutdown-only machine this strands in-use updates.
+            $content | Should -Match 'Disable-FastStartup'
+            $content | Should -Match 'HiberbootEnabled'
+        }
+
         It "Uses ShouldProcess for destructive operations" {
             $content = Get-Content $ScriptPath -Raw
             $content | Should -Match "ShouldProcess"

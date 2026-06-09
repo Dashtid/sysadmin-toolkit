@@ -253,6 +253,39 @@ function Initialize-Environment {
     return $true
 }
 
+function Disable-FastStartup {
+    <#
+    .SYNOPSIS
+        Disables Windows Fast Startup so a normal shutdown finalizes pending updates.
+    .DESCRIPTION
+        Fast Startup (hybrid shutdown) hibernates the kernel session on "Shut down" and
+        resumes it on the next power-on, so the early-boot pass that processes
+        PendingFileRenameOperations and completes pending servicing never runs - only a
+        full "Restart" finalizes them. On a machine that is typically shut down rather
+        than restarted, in-use file replacements (e.g. PowerShell) and update renames
+        stay stuck indefinitely. Setting HiberbootEnabled = 0 makes a normal "Shut down"
+        a full shutdown that finalizes them on the next boot. Hibernation itself is
+        unaffected. Re-applied every run because Windows feature updates can silently
+        reset this value back to 1 (ref: Microsoft KB 4011287).
+    #>
+    $powerKey = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power'
+    try {
+        $current = (Get-ItemProperty -Path $powerKey -Name 'HiberbootEnabled' -ErrorAction SilentlyContinue).HiberbootEnabled
+        if ($current -eq 0) {
+            Write-InfoMessage "Fast Startup already disabled (a normal shutdown finalizes updates)"
+            return
+        }
+
+        if ($PSCmdlet.ShouldProcess("Fast Startup (HiberbootEnabled)", "Disable")) {
+            Set-ItemProperty -Path $powerKey -Name 'HiberbootEnabled' -Value 0 -Type DWord -ErrorAction Stop
+            Write-Success "Disabled Fast Startup so a normal shutdown now finalizes pending updates"
+        }
+    }
+    catch {
+        Write-WarningMessage "Could not disable Fast Startup: $($_.Exception.Message)"
+    }
+}
+
 function Test-PendingReboot {
     <#
     .SYNOPSIS
@@ -733,6 +766,11 @@ try {
     if (-not $isAdmin) {
         exit 1
     }
+
+    # Ensure Fast Startup stays disabled so a normal shutdown finalizes pending updates.
+    # This machine is typically shut down (not restarted); without this, in-use updates
+    # such as PowerShell never finalize. See Disable-FastStartup for details.
+    Disable-FastStartup
 
     # Check for pending reboots
     $pendingReboot = Test-PendingReboot
