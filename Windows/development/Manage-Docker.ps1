@@ -195,7 +195,8 @@ function Test-DockerRunning {
 }
 
 function Test-DockerDesktopInstalled {
-    return (Test-Path $script:DockerDesktopPath)
+    param([string]$Path = $script:DockerDesktopPath)
+    return (Test-Path $Path)
 }
 
 function Get-DockerVersion {
@@ -228,12 +229,12 @@ function Get-DockerContainers {
 
     try {
         $format = '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}\t{{.State}}'
-        $args = @('ps', '--format', $format)
+        $dockerArgs = @('ps', '--format', $format)
         if ($All) {
-            $args += '-a'
+            $dockerArgs += '-a'
         }
 
-        $output = docker @args 2>&1
+        $output = docker @dockerArgs 2>&1
 
         if ($LASTEXITCODE -eq 0 -and $output) {
             foreach ($line in $output) {
@@ -475,7 +476,9 @@ function Show-DockerStatus {
 }
 
 function Start-DockerDesktop {
-    if (-not (Test-DockerDesktopInstalled)) {
+    param([string]$Path = $script:DockerDesktopPath)
+
+    if (-not (Test-DockerDesktopInstalled -Path $Path)) {
         Write-ErrorMessage "Docker Desktop not found"
         return $false
     }
@@ -488,7 +491,7 @@ function Start-DockerDesktop {
     Write-InfoMessage "Starting Docker Desktop..."
 
     try {
-        Start-Process -FilePath $script:DockerDesktopPath -WindowStyle Hidden
+        Start-Process -FilePath $Path -WindowStyle Hidden
 
         # Wait for Docker to start
         $maxWait = 120  # 2 minutes
@@ -645,18 +648,18 @@ function Show-ContainerLogs {
 
     Write-InfoMessage "Showing logs for '$Name'..."
 
-    $args = @('logs')
+    $dockerArgs = @('logs')
     if ($Tail -gt 0) {
-        $args += '--tail'
-        $args += $Tail
+        $dockerArgs += '--tail'
+        $dockerArgs += $Tail
     }
     if ($Follow) {
-        $args += '-f'
+        $dockerArgs += '-f'
     }
-    $args += $Name
+    $dockerArgs += $Name
 
     try {
-        & docker @args
+        & docker @dockerArgs
     }
     catch {
         Write-ErrorMessage "Error getting logs: $($_.Exception.Message)"
@@ -752,7 +755,11 @@ function Invoke-DockerPrune {
     }
 }
 
-function Pull-DockerImage {
+function Invoke-DockerImagePull {
+    <#
+    .SYNOPSIS
+        Pulls a Docker image by name (renamed from Pull-DockerImage to use an approved verb).
+    #>
     param([string]$Name)
 
     if (-not (Test-DockerRunning)) {
@@ -988,7 +995,14 @@ function Show-ResourceStats {
 #endregion
 
 #region Main Execution
-function Main {
+function Invoke-DockerManager {
+    <#
+    .SYNOPSIS
+        Dispatches the requested Action to the appropriate helper.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param()
+
     Write-InfoMessage "Docker Manager v$($script:ScriptVersion)"
 
     switch ($Action) {
@@ -1116,7 +1130,7 @@ function Main {
                 exit 1
             }
             if ($PSCmdlet.ShouldProcess($ImageName, "Pull image")) {
-                $success = Pull-DockerImage -Name $ImageName
+                $success = Invoke-DockerImagePull -Name $ImageName
                 exit $(if ($success) { 0 } else { 1 })
             }
         }
@@ -1176,6 +1190,9 @@ function Main {
     Write-InfoMessage "Completed in $($duration.TotalSeconds.ToString('F1')) seconds"
 }
 
-# Run main function
-Main
+# Run Invoke-DockerManager when invoked as a script. When dot-sourced for
+# testing, skip auto-run so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    Invoke-DockerManager
+}
 #endregion
