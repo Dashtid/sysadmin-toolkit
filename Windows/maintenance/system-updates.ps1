@@ -586,7 +586,10 @@ function Update-Chocolatey {
             Write-InfoMessage "Updating all Chocolatey packages..."
             Write-Progress -Activity "Updating Chocolatey" -Status "Updating all packages..." -PercentComplete 75
 
-            $chocoOutput = & choco upgrade all -y --no-progress 2>&1
+            # Exclude apps that winget owns so the two managers don't both upgrade the same
+            # package (PowerShell, Azure CLI, Notepad++, Pandoc). choco keeps everything else.
+            $wingetOwned = "powershell-core,azure-cli,notepadplusplus,notepadplusplus.install,pandoc"
+            $chocoOutput = & choco upgrade all -y --no-progress --except="'$wingetOwned'" 2>&1
             Write-LogMessage ($chocoOutput | Out-String) -NoConsole
 
             Write-Progress -Activity "Updating Chocolatey" -Completed

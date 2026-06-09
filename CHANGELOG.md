@@ -31,9 +31,18 @@ signal bug fixes only.
   this stranded in-use updates (e.g. PowerShell) indefinitely. The value is
   re-applied each run because feature updates can silently reset it; hibernation
   is unaffected.
-- Added three regression tests in `tests/Windows/SystemUpdates.Tests.ps1` covering
-  the continue-on-pending-reboot, informational-file-rename, and
-  Fast-Startup-disable behaviors.
+- `system-updates.ps1` now excludes winget-owned packages (PowerShell, Azure CLI,
+  Notepad++, Pandoc) from `choco upgrade all` via `--except`, so the two package
+  managers no longer both upgrade the same app. Chocolatey continues to own
+  everything else (kubectl, the .NET SDKs, python/uv, grype/syft, etc.).
+- `fresh-windows-setup.ps1`: Pandoc is now installed via winget for both profiles
+  (`$CommonWinget`) and removed from the hardcoded Chocolatey list, so a fresh
+  Work-profile setup no longer installs it through both managers.
+  `chocolatey-packages.config` no longer lists powershell-core / azure-cli /
+  notepadplusplus(.install) / pandoc.
+- Added four regression tests in `tests/Windows/SystemUpdates.Tests.ps1` covering
+  the continue-on-pending-reboot, informational-file-rename, Fast-Startup-disable,
+  and choco-excludes-winget-owned behaviors.
 
 ## [2.3.0] - 2026-06-05
 

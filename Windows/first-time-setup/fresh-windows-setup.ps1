@@ -277,7 +277,8 @@ function Install-ProfilePackage {
         'Brave.Brave',
         'Notepad++.Notepad++',
         'geeksoftwareGmbH.PDF24Creator',
-        'Obsidian.Obsidian'
+        'Obsidian.Obsidian',
+        'JohnMacFarlane.Pandoc'
     )
 
     # Profile-specific Winget packages
@@ -285,7 +286,6 @@ function Install-ProfilePackage {
     if ($ProfileName -eq 'Work') {
         $ProfileWinget = @(
             'Microsoft.AzureCLI',
-            'JohnMacFarlane.Pandoc',
             'Microsoft.Teams',
             'Zoom.Zoom.EXE',
             'WatchGuard.MobileVPNWithSSLClient',
@@ -336,7 +336,9 @@ function Install-ProfilePackage {
 
     # Common Chocolatey packages with error handling
     if (Get-Command choco -ErrorAction SilentlyContinue) {
-        $ChocoPackages = @('python', 'python3', 'uv', 'pandoc', 'bind-toolsonly', 'grype', 'syft')
+        # Pandoc/PowerShell/Azure CLI/Notepad++ are installed via winget above; keep them out
+        # of this choco list so the two managers do not both manage the same package.
+        $ChocoPackages = @('python', 'python3', 'uv', 'bind-toolsonly', 'grype', 'syft')
 
         # try choco installations with error handling
         try {

@@ -427,6 +427,14 @@ Describe "system-updates.ps1 - Security and Best Practices" {
             $content | Should -Match 'HiberbootEnabled'
         }
 
+        It "Excludes winget-owned packages from 'choco upgrade all' (no dual-manager conflict)" {
+            $content = Get-Content $ScriptPath -Raw
+            # winget owns PowerShell/Azure CLI/Notepad++/Pandoc; choco must not also upgrade them.
+            $content | Should -Match "choco upgrade all[^\r\n]*--except"
+            $content | Should -Match 'powershell-core'
+            $content | Should -Match 'notepadplusplus\.install'
+        }
+
         It "Uses ShouldProcess for destructive operations" {
             $content = Get-Content $ScriptPath -Raw
             $content | Should -Match "ShouldProcess"
