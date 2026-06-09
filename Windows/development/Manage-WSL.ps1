@@ -542,14 +542,12 @@ function Set-WslConfiguration {
     param(
         [string]$Memory,
         [int]$Processors,
-        [string]$Swap
+        [string]$Swap,
+        [string]$ConfigPath = $script:WslConfigPath
     )
 
-    $config = @{}
-
     # Read existing config if present
-    if (Test-Path $script:WslConfigPath) {
-        $existingConfig = Get-Content $script:WslConfigPath -Raw
+    if (Test-Path $ConfigPath) {
         Write-InfoMessage "Existing .wslconfig found, merging settings..."
     }
 
@@ -578,8 +576,8 @@ nestedVirtualization=true
 "@
 
     try {
-        $configContent | Out-File -FilePath $script:WslConfigPath -Encoding UTF8 -Force
-        Write-Success "WSL configuration saved to: $($script:WslConfigPath)"
+        $configContent | Out-File -FilePath $ConfigPath -Encoding UTF8 -Force
+        Write-Success "WSL configuration saved to: $ConfigPath"
         Write-InfoMessage "Restart WSL for changes to take effect: wsl --shutdown"
         return $true
     }
@@ -898,7 +896,14 @@ function Show-AvailableDistributions {
 #endregion
 
 #region Main Execution
-function Main {
+function Invoke-WslManager {
+    <#
+    .SYNOPSIS
+        Dispatches the requested Action to the appropriate WSL helper.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param()
+
     Write-InfoMessage "WSL Manager v$($script:ScriptVersion)"
 
     switch ($Action) {
@@ -1022,6 +1027,9 @@ function Main {
     Write-InfoMessage "Completed in $($duration.TotalSeconds.ToString('F1')) seconds"
 }
 
-# Run main function
-Main
+# Run Invoke-WslManager when invoked as a script. When dot-sourced for
+# testing, skip auto-run so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    Invoke-WslManager
+}
 #endregion
