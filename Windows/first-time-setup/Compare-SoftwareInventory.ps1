@@ -657,11 +657,22 @@ function Export-JSONReport {
 #endregion
 
 #region Main Execution
-try {
-    Write-Host ""
-    Write-InfoMessage "========================================"
-    Write-InfoMessage "  Software Inventory Comparison v$script:ScriptVersion"
-    Write-InfoMessage "========================================"
+function Invoke-SoftwareInventoryComparison {
+    <#
+    .SYNOPSIS
+        Compares two software inventories and emits reports per the requested OutputFormat.
+    .OUTPUTS
+        [int] 0 on success, 1 on fatal error.
+    #>
+    [CmdletBinding()]
+    [OutputType([int])]
+    param()
+
+    try {
+        Write-Host ""
+        Write-InfoMessage "========================================"
+        Write-InfoMessage "  Software Inventory Comparison v$script:ScriptVersion"
+        Write-InfoMessage "========================================"
 
     # Determine if comparing to live system
     $compareLive = $CompareToLive.IsPresent -or (-not $CurrentFile)
@@ -738,12 +749,23 @@ try {
         Export-MissingPackagesScript -Removed $allRemoved -OutputPath $OutputPath
     }
 
-    Write-Success "Comparison complete"
-    exit 0
+        Write-Success "Comparison complete"
+        return 0
+    }
+    catch {
+        Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
+        Write-ErrorMessage "Stack trace: $($_.ScriptStackTrace)"
+        return 1
+    }
 }
-catch {
-    Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
-    Write-ErrorMessage "Stack trace: $($_.ScriptStackTrace)"
-    exit 1
+
+# Run Invoke-SoftwareInventoryComparison when invoked as a script. When
+# dot-sourced for testing, skip auto-run so test files can load function
+# definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    $exitCode = Invoke-SoftwareInventoryComparison
+    if ($exitCode -ne 0) {
+        exit 1
+    }
 }
 #endregion
