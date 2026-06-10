@@ -71,7 +71,7 @@ The Linux side is intentionally narrower than Windows: it targets headless serve
 | Kubernetes | (none) | 2 scripts (pod-health, pvc) | Linux-only by design |
 | GPU | (none) | nvidia-gpu-exporter | Linux-only by design |
 
-**Realistic gaps**: Linux-side reporting, troubleshooting, and network scripts. Tracked in `backlog.md` under "Linux coverage gaps".
+**Realistic gaps**: Linux-side reporting, troubleshooting, and network scripts. Tracked in `BACKLOG.md` under "Linux coverage gaps".
 
 ---
 
