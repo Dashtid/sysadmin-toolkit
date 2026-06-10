@@ -597,9 +597,16 @@ function Update-Chocolatey {
             Write-Progress -Activity "Updating Chocolatey" -Status "Updating all packages..." -PercentComplete 75
 
             # Exclude apps that winget owns so the two managers don't both upgrade the same
-            # package (PowerShell, Azure CLI, Notepad++, Pandoc). choco keeps everything else.
+            # package (PowerShell, Azure CLI, Notepad++, Pandoc).
             $wingetOwned = "powershell-core,azure-cli,notepadplusplus,notepadplusplus.install,pandoc"
-            $chocoOutput = & choco upgrade all -y --no-progress --except="'$wingetOwned'" 2>&1
+
+            # Version-pinned packages: skip the upgrade-all sweep so manual pins hold.
+            # kubernetes-cli is pinned to v1.34.x to stay within +/-1 of the K3s v1.33.5
+            # server on q-lab; bump manually when q-lab K3s upgrades.
+            $versionPinned = "kubernetes-cli"
+
+            $chocoExcludes = "$wingetOwned,$versionPinned"
+            $chocoOutput = & choco upgrade all -y --no-progress --except="'$chocoExcludes'" 2>&1
             Write-LogMessage ($chocoOutput | Out-String) -NoConsole
 
             Write-Progress -Activity "Updating Chocolatey" -Completed

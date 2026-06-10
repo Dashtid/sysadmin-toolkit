@@ -6,6 +6,18 @@ not strictly adhere to semantic versioning (it is a personal toolkit, not a
 published library) but minor bumps signal new public surface and patch bumps
 signal bug fixes only.
 
+## [2.3.2] - 2026-06-10
+
+### Changed
+
+- `system-updates.ps1` `Update-Chocolatey`: split the `--except` list into
+  two named variables (`$wingetOwned`, `$versionPinned`) so each exclusion
+  carries the reason it exists in the source. Added `kubernetes-cli` to
+  `$versionPinned` - it's now pinned to v1.34.x to stay within the
+  supported +/-1 minor skew of the K3s v1.33.5 server on q-lab.
+  Previously the weekly choco sweep would have bumped kubectl to v1.36.x
+  and reopened the skew gap. Bump manually when q-lab K3s upgrades.
+
 ## [2.3.1] - 2026-06-09
 
 ### Fixed
