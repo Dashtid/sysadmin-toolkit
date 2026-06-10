@@ -441,9 +441,10 @@ function Remove-VpnProfile {
         return $false
     }
 
-    # Disconnect first if connected
+    # Disconnect first if connected (discard return value so the function's own
+    # success boolean is the only thing emitted to the pipeline)
     if ($vpn.ConnectionStatus -eq "Connected") {
-        Disconnect-VpnProfile -Name $Name
+        $null = Disconnect-VpnProfile -Name $Name
     }
 
     Write-InfoMessage "Removing VPN profile '$Name'..."
@@ -910,6 +911,9 @@ function Main {
     Write-InfoMessage "Completed in $($duration.TotalSeconds.ToString('F1')) seconds"
 }
 
-# Run main function
-Main
+# Run Main when invoked as a script. When dot-sourced for testing, skip auto-run
+# so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    Main
+}
 #endregion
