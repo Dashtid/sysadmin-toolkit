@@ -9,12 +9,12 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 
 ## Current state (2026-06-10)
 
-- **Windows behavioral coverage**: 28.09% overall (was 6.68% at session start, +21.41 pp).
-- **Pester tests**: 1104 passing, 0 failing.
-- **Production bugs found and fixed via testing**: 5 (see Sprint 1 closeouts).
-- **Setup, restore, monitoring, Docker/WSL, and read-only reporting/audit all behaviorally covered (Sprints 1 + 2 done).**
+- **Windows behavioral coverage**: 31.24% overall (was 6.68% at session start, +24.56 pp).
+- **Pester tests**: 1161 passing, 0 failing.
+- **Production bugs found and fixed via testing**: 6 (5 from Sprint 1, 1 from Sprint 3.3).
+- **Sprints 1, 2, and 3 all complete.** Setup, restore, monitoring, Docker/WSL, read-only reporting/audit, system updates, and network/repair tooling all behaviorally covered.
 
-Next bottleneck is **system-mutation scripts** (Sprint 3: updates, network, repair) followed by **backup & state** (Sprint 4).
+Next bottleneck is **backup & state** (Sprint 4: 5 scripts, est. +8-10 pp).
 After that, two scripts (Get-SystemPerformance, Test-DevEnvironment) need substantial refactor before they can be tested cleanly.
 
 ---
@@ -25,8 +25,8 @@ After that, two scripts (Get-SystemPerformance, Test-DevEnvironment) need substa
 |--------|-------|---------|--------|---------------|
 | 1 | High-ROI monitoring + dev-tooling | 5 scripts | ~16 hrs | +14.26 pp (DONE) |
 | 2 | Read-only reporting & audit | 4 scripts | ~12 hrs | +7.15 pp (DONE) |
-| 3 | Mutating system & network | 4 scripts | ~18 hrs | est. +6-8 pp (NEXT) |
-| 4 | Backup & state | 5 scripts | ~24 hrs | est. +8-10 pp |
+| 3 | Mutating system & network | 4 scripts | ~10 hrs | +3.15 pp (DONE) |
+| 4 | Backup & state | 5 scripts | ~24 hrs | est. +8-10 pp (NEXT) |
 | 5 | Excluded hard scripts | 2 scripts | ~24 hrs | est. +5-7 pp |
 | 6 | Test runner + repo hygiene | 3 small items | ~3 hrs | -- |
 | 7 | Linux coverage gaps | 4 sh scripts | ~10 hrs | -- |
@@ -35,20 +35,7 @@ Cumulative target after Sprint 5: **~55-60% overall coverage**, all Windows scri
 
 ---
 
-## Sprint 3 — Mutating system & network (next)
-
-Higher risk because these write to system state. Tests must mock at the boundary so they never actually call `wsl --shutdown`, `netsh`, `Windows Update`, etc.
-
-| # | Script | Lines | Size | Notes |
-|---|--------|-------|------|-------|
-| 3.1 | `Windows/maintenance/system-updates.ps1` | 831 | L | Installs Windows updates. Mock PSWindowsUpdate cmdlets. |
-| 3.2 | `Windows/network/Set-StaticIP.ps1` | 276 | M | Small but mutates network config. |
-| 3.3 | `Windows/network/Manage-VPN.ps1` | 915 | L | Adds/removes VPN connections via `Add-VpnConnection` etc. |
-| 3.4 | `Windows/troubleshooting/Repair-CommonIssues.ps1` | 671 | M | Runs sfc/dism/network resets. Test the dispatch logic, not the repair calls. |
-
----
-
-## Sprint 4 — Backup & state
+## Sprint 4 — Backup & state (next)
 
 Highest mutation risk in the entire backlog (file copies, registry exports, restore paths).
 Every test must be sandboxed in `$TestDrive`; nothing touches the real user profile.
@@ -115,6 +102,15 @@ Carried from ROADMAP.md. Not in the sprint plan above because nothing in this li
 | Compliance reporting | 3-4 hr | From ROADMAP.md |
 
 ---
+
+## Sprint 3 closeouts (mutating system & network)
+
+Coverage 28.09% -> 31.24% across 57 new tests. **One real production bug fixed.**
+
+- 2026-06-10: `test(troubleshooting): behavioral coverage for Repair-CommonIssues` (commit 8af368b, Sprint 3.4) - 11 tests. Removed `#Requires -RunAsAdministrator` for dot-source testability; added testability guard. Test strategy: mock Invoke-CommandWithLogging (the orchestrator) and assert on `$Description` so each Repair-X function is a dispatch check rather than a coupling-to-cmdlet check.
+- 2026-06-10: `test(network): behavioral coverage for Manage-VPN` (commit 48d04e8, Sprint 3.3) - 19 tests. **Fixed one production bug**: `Remove-VpnProfile` did not discard `Disconnect-VpnProfile`'s return value, so when called on a Connected profile it emitted `@($true, $true)` to the pipeline instead of `$true`. Any caller using `if ($success = Remove-VpnProfile ...)` saw an array-truthy result in either success or partial-failure cases. Wrapped the call in `$null = Disconnect-VpnProfile`.
+- 2026-06-10: `test(network): behavioral coverage for Set-StaticIP` (commit ff4c6a5, Sprint 3.2) - 8 tests. Wrapped the straight-line main flow in Invoke-SetStaticIP with a testability guard; replaced inner `exit` with `return`.
+- 2026-06-10: `test(maintenance): behavioral coverage for system-updates` (commit a9275ec, Sprint 3.1) - 19 tests. Wrapped top-level try/catch/finally in Invoke-SystemUpdates; removed `#Requires -RunAsAdministrator`. Added `[CmdletBinding(SupportsShouldProcess=$true)]` to Disable-FastStartup, New-SystemRestorePoint, Update-Winget, Update-Chocolatey, Update-Windows so `$PSCmdlet.ShouldProcess` resolves correctly when the helpers are tested in isolation (was null-ref otherwise).
 
 ## Sprint 2 closeouts (read-only reporting & audit)
 
