@@ -49,8 +49,10 @@ param(
     [string[]]$DNSServers
 )
 
-# Requires Administrator privileges
-#Requires -RunAsAdministrator
+# Note: admin check would normally be enforced by `#Requires -RunAsAdministrator`,
+# but that line was removed so the script can be dot-sourced for behavioral tests
+# in a non-elevated session. The underlying New-NetIPAddress /
+# Set-DnsClientServerAddress cmdlets enforce the admin requirement at runtime.
 
 function Write-Status {
     param([string]$Message, [string]$Type = "INFO")
@@ -168,7 +170,17 @@ function Set-StaticIPConfiguration {
     }
 }
 
-# Main execution
+function Invoke-SetStaticIP {
+    <#
+    .SYNOPSIS
+        Walks the interactive Static-IP configuration flow.
+    .OUTPUTS
+        [int] 0 on success, 1 on error.
+    #>
+    [CmdletBinding()]
+    [OutputType([int])]
+    param()
+
 Write-Host "`n==========================================" -ForegroundColor Cyan
 Write-Host "  Windows Static IP Configuration Tool" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
@@ -186,7 +198,7 @@ if (-not $AdapterName) {
 $selectedAdapter = Get-NetAdapter -Name $AdapterName -ErrorAction SilentlyContinue
 if (-not $selectedAdapter) {
     Write-Status "Error: Adapter '$AdapterName' not found" "ERROR"
-    exit 1
+    return 1
 }
 
 # Get current configuration for suggestions
@@ -202,7 +214,7 @@ if (-not $IPAddress) {
 
 if (-not (Test-IPAddress $IPAddress)) {
     Write-Status "Error: Invalid IP address format" "ERROR"
-    exit 1
+    return 1
 }
 
 if (-not $PrefixLength) {
@@ -221,7 +233,7 @@ if (-not $Gateway) {
 
 if (-not (Test-IPAddress $Gateway)) {
     Write-Status "Error: Invalid gateway address format" "ERROR"
-    exit 1
+    return 1
 }
 
 if (-not $DNSServers) {
@@ -243,7 +255,7 @@ if (-not $DNSServers) {
 foreach ($dns in $DNSServers) {
     if (-not (Test-IPAddress $dns)) {
         Write-Status "Error: Invalid DNS server address: $dns" "ERROR"
-        exit 1
+        return 1
     }
 }
 
@@ -259,18 +271,28 @@ Write-Host ""
 $confirm = Read-Host "Apply this configuration? (Y/N)"
 if ($confirm -ne 'Y' -and $confirm -ne 'y') {
     Write-Status "Configuration cancelled by user" "WARN"
-    exit 0
+    return 0
 }
 
 # Apply configuration
 $result = Set-StaticIPConfiguration -Adapter $AdapterName -IP $IPAddress -Prefix $PrefixLength -GW $Gateway -DNS $DNSServers
 
-if ($result) {
-    Write-Host "`n[+] Static IP configuration completed successfully!" -ForegroundColor Green
-    Write-Host "[*] Note: Some applications may require a restart to recognize the new configuration." -ForegroundColor Yellow
-    exit 0
+    if ($result) {
+        Write-Host "`n[+] Static IP configuration completed successfully!" -ForegroundColor Green
+        Write-Host "[*] Note: Some applications may require a restart to recognize the new configuration." -ForegroundColor Yellow
+        return 0
+    }
+    else {
+        Write-Host "`n[-] Static IP configuration failed!" -ForegroundColor Red
+        return 1
+    }
 }
-else {
-    Write-Host "`n[-] Static IP configuration failed!" -ForegroundColor Red
-    exit 1
+
+# Run Invoke-SetStaticIP when invoked as a script. When dot-sourced for testing,
+# skip auto-run so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    $exitCode = Invoke-SetStaticIP
+    if ($exitCode -ne 0) {
+        exit 1
+    }
 }
