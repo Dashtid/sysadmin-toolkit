@@ -1,5 +1,8 @@
 #Requires -Version 5.1
-#Requires -RunAsAdministrator
+# Note: admin check is enforced at runtime by the underlying netsh / sfc / dism
+# / DISM cmdlets (they fail with access-denied without elevation).
+# #Requires -RunAsAdministrator was removed to allow dot-source testing in a
+# non-elevated session.
 <#
 .SYNOPSIS
     Auto-fixes common Windows issues including DNS, network, Windows Update, and cache problems.
@@ -665,7 +668,10 @@ function Invoke-CommonRepairs {
     }
 }
 
-# Run repairs
-$result = Invoke-CommonRepairs
-exit $result.ExitCode
+# Run Invoke-CommonRepairs when invoked as a script. When dot-sourced for
+# testing, skip auto-run so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    $result = Invoke-CommonRepairs
+    exit $result.ExitCode
+}
 #endregion
