@@ -78,7 +78,9 @@
 using namespace System.Security.Principal
 
 #Requires -Version 7.0
-#Requires -RunAsAdministrator
+# Note: admin check is enforced at runtime by Initialize-Environment (Test-IsAdministrator).
+# #Requires -RunAsAdministrator was removed to allow dot-source testing in a
+# non-elevated session; the runtime check provides the same real-world safety.
 
 [CmdletBinding(SupportsShouldProcess)]
 param(
@@ -254,6 +256,8 @@ function Initialize-Environment {
 }
 
 function Disable-FastStartup {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param()
     <#
     .SYNOPSIS
         Disables Windows Fast Startup so a normal shutdown finalizes pending updates.
@@ -386,6 +390,8 @@ function Test-RestorePointCreation {
 }
 
 function New-SystemRestorePoint {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param()
     <#
     .SYNOPSIS
         Creates a system restore point before applying updates.
@@ -472,6 +478,8 @@ function Export-PreUpdateState {
 
 #region Update Functions
 function Update-Winget {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param()
     <#
     .SYNOPSIS
         Updates all Winget packages with error handling.
@@ -540,6 +548,8 @@ function Update-Winget {
 }
 
 function Update-Chocolatey {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param()
     <#
     .SYNOPSIS
         Updates Chocolatey itself and all installed packages.
@@ -603,6 +613,8 @@ function Update-Chocolatey {
 }
 
 function Update-Windows {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param()
     <#
     .SYNOPSIS
         Installs Windows Updates using the PSWindowsUpdate module.
@@ -754,8 +766,19 @@ function Show-UpdateSummary {
 #endregion
 
 #region Main Execution
-try {
-    Write-InfoMessage "=== Windows System Update Script Started ==="
+function Invoke-SystemUpdates {
+    <#
+    .SYNOPSIS
+        Runs the full system-updates workflow.
+    .OUTPUTS
+        [int] 0 on success, 1 on fatal error.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    [OutputType([int])]
+    param()
+
+    try {
+        Write-InfoMessage "=== Windows System Update Script Started ==="
     Write-InfoMessage "PowerShell Version: $($PSVersionTable.PSVersion)"
     Write-InfoMessage "Script Version: 2.0.0"
     Write-InfoMessage "Log file: $logFile"
@@ -767,7 +790,7 @@ try {
     # Initialize environment and check for admin rights
     $isAdmin = Initialize-Environment
     if (-not $isAdmin) {
-        exit 1
+        return 1
     }
 
     # Ensure Fast Startup stays disabled so a normal shutdown finalizes pending updates.
@@ -783,7 +806,7 @@ try {
             # AutoReboot is on: reboot now, updates run on the next scheduled cycle
             Write-WarningMessage "AutoReboot is enabled - rebooting before applying updates"
             Invoke-Reboot
-            exit 0
+            return 0
         }
         # AutoReboot is off: do NOT skip updates. Warn and continue so the scheduled run
         # is not silently a no-op every time a reboot happens to be pending.
@@ -809,23 +832,35 @@ try {
 
     Write-Success "=== Windows System Update Script Completed ==="
 
-    # Check if reboot is needed
-    if (Test-PendingReboot) {
-        Invoke-Reboot
-    }
-}
-catch {
-    Write-ErrorMessage "Fatal error during update process: $($_.Exception.Message)"
-    Write-ErrorMessage $_.ScriptStackTrace
-    exit 1
-}
-finally {
-    # finally block: Stop-Transcript and cleanup
-    try {
-        Stop-Transcript -ErrorAction SilentlyContinue
+        # Check if reboot is needed
+        if (Test-PendingReboot) {
+            Invoke-Reboot
+        }
+
+        return 0
     }
     catch {
-        # Ignore errors if transcript wasn't started
+        Write-ErrorMessage "Fatal error during update process: $($_.Exception.Message)"
+        Write-ErrorMessage $_.ScriptStackTrace
+        return 1
+    }
+    finally {
+        # finally block: Stop-Transcript and cleanup
+        try {
+            Stop-Transcript -ErrorAction SilentlyContinue
+        }
+        catch {
+            # Ignore errors if transcript wasn't started
+        }
+    }
+}
+
+# Run Invoke-SystemUpdates when invoked as a script. When dot-sourced for
+# testing, skip auto-run so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    $exitCode = Invoke-SystemUpdates
+    if ($exitCode -ne 0) {
+        exit 1
     }
 }
 #endregion
