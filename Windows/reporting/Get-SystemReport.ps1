@@ -1069,6 +1069,9 @@ function Invoke-SystemReport {
     return $reportData
 }
 
-# Run the report
-$result = Invoke-SystemReport
+# Run Invoke-SystemReport when invoked as a script. When dot-sourced for
+# testing, skip auto-run so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    $null = Invoke-SystemReport
+}
 #endregion
