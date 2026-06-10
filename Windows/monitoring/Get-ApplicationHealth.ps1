@@ -790,7 +790,10 @@ function Invoke-ApplicationHealthCheck {
     }
 }
 
-# Run the health check
-$result = Invoke-ApplicationHealthCheck
-exit $result.ExitCode
+# Run Invoke-ApplicationHealthCheck when invoked as a script. When dot-sourced
+# for testing, skip auto-run so test files can load function definitions.
+if ($MyInvocation.InvocationName -ne '.') {
+    $result = Invoke-ApplicationHealthCheck
+    exit $result.ExitCode
+}
 #endregion
