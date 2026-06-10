@@ -7,14 +7,14 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 
 ---
 
-## Current state (2026-06-09)
+## Current state (2026-06-10)
 
-- **Windows behavioral coverage**: 20.94% overall (was 6.68% at session start, +14.26 pp).
-- **Pester tests**: 1038 passing, 0 failing.
+- **Windows behavioral coverage**: 28.09% overall (was 6.68% at session start, +21.41 pp).
+- **Pester tests**: 1104 passing, 0 failing.
 - **Production bugs found and fixed via testing**: 5 (see Sprint 1 closeouts).
-- **Setup, restore, monitoring core, and Docker/WSL all behaviorally covered.**
+- **Setup, restore, monitoring, Docker/WSL, and read-only reporting/audit all behaviorally covered (Sprints 1 + 2 done).**
 
-The current bottleneck is **read-only reporting/audit scripts** and a smaller cluster of **system-mutation scripts** (backup, network, updates, repair).
+Next bottleneck is **system-mutation scripts** (Sprint 3: updates, network, repair) followed by **backup & state** (Sprint 4).
 After that, two scripts (Get-SystemPerformance, Test-DevEnvironment) need substantial refactor before they can be tested cleanly.
 
 ---
@@ -24,8 +24,8 @@ After that, two scripts (Get-SystemPerformance, Test-DevEnvironment) need substa
 | Sprint | Theme | Scripts | Effort | Coverage gain |
 |--------|-------|---------|--------|---------------|
 | 1 | High-ROI monitoring + dev-tooling | 5 scripts | ~16 hrs | +14.26 pp (DONE) |
-| 2 | Read-only reporting & audit | 4 scripts | ~20 hrs | est. +8-10 pp |
-| 3 | Mutating system & network | 4 scripts | ~18 hrs | est. +6-8 pp |
+| 2 | Read-only reporting & audit | 4 scripts | ~12 hrs | +7.15 pp (DONE) |
+| 3 | Mutating system & network | 4 scripts | ~18 hrs | est. +6-8 pp (NEXT) |
 | 4 | Backup & state | 5 scripts | ~24 hrs | est. +8-10 pp |
 | 5 | Excluded hard scripts | 2 scripts | ~24 hrs | est. +5-7 pp |
 | 6 | Test runner + repo hygiene | 3 small items | ~3 hrs | -- |
@@ -35,21 +35,7 @@ Cumulative target after Sprint 5: **~55-60% overall coverage**, all Windows scri
 
 ---
 
-## Sprint 2 — Read-only reporting & audit (next)
-
-Low-risk because nothing mutates state, but mocking surface is wide (WMI/CIM/registry/HKLM/HKCU).
-Each follows the established pattern: wrap main in `Invoke-X`, add dot-source guard, refactor helpers that read script-scope to take explicit params, then write behavioral tests.
-
-| # | Script | Lines | Size | Notes |
-|---|--------|-------|------|-------|
-| 2.1 | `Windows/reporting/Get-SystemReport.ps1` | 1074 | L | Was rank-5 in the original survey. Main function already present, 7 helpers, 28 try/catch blocks. Single blocker is auto-execution. 21 WMI/CIM cmdlets to mock. |
-| 2.2 | `Windows/monitoring/Get-ApplicationHealth.ps1` | 796 | M | Application health check — read-only by design. |
-| 2.3 | `Windows/first-time-setup/Compare-SoftwareInventory.ps1` | 749 | M | Diffs installed packages against a baseline. Reads winget/choco/registry. |
-| 2.4 | `Windows/security/Get-UserAccountAudit.ps1` | 632 | M | Local account audit. Reads SAM/security registry. |
-
----
-
-## Sprint 3 — Mutating system & network
+## Sprint 3 — Mutating system & network (next)
 
 Higher risk because these write to system state. Tests must mock at the boundary so they never actually call `wsl --shutdown`, `netsh`, `Windows Update`, etc.
 
@@ -130,7 +116,16 @@ Carried from ROADMAP.md. Not in the sprint plan above because nothing in this li
 
 ---
 
-## Sprint 1 closeouts (recent)
+## Sprint 2 closeouts (read-only reporting & audit)
+
+Coverage 20.94% -> 28.09% across 75 new tests; no production bugs found (all four scripts were already well-shaped read-only data collectors).
+
+- 2026-06-10: `test(security): behavioral coverage for Get-UserAccountAudit` (commit 15d0eca, Sprint 2.4) - 17 tests. All seven branches of Get-UserSecurityIssues exercised (PasswordNeverExpires, PasswordNotRequired, IsInactive, old password, CRITICAL admin escalation, built-in Administrator, Guest); Get-UserAccountDetails IsAdmin tagging and disabled-account skipping; Get-AuditSummary aggregation including CRITICAL substring detection. Coverage 23.86% -> 28.09% (+4.23 pp).
+- 2026-06-10: `test(setup): behavioral coverage for Compare-SoftwareInventory` (commit 2cf55da, Sprint 2.3) - 18 tests. Wrapped top-level try/catch in Invoke-SoftwareInventoryComparison with a testability guard. Tests cover Winget JSON / Chocolatey XML parsing, all four Compare-PackageLists buckets, Import-Inventory file vs directory dispatch, and Export-MissingPackagesScript output. Coverage delta included in Sprint 2.4 closeout.
+- 2026-06-10: `test(monitoring): behavioral coverage for Get-ApplicationHealth` (commit cc40e2e, Sprint 2.2) - 18 tests. Registry app enumeration with x86/x64 tagging from WOW6432Node path, dedup, Windows Store apps, winget upgrade parser, choco outdated parser, Application Error / Hang / WER event mapping, process top-10 filtering, Update-Application package-manager routing.
+- 2026-06-10: `test(reporting): behavioral coverage for Get-SystemReport` (commit ef928e1, Sprint 2.1) - 13 tests. Hardware/Software/Network/Security/Performance helpers exercised by mocking each CIM/registry call independently; CPU Architecture switch (9 -> x64), SMBIOSMemoryType switch (26 -> DDR4), UAC ConsentPromptBehaviorAdmin switch, fDenyTSConnections inversion, Get-Counter + Win32_OperatingSystem memory branch. Coverage 20.94% -> 23.86% (+2.92 pp).
+
+## Sprint 1 closeouts (high-ROI monitoring + dev-tooling)
 
 The current behavioral-testing push started 2026-06-05. Coverage went from 6.68% to 20.94% across 138 new tests; 5 real production bugs were fixed along the way.
 
@@ -156,4 +151,4 @@ The current behavioral-testing push started 2026-06-05. Coverage went from 6.68%
 - 2026-05-25: `chore: remove dotfiles/claude-config + Windows/ssh, add CmdletBinding to 4 setup scripts` (commit 02a7709)
 
 ---
-**Last Updated**: 2026-06-09
+**Last Updated**: 2026-06-10
