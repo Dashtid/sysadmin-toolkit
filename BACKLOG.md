@@ -9,13 +9,13 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 
 ## Current state (2026-06-10)
 
-- **Windows behavioral coverage**: 31.24% overall (was 6.68% at session start, +24.56 pp).
-- **Pester tests**: 1161 passing, 0 failing.
+- **Windows behavioral coverage**: 30.63% overall (re-measured baseline; prior 31.24% figure reflected a slightly different measurement config).
+- **Pester tests**: 1177 passing, 0 failing.
 - **Production bugs found and fixed via testing**: 6 (5 from Sprint 1, 1 from Sprint 3.3).
-- **Sprints 1, 2, and 3 all complete.** Setup, restore, monitoring, Docker/WSL, read-only reporting/audit, system updates, and network/repair tooling all behaviorally covered.
+- **Sprints 1, 2, and 3 complete. Sprint 4 in progress (4.1 done).**
 
-Next bottleneck is **backup & state** (Sprint 4: 5 scripts, est. +8-10 pp).
-After that, two scripts (Get-SystemPerformance, Test-DevEnvironment) need substantial refactor before they can be tested cleanly.
+Next: Sprint 4.2 (`Backup-UserData.ps1`, 996 lines, L).
+After Sprint 4, two scripts (Get-SystemPerformance, Test-DevEnvironment) need substantial refactor before they can be tested cleanly.
 
 ---
 
@@ -35,18 +35,18 @@ Cumulative target after Sprint 5: **~55-60% overall coverage**, all Windows scri
 
 ---
 
-## Sprint 4 — Backup & state (next)
+## Sprint 4 — Backup & state (in progress)
 
 Highest mutation risk in the entire backlog (file copies, registry exports, restore paths).
 Every test must be sandboxed in `$TestDrive`; nothing touches the real user profile.
 
-| # | Script | Lines | Size | Notes |
-|---|--------|-------|------|-------|
-| 4.1 | `Windows/backup/Backup-DeveloperEnvironment.ps1` | 248 | S | Already small; smallest entry point into this category. |
-| 4.2 | `Windows/backup/Backup-UserData.ps1` | 996 | L | User-profile backup. Robocopy boundary. |
-| 4.3 | `Windows/backup/Backup-BrowserProfiles.ps1` | 1078 | L | Browser profile backup + restore round-trip. File-mutation hazards. |
-| 4.4 | `Windows/backup/Export-SystemState.ps1` | 895 | L | Registry/service export. |
-| 4.5 | `Windows/backup/Test-BackupIntegrity.ps1` | 869 | L | Backup verifier — read-only but checksums real archives. |
+| # | Script | Lines | Size | Status | Notes |
+|---|--------|-------|------|--------|-------|
+| 4.1 | `Windows/backup/Backup-DeveloperEnvironment.ps1` | 252 | S | DONE | 16 tests, +0.47 pp. |
+| 4.2 | `Windows/backup/Backup-UserData.ps1` | 996 | L | NEXT | User-profile backup. Robocopy boundary. |
+| 4.3 | `Windows/backup/Backup-BrowserProfiles.ps1` | 1078 | L | -- | Browser profile backup + restore round-trip. File-mutation hazards. |
+| 4.4 | `Windows/backup/Export-SystemState.ps1` | 895 | L | -- | Registry/service export. |
+| 4.5 | `Windows/backup/Test-BackupIntegrity.ps1` | 869 | L | -- | Backup verifier — read-only but checksums real archives. |
 
 ---
 
@@ -102,6 +102,10 @@ Carried from ROADMAP.md. Not in the sprint plan above because nothing in this li
 | Compliance reporting | 3-4 hr | From ROADMAP.md |
 
 ---
+
+## Sprint 4 closeouts (backup & state, in progress)
+
+- 2026-06-10: `test(backup): behavioral coverage for Backup-DeveloperEnvironment` (Sprint 4.1) - 16 tests. Wrapped straight-line body in `Invoke-DeveloperEnvironmentBackup` with `[CmdletBinding(SupportsShouldProcess=$true)]`; replaced inner `exit 1` with `return $null`; added testability guard. **Pester quirk discovered**: in PS7, `Out-File`'s `-Encoding` parameter has an `ArgumentTransformationAttribute` that converts strings like `"UTF8"` to encoding objects; Pester's `Mock Out-File` replicates the parameter type but NOT the transformer, so mocking `Out-File` breaks the script's `-Encoding UTF8` call with a binding error. Workaround: tests that need the manifest/extensions code paths leave `Out-File` and `New-Item` unmocked so real cmdlets write into `$TestDrive`. Documented inline at the top of the test file. Coverage 30.16% -> 30.63% (+0.47 pp).
 
 ## Sprint 3 closeouts (mutating system & network)
 
