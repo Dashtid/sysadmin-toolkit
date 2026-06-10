@@ -626,7 +626,10 @@ function Invoke-UserAccountAudit {
     }
 }
 
-# Run the audit
-$result = Invoke-UserAccountAudit
-exit $result.ExitCode
+# Run Invoke-UserAccountAudit when invoked as a script. When dot-sourced for
+# testing, skip auto-run so test files can load function definitions into scope.
+if ($MyInvocation.InvocationName -ne '.') {
+    $result = Invoke-UserAccountAudit
+    exit $result.ExitCode
+}
 #endregion
