@@ -737,17 +737,42 @@ function Export-JSONReport {
 #endregion
 
 #region Main Execution
-try {
-    Write-Host ""
-    Write-InfoMessage "========================================"
-    Write-InfoMessage "  Backup Integrity Test v$script:ScriptVersion"
-    Write-InfoMessage "========================================"
+function Invoke-BackupIntegrityTest {
+    [CmdletBinding()]
+    [OutputType([int])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BackupPath,
 
-    # Validate parameters
-    if ($TestType -eq 'Restore' -and -not $RestoreTarget) {
-        Write-ErrorMessage "RestoreTarget is required when TestType is 'Restore'"
-        exit 1
-    }
+        [ValidateSet('Quick', 'Full', 'Restore')]
+        [string]$TestType = 'Quick',
+
+        [string]$RestoreTarget,
+
+        [ValidateRange(1, 100)]
+        [int]$SamplePercent = 10,
+
+        [ValidateSet('Console', 'HTML', 'JSON', 'All')]
+        [string]$OutputFormat = 'Console',
+
+        [string]$OutputPath,
+
+        [switch]$IncludeFileList,
+
+        [switch]$CleanupAfterTest
+    )
+
+    try {
+        Write-Host ""
+        Write-InfoMessage "========================================"
+        Write-InfoMessage "  Backup Integrity Test v$script:ScriptVersion"
+        Write-InfoMessage "========================================"
+
+        # Validate parameters
+        if ($TestType -eq 'Restore' -and -not $RestoreTarget) {
+            Write-ErrorMessage "RestoreTarget is required when TestType is 'Restore'"
+            return 1
+        }
 
     # Get backup info
     $backupInfo = Get-BackupInfo -Path $BackupPath
@@ -844,26 +869,42 @@ try {
         }
     }
 
-    # Exit code based on results
-    $success = ($script:Stats.Errors.Count -eq 0) -and ($script:Stats.FilesFailed -eq 0)
-    if ($success) {
-        Write-Success "Backup integrity verified successfully"
-        exit 0
+        # Exit code based on results
+        $success = ($script:Stats.Errors.Count -eq 0) -and ($script:Stats.FilesFailed -eq 0)
+        if ($success) {
+            Write-Success "Backup integrity verified successfully"
+            return 0
+        }
+        else {
+            Write-ErrorMessage "Backup integrity check failed"
+            return 1
+        }
     }
-    else {
-        Write-ErrorMessage "Backup integrity check failed"
-        exit 1
+    catch {
+        Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
+        Write-ErrorMessage "Stack trace: $($_.ScriptStackTrace)"
+        return 1
+    }
+    finally {
+        # Cleanup temp folder if it exists
+        if ($script:TempFolder -and (Test-Path $script:TempFolder)) {
+            Remove-TempFolder -Path $script:TempFolder
+        }
     }
 }
-catch {
-    Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
-    Write-ErrorMessage "Stack trace: $($_.ScriptStackTrace)"
-    exit 1
-}
-finally {
-    # Cleanup temp folder if it exists
-    if ($script:TempFolder -and (Test-Path $script:TempFolder)) {
-        Remove-TempFolder -Path $script:TempFolder
+
+if ($MyInvocation.InvocationName -ne '.') {
+    $invokeArgs = @{
+        BackupPath       = $BackupPath
+        TestType         = $TestType
+        RestoreTarget    = $RestoreTarget
+        SamplePercent    = $SamplePercent
+        OutputFormat     = $OutputFormat
+        OutputPath       = $OutputPath
+        IncludeFileList  = $IncludeFileList
+        CleanupAfterTest = $CleanupAfterTest
     }
+    $exitCode = Invoke-BackupIntegrityTest @invokeArgs
+    if ($exitCode -ne 0) { exit $exitCode }
 }
 #endregion

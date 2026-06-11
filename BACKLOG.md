@@ -9,13 +9,12 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 
 ## Current state (2026-06-11)
 
-- **Windows behavioral coverage**: 40.83% overall (was 6.68% at session start, +34.15 pp cumulative).
-- **Pester tests**: 1266 passing, 0 failing.
+- **Windows behavioral coverage**: 44.12% overall (was 6.68% at session start, +37.44 pp cumulative).
+- **Pester tests**: 1293 passing, 0 failing.
 - **Production bugs found and fixed via testing**: 7 (5 from Sprint 1, 1 from Sprint 3.3, 1 from Sprint 4.2).
-- **Sprints 1, 2, and 3 complete. Sprint 4 in progress (4.1-4.4 done).**
+- **Sprints 1, 2, 3, and 4 all complete.**
 
-Next: Sprint 4.5 (`Test-BackupIntegrity.ps1`, 869 lines, L).
-After Sprint 4, two scripts (Get-SystemPerformance, Test-DevEnvironment) need substantial refactor before they can be tested cleanly.
+Next: Sprint 5 (Get-SystemPerformance, Test-DevEnvironment - both need substantial refactor before they can be tested cleanly).
 
 ---
 
@@ -26,8 +25,8 @@ After Sprint 4, two scripts (Get-SystemPerformance, Test-DevEnvironment) need su
 | 1 | High-ROI monitoring + dev-tooling | 5 scripts | ~16 hrs | +14.26 pp (DONE) |
 | 2 | Read-only reporting & audit | 4 scripts | ~12 hrs | +7.15 pp (DONE) |
 | 3 | Mutating system & network | 4 scripts | ~10 hrs | +3.15 pp (DONE) |
-| 4 | Backup & state | 5 scripts | ~24 hrs | est. +8-10 pp (NEXT) |
-| 5 | Excluded hard scripts | 2 scripts | ~24 hrs | est. +5-7 pp |
+| 4 | Backup & state | 5 scripts | ~24 hrs | +13.96 pp (DONE - above +8-10 est) |
+| 5 | Excluded hard scripts | 2 scripts | ~24 hrs | est. +5-7 pp (NEXT) |
 | 6 | Test runner + repo hygiene | 3 small items | ~3 hrs | -- |
 | 7 | Linux coverage gaps | 4 sh scripts | ~10 hrs | -- |
 
@@ -35,7 +34,7 @@ Cumulative target after Sprint 5: **~55-60% overall coverage**, all Windows scri
 
 ---
 
-## Sprint 4 — Backup & state (in progress)
+## Sprint 4 — Backup & state (DONE)
 
 Highest mutation risk in the entire backlog (file copies, registry exports, restore paths).
 Every test must be sandboxed in `$TestDrive`; nothing touches the real user profile.
@@ -46,7 +45,7 @@ Every test must be sandboxed in `$TestDrive`; nothing touches the real user prof
 | 4.2 | `Windows/backup/Backup-UserData.ps1` | ~1050 | L | DONE | 37 tests, +2.91 pp, 1 bug. |
 | 4.3 | `Windows/backup/Backup-BrowserProfiles.ps1` | ~1130 | L | DONE | 34 tests, +3.73 pp. |
 | 4.4 | `Windows/backup/Export-SystemState.ps1` | ~920 | L | DONE | 18 tests, +3.56 pp. |
-| 4.5 | `Windows/backup/Test-BackupIntegrity.ps1` | 869 | L | NEXT | Backup verifier — read-only but checksums real archives. |
+| 4.5 | `Windows/backup/Test-BackupIntegrity.ps1` | ~895 | L | DONE | 27 tests, +3.29 pp. |
 
 ---
 
@@ -103,8 +102,11 @@ Carried from ROADMAP.md. Not in the sprint plan above because nothing in this li
 
 ---
 
-## Sprint 4 closeouts (backup & state, in progress)
+## Sprint 4 closeouts (backup & state, DONE)
 
+Total: 132 tests added, +13.96 pp coverage gain (30.16% -> 44.12%), 1 production bug fixed. Above the +8-10 pp estimate. Same wrap-main-in-Invoke-X + mirrored param block pattern across all five scripts; Sprint 4.2 documented why this pattern is necessary (Pester 5 isolates dot-sourced script vars).
+
+- 2026-06-11: `test(backup): behavioral coverage for Test-BackupIntegrity` (Sprint 4.5) - 27 tests across 10 helpers + Invoke-BackupIntegrityTest top-level. Same wrap-main-in-Invoke-BackupIntegrityTest pattern as 4.2-4.4. Tests build a real ZIP archive in $TestDrive with a SHA256 metadata file so the archive helpers can run end-to-end against real bytes. Coverage: Format-FileSize boundaries, Get-BackupInfo archive/folder/corrupt-archive paths, Test-ArchiveStructure valid/corrupt, Get-BackupMetadata archive/folder/missing, Expand-BackupToTemp success+failure, Test-FileHashes skipped/matched/mismatched, Test-FileExtraction readable/corrupt, Restore-ToTarget archive+folder paths and failure, Remove-TempFolder existing+missing, Export-HTMLReport / Export-JSONReport file writing, Invoke-BackupIntegrityTest Restore-without-target returns 1, Quick happy path returns 0, fatal-error returns 1. Coverage 40.83% -> 44.12% (+3.29 pp).
 - 2026-06-11: `test(backup): behavioral coverage for Export-SystemState` (Sprint 4.4) - 18 tests across 12 helper functions + Invoke-SystemStateExport top-level. Same wrap-and-mirror refactor pattern as 4.2/4.3: top-level try/catch wrapped in Invoke-SystemStateExport with explicit params, inner `exit N` replaced with `return N`, testability guard forwards script params. Tests cover Get-ExportComponents (All vs explicit), New-ExportFolder timestamp+subdirs, Export-Drivers (Get-PnpDevice + Get-PnpDeviceProperty success and throw), Export-Services, Export-WindowsFeatures, Export-NetworkConfig (adapters/ip-config/dns/routes/firewall), Export-ScheduledTasks (Microsoft\* filter exclusion verified), Export-EventLogs, New-ExportManifest, Compress-ExportFolder (zip+remove and failure fallback), Export-HTMLReport, Export-JSONReport, Invoke-SystemStateExport DryRun returns 0, fatal-error returns 1, dispatcher only invokes listed components. Coverage 37.27% -> 40.83% (+3.56 pp, crossed the 40% threshold).
 - 2026-06-11: `test(backup): behavioral coverage for Backup-BrowserProfiles` (Sprint 4.3) - 34 tests across 11 helpers + Invoke-BrowserProfileBackup top-level. Renamed `Main` to `Invoke-BrowserProfileBackup` with a mirrored param() block so the testability guard forwards all script params explicitly (same pattern as Sprint 4.2). Replaced inner `exit N` with `return N`. Added explicit `-Path` to Get-BackupDirectory and `-BackupDir` to Get-BackupList so they are independently testable. **New Pester gotcha documented**: Get-Content's `-Path` and `-LiteralPath` are separate parameters; a ParameterFilter on `$Path` does not see `-LiteralPath` values, so when tests verify written files via `Get-Content -LiteralPath`, the mock's filter still fires and returns the mocked content instead of the real file. Workaround: read verification files via `[System.IO.File]::ReadAllText()` to bypass Pester's mock entirely. Coverage 33.54% -> 37.27% (+3.73 pp).
 - 2026-06-11: `test(backup): behavioral coverage for Backup-UserData` (Sprint 4.2) - 37 tests across 11 helper functions + Invoke-UserDataBackup top-level. Wrapped 160-line main try/catch in Invoke-UserDataBackup function; replaced inner `exit 1` with `return 1` so the main flow returns an exit code cleanly. **Pester scope discovery**: helpers in the original script read `$VerifyBackup`, `$CompressionLevel`, `$RetentionCount`, `$RetentionDays`, `$DryRun`, etc. via dynamic scope from the script's param block. Pester 5 isolates the dot-sourced script's variables in a scope NOT reachable by `$script:` or `$global:` from the It block, so the test cannot override them after the fact. Solution was to refactor the helpers to take explicit parameters (`Copy-BackupFiles -ComputeHash`, `Compress-BackupFolder -Level`, `Remove-OldBackups -KeepCount/-KeepDays`) and add a full mirrored `param()` block to Invoke-UserDataBackup with the testability guard forwarding all script params. The refactor improves the production code too — explicit beats implicit dynamic scope reads. **Fixed one production bug**: the script accepts `-CompressionLevel SmallestSize` (mapped to `[System.IO.Compression.CompressionLevel]::SmallestSize` enum) but `Compress-Archive`'s `-CompressionLevel` parameter is `[string]` with ValidateSet limited to `Optimal`/`Fastest`/`NoCompression` — so any user picking SmallestSize hit the silent catch path and got "Compression failed". Removed SmallestSize from the script's and helper's ValidateSets and switched the Compress-Archive call to pass the string name. Coverage 30.63% -> 33.54% (+2.91 pp).
