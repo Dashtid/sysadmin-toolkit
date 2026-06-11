@@ -645,9 +645,12 @@ Describe "Monitoring Script Error Handling" {
         }
 
         It "Backup-UserData has exit code handling" {
+            # Sprint 4.2 refactor moved the main body into Invoke-UserDataBackup and
+            # replaced inner 'exit 1' with 'return 1'; the testability guard preserves
+            # the non-zero exit via 'exit $exitCode'. Accept either pattern.
             $scriptPath = Join-Path $BackupPath "Backup-UserData.ps1"
             $content = Get-Content $scriptPath -Raw
-            $content | Should -Match "exit 1"
+            $content | Should -Match '(exit 1|return 1|exit \$exitCode)'
         }
     }
 }

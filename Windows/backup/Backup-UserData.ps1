@@ -146,7 +146,7 @@ param(
     ),
 
     [Parameter()]
-    [ValidateSet('None', 'Fastest', 'Optimal', 'SmallestSize')]
+    [ValidateSet('None', 'Fastest', 'Optimal')]
     [string]$CompressionLevel = 'Optimal',
 
     [Parameter()]
@@ -380,7 +380,9 @@ function Copy-BackupFiles {
         [string]$SourceRoot,
 
         [Parameter(Mandatory)]
-        [string]$DestinationRoot
+        [string]$DestinationRoot,
+
+        [switch]$ComputeHash
     )
 
     $totalFiles = $Files.Count
@@ -423,7 +425,7 @@ function Copy-BackupFiles {
                 $script:Stats.BackedUpSize += $file.Size
 
                 # Calculate hash if verification is enabled
-                if ($VerifyBackup) {
+                if ($ComputeHash) {
                     $file.Hash = Get-FileHash256 -FilePath $file.FullName
                 }
             }
@@ -449,20 +451,22 @@ function Compress-BackupFolder {
         [string]$SourcePath,
 
         [Parameter(Mandatory)]
-        [string]$ArchivePath
+        [string]$ArchivePath,
+
+        [ValidateSet('None', 'Fastest', 'Optimal')]
+        [string]$Level = 'Optimal'
     )
 
     if ($PSCmdlet.ShouldProcess($SourcePath, "Compress to $ArchivePath")) {
         try {
-            $compressionLevelEnum = switch ($CompressionLevel) {
-                'None'         { [System.IO.Compression.CompressionLevel]::NoCompression }
-                'Fastest'      { [System.IO.Compression.CompressionLevel]::Fastest }
-                'Optimal'      { [System.IO.Compression.CompressionLevel]::Optimal }
-                'SmallestSize' { [System.IO.Compression.CompressionLevel]::SmallestSize }
-            }
+            # Compress-Archive's -CompressionLevel is a string ValidateSet limited to
+            # Optimal / Fastest / NoCompression -- the System.IO.Compression.CompressionLevel
+            # enum's SmallestSize value is NOT accepted. Map 'None' through to the
+            # NoCompression string and pass the rest as-is.
+            $compressArchiveLevel = if ($Level -eq 'None') { 'NoCompression' } else { $Level }
 
-            Write-InfoMessage "Compressing backup (Level: $CompressionLevel)..."
-            Compress-Archive -Path "$SourcePath\*" -DestinationPath $ArchivePath -CompressionLevel $compressionLevelEnum -Force
+            Write-InfoMessage "Compressing backup (Level: $Level)..."
+            Compress-Archive -Path "$SourcePath\*" -DestinationPath $ArchivePath -CompressionLevel $compressArchiveLevel -Force
 
             return $true
         }
@@ -533,7 +537,13 @@ function Remove-OldBackups {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
-        [string]$BackupRoot
+        [string]$BackupRoot,
+
+        [ValidateRange(1, 100)]
+        [int]$KeepCount = 5,
+
+        [ValidateRange(1, 365)]
+        [int]$KeepDays = 30
     )
 
     Write-InfoMessage "Applying retention policy..."
@@ -553,8 +563,8 @@ function Remove-OldBackups {
     $removedCount = 0
 
     # Remove by count
-    if ($allBackups.Count -gt $RetentionCount) {
-        $toRemove = $allBackups | Select-Object -Skip $RetentionCount
+    if ($allBackups.Count -gt $KeepCount) {
+        $toRemove = $allBackups | Select-Object -Skip $KeepCount
 
         foreach ($backup in $toRemove) {
             if ($PSCmdlet.ShouldProcess($backup.Path, "Remove old backup")) {
@@ -576,12 +586,12 @@ function Remove-OldBackups {
     }
 
     # Remove by age
-    $cutoffDate = (Get-Date).AddDays(-$RetentionDays)
+    $cutoffDate = (Get-Date).AddDays(-$KeepDays)
     $oldBackups = $allBackups | Where-Object { $_.Date -lt $cutoffDate }
 
     foreach ($backup in $oldBackups) {
         # Skip if already in retention count
-        if ($backup -in ($allBackups | Select-Object -First $RetentionCount)) {
+        if ($backup -in ($allBackups | Select-Object -First $KeepCount)) {
             continue
         }
 
@@ -830,8 +840,39 @@ function Export-JSONReport {
 #endregion
 
 #region Main Execution
-try {
-    Write-InfoMessage "=== User Data Backup v$script:ScriptVersion ==="
+function Invoke-UserDataBackup {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    [OutputType([int])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Destination,
+
+        [ValidateSet('Full', 'Incremental', 'Differential')]
+        [string]$BackupType = 'Incremental',
+
+        [string[]]$SourceFolders = @(),
+
+        [switch]$DryRun,
+
+        [switch]$VerifyBackup,
+
+        [ValidateSet('None', 'Fastest', 'Optimal')]
+        [string]$CompressionLevel = 'Optimal',
+
+        [int]$RetentionCount = 5,
+
+        [int]$RetentionDays = 30,
+
+        [ValidateSet('Console', 'HTML', 'JSON')]
+        [string]$OutputFormat = 'Console',
+
+        [string]$LogPath,
+
+        [Nullable[datetime]]$IncrementalSince
+    )
+
+    try {
+        Write-InfoMessage "=== User Data Backup v$script:ScriptVersion ==="
     Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
     Write-InfoMessage "Backup Type: $BackupType"
 
@@ -913,7 +954,7 @@ try {
                 $destRoot = Join-Path $backupPath $sourceName
 
                 Write-InfoMessage "Backing up: $sourceName"
-                Copy-BackupFiles -Files $group.Group -SourceRoot $sourceRoot -DestinationRoot $destRoot
+                Copy-BackupFiles -Files $group.Group -SourceRoot $sourceRoot -DestinationRoot $destRoot -ComputeHash:$VerifyBackup
             }
 
             # Verify backup if requested
@@ -925,7 +966,7 @@ try {
             # Compress if requested
             if ($CompressionLevel -ne 'None') {
                 $archivePath = "$backupPath.zip"
-                $compressed = Compress-BackupFolder -SourcePath $backupPath -ArchivePath $archivePath
+                $compressed = Compress-BackupFolder -SourcePath $backupPath -ArchivePath $archivePath -Level $CompressionLevel
 
                 if ($compressed) {
                     # Remove uncompressed folder
@@ -958,7 +999,7 @@ try {
             Save-BackupMetadata -Metadata $metadata
 
             # Apply retention policy
-            Remove-OldBackups -BackupRoot $Destination
+            Remove-OldBackups -BackupRoot $Destination -KeepCount $RetentionCount -KeepDays $RetentionDays
         }
     }
 
@@ -984,13 +1025,36 @@ try {
 
     Write-Success "=== Backup completed in $($duration.TotalSeconds.ToString('0.00'))s ==="
 
-    # Exit with error code if backup failed
-    if (-not $report.Success) {
-        exit 1
+        # Exit with error code if backup failed
+        if (-not $report.Success) {
+            return 1
+        }
+
+        return 0
+    }
+    catch {
+        Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
+        return 1
     }
 }
-catch {
-    Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
-    exit 1
+
+if ($MyInvocation.InvocationName -ne '.') {
+    $invokeArgs = @{
+        Destination      = $Destination
+        BackupType       = $BackupType
+        SourceFolders    = $SourceFolders
+        DryRun           = $DryRun
+        VerifyBackup     = $VerifyBackup
+        CompressionLevel = $CompressionLevel
+        RetentionCount   = $RetentionCount
+        RetentionDays    = $RetentionDays
+        OutputFormat     = $OutputFormat
+        LogPath          = $LogPath
+    }
+    if ($PSBoundParameters.ContainsKey('IncrementalSince')) {
+        $invokeArgs.IncrementalSince = $IncrementalSince
+    }
+    $exitCode = Invoke-UserDataBackup @invokeArgs
+    if ($exitCode -ne 0) { exit $exitCode }
 }
 #endregion

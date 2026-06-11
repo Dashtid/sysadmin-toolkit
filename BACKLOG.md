@@ -7,14 +7,14 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 
 ---
 
-## Current state (2026-06-10)
+## Current state (2026-06-11)
 
-- **Windows behavioral coverage**: 30.63% overall (re-measured baseline; prior 31.24% figure reflected a slightly different measurement config).
-- **Pester tests**: 1177 passing, 0 failing.
-- **Production bugs found and fixed via testing**: 6 (5 from Sprint 1, 1 from Sprint 3.3).
-- **Sprints 1, 2, and 3 complete. Sprint 4 in progress (4.1 done).**
+- **Windows behavioral coverage**: 33.54% overall (was 6.68% at session start, +26.86 pp cumulative).
+- **Pester tests**: 1214 passing, 0 failing.
+- **Production bugs found and fixed via testing**: 7 (5 from Sprint 1, 1 from Sprint 3.3, 1 from Sprint 4.2).
+- **Sprints 1, 2, and 3 complete. Sprint 4 in progress (4.1 + 4.2 done).**
 
-Next: Sprint 4.2 (`Backup-UserData.ps1`, 996 lines, L).
+Next: Sprint 4.3 (`Backup-BrowserProfiles.ps1`, 1078 lines, L).
 After Sprint 4, two scripts (Get-SystemPerformance, Test-DevEnvironment) need substantial refactor before they can be tested cleanly.
 
 ---
@@ -43,8 +43,8 @@ Every test must be sandboxed in `$TestDrive`; nothing touches the real user prof
 | # | Script | Lines | Size | Status | Notes |
 |---|--------|-------|------|--------|-------|
 | 4.1 | `Windows/backup/Backup-DeveloperEnvironment.ps1` | 252 | S | DONE | 16 tests, +0.47 pp. |
-| 4.2 | `Windows/backup/Backup-UserData.ps1` | 996 | L | NEXT | User-profile backup. Robocopy boundary. |
-| 4.3 | `Windows/backup/Backup-BrowserProfiles.ps1` | 1078 | L | -- | Browser profile backup + restore round-trip. File-mutation hazards. |
+| 4.2 | `Windows/backup/Backup-UserData.ps1` | ~1050 | L | DONE | 37 tests, +2.91 pp, 1 bug. |
+| 4.3 | `Windows/backup/Backup-BrowserProfiles.ps1` | 1078 | L | NEXT | Browser profile backup + restore round-trip. File-mutation hazards. |
 | 4.4 | `Windows/backup/Export-SystemState.ps1` | 895 | L | -- | Registry/service export. |
 | 4.5 | `Windows/backup/Test-BackupIntegrity.ps1` | 869 | L | -- | Backup verifier — read-only but checksums real archives. |
 
@@ -105,6 +105,7 @@ Carried from ROADMAP.md. Not in the sprint plan above because nothing in this li
 
 ## Sprint 4 closeouts (backup & state, in progress)
 
+- 2026-06-11: `test(backup): behavioral coverage for Backup-UserData` (Sprint 4.2) - 37 tests across 11 helper functions + Invoke-UserDataBackup top-level. Wrapped 160-line main try/catch in Invoke-UserDataBackup function; replaced inner `exit 1` with `return 1` so the main flow returns an exit code cleanly. **Pester scope discovery**: helpers in the original script read `$VerifyBackup`, `$CompressionLevel`, `$RetentionCount`, `$RetentionDays`, `$DryRun`, etc. via dynamic scope from the script's param block. Pester 5 isolates the dot-sourced script's variables in a scope NOT reachable by `$script:` or `$global:` from the It block, so the test cannot override them after the fact. Solution was to refactor the helpers to take explicit parameters (`Copy-BackupFiles -ComputeHash`, `Compress-BackupFolder -Level`, `Remove-OldBackups -KeepCount/-KeepDays`) and add a full mirrored `param()` block to Invoke-UserDataBackup with the testability guard forwarding all script params. The refactor improves the production code too — explicit beats implicit dynamic scope reads. **Fixed one production bug**: the script accepts `-CompressionLevel SmallestSize` (mapped to `[System.IO.Compression.CompressionLevel]::SmallestSize` enum) but `Compress-Archive`'s `-CompressionLevel` parameter is `[string]` with ValidateSet limited to `Optimal`/`Fastest`/`NoCompression` — so any user picking SmallestSize hit the silent catch path and got "Compression failed". Removed SmallestSize from the script's and helper's ValidateSets and switched the Compress-Archive call to pass the string name. Coverage 30.63% -> 33.54% (+2.91 pp).
 - 2026-06-10: `test(backup): behavioral coverage for Backup-DeveloperEnvironment` (Sprint 4.1) - 16 tests. Wrapped straight-line body in `Invoke-DeveloperEnvironmentBackup` with `[CmdletBinding(SupportsShouldProcess=$true)]`; replaced inner `exit 1` with `return $null`; added testability guard. **Pester quirk discovered**: in PS7, `Out-File`'s `-Encoding` parameter has an `ArgumentTransformationAttribute` that converts strings like `"UTF8"` to encoding objects; Pester's `Mock Out-File` replicates the parameter type but NOT the transformer, so mocking `Out-File` breaks the script's `-Encoding UTF8` call with a binding error. Workaround: tests that need the manifest/extensions code paths leave `Out-File` and `New-Item` unmocked so real cmdlets write into `$TestDrive`. Documented inline at the top of the test file. Coverage 30.16% -> 30.63% (+0.47 pp).
 
 ## Sprint 3 closeouts (mutating system & network)
