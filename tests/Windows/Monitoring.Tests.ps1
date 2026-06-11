@@ -621,9 +621,12 @@ Describe "Monitoring Script Error Handling" {
 
     Context "Exit Codes" {
         It "Get-SystemPerformance has exit code handling" {
+            # Sprint 5.1 refactor wrapped Main into Invoke-SystemPerformance, replacing
+            # literal 'exit 1' with 'return 1' inside the function. The testability
+            # guard preserves the non-zero exit via 'exit $exitCode'.
             $scriptPath = Join-Path $MonitoringPath "Get-SystemPerformance.ps1"
             $content = Get-Content $scriptPath -Raw
-            $content | Should -Match "exit 1"
+            $content | Should -Match '(exit 1|return 1|exit \$exitCode)'
         }
 
         It "Watch-ServiceHealth has exit code handling" {

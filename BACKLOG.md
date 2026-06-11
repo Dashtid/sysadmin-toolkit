@@ -9,12 +9,12 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 
 ## Current state (2026-06-11)
 
-- **Windows behavioral coverage**: 44.12% overall (was 6.68% at session start, +37.44 pp cumulative).
-- **Pester tests**: 1293 passing, 0 failing.
-- **Production bugs found and fixed via testing**: 7 (5 from Sprint 1, 1 from Sprint 3.3, 1 from Sprint 4.2).
-- **Sprints 1, 2, 3, and 4 all complete.**
+- **Windows behavioral coverage**: 46.76% overall (was 6.68% at session start, +40.08 pp cumulative).
+- **Pester tests**: 1316 passing, 0 failing.
+- **Production bugs found and fixed via testing**: 8 (5 from Sprint 1, 1 from Sprint 3.3, 1 from Sprint 4.2, 1 from Sprint 5.1).
+- **Sprints 1, 2, 3, and 4 complete. Sprint 5 in progress (5.1 done).**
 
-Next: Sprint 5 (Get-SystemPerformance, Test-DevEnvironment - both need substantial refactor before they can be tested cleanly).
+Next: Sprint 5.2 (`Test-DevEnvironment.ps1`, 1213 lines - 17 external tools to stub).
 
 ---
 
@@ -53,10 +53,10 @@ Every test must be sandboxed in `$TestDrive`; nothing touches the real user prof
 
 Both were explicitly excluded from the original survey ranking because they need substantial restructuring before behavioral tests can land. Treat the refactor as the deliverable; tests come after.
 
-| # | Script | Lines | Size | Notes |
-|---|--------|-------|------|-------|
-| 5.1 | `Windows/monitoring/Get-SystemPerformance.ps1` | 1457 | L+ | No Main function, 70-line straight-line script body, destructive AutoCleanup option. Refactor first: extract `Invoke-SystemPerformance`, factor out the script body, add testability guard. |
-| 5.2 | `Windows/development/Test-DevEnvironment.ps1` | 1213 | L+ | 17 external tools to stub (git, node, npm, python, pip, docker, kubectl, az, gh, code, etc.). Most expensive mocking surface in the repo. |
+| # | Script | Lines | Size | Status | Notes |
+|---|--------|-------|------|--------|-------|
+| 5.1 | `Windows/monitoring/Get-SystemPerformance.ps1` | ~1500 | L+ | DONE | 23 tests, +2.64 pp, 1 bug. |
+| 5.2 | `Windows/development/Test-DevEnvironment.ps1` | 1213 | L+ | NEXT | 17 external tools to stub (git, node, npm, python, pip, docker, kubectl, az, gh, code, etc.). Most expensive mocking surface in the repo. |
 
 ---
 
@@ -101,6 +101,10 @@ Carried from ROADMAP.md. Not in the sprint plan above because nothing in this li
 | Compliance reporting | 3-4 hr | From ROADMAP.md |
 
 ---
+
+## Sprint 5 closeouts (excluded hard scripts, in progress)
+
+- 2026-06-11: `test(monitoring): behavioral coverage for Get-SystemPerformance` (Sprint 5.1) - 23 tests across 9 helpers + Invoke-SystemPerformance top-level. Refactored the straight-line main try/catch into Invoke-SystemPerformance with a mirrored param() block (same Sprint 4.x pattern). Replaced inner `exit 1` with `return 1`; testability guard forwards script params. **Fixed one production bug**: 4 script-level switches/ints carried from a "merged from Watch-DiskSpace.ps1" comment (`-IncludeDiskAnalysis`, `-AutoCleanup`, `-TopFilesCount`, `-TopFoldersCount`) were declared but never actually invoked in main. The `Get-DiskAnalysis` helper existed and was complete, just never called. Reconnected the wire-up: when `-IncludeDiskAnalysis` is set in single-run mode, main now calls `Get-DiskAnalysis -DiskVolumes $metrics.DiskVolumes -EnableAutoCleanup:$AutoCleanup` after metrics collection. Tests cover Get-ThresholdAlerts (Critical/Warning bands, multi-alert combinations, no-alert path), Get-TopProcesses (sort+top-N, PID 0 filter, Get-Process throw), Get-SystemInfo CIM aggregation, Get-LargestFiles >100MB filter, Get-CleanupSuggestions Temp/Windows-Update branches, Invoke-DiskAutoCleanup with Remove-Item / Clear-RecycleBin destructive operations blocked, Get-DiskAnalysis dispatcher (Warning threshold gate, EnableAutoCleanup+Critical-only auto-clean trigger), Export-JSONReport / Export-CSVReport file output, Invoke-SystemPerformance happy path + fatal-error + AlertOnly + IncludeDiskAnalysis wire-up verification. Coverage 44.12% -> 46.76% (+2.64 pp).
 
 ## Sprint 4 closeouts (backup & state, DONE)
 

@@ -1374,12 +1374,40 @@ function Export-PrometheusReport {
 #endregion
 
 #region Main Execution
-try {
-    Write-InfoMessage "=== System Performance Monitor v$script:ScriptVersion ==="
-    Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+function Invoke-SystemPerformance {
+    [CmdletBinding()]
+    [OutputType([int])]
+    param(
+        [ValidateSet('Console', 'HTML', 'JSON', 'CSV', 'Prometheus', 'All')]
+        [string]$OutputFormat = 'Console',
 
-    # Get system information
-    $systemInfo = Get-SystemInfo
+        [string]$OutputPath,
+
+        [ValidateRange(1, 100)]
+        [int]$SampleCount = 5,
+
+        [ValidateRange(1, 300)]
+        [int]$SampleInterval = 2,
+
+        [ValidateRange(0, 1440)]
+        [int]$MonitorDuration = 0,
+
+        [switch]$AlertOnly,
+        [switch]$IncludeProcesses,
+
+        [ValidateRange(1, 50)]
+        [int]$TopProcessCount = 10,
+
+        [switch]$IncludeDiskAnalysis,
+        [switch]$AutoCleanup
+    )
+
+    try {
+        Write-InfoMessage "=== System Performance Monitor v$script:ScriptVersion ==="
+        Write-InfoMessage "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+
+        # Get system information
+        $systemInfo = Get-SystemInfo
 
     # Continuous monitoring mode
     if ($MonitorDuration -gt 0) {
@@ -1423,6 +1451,14 @@ try {
         $metrics = Get-PerformanceMetrics
         $processes = if ($IncludeProcesses) { Get-TopProcesses } else { $null }
 
+        # Disk analysis (was previously declared on the script param block but never
+        # wired into main; this Sprint 5.1 refactor reconnects it). Only runs in
+        # single-run mode -- repeated heavy disk scans in the continuous monitor
+        # loop would not make sense.
+        if ($IncludeDiskAnalysis -and $metrics.DiskVolumes) {
+            $metrics.DiskAnalysis = Get-DiskAnalysis -DiskVolumes $metrics.DiskVolumes -EnableAutoCleanup:$AutoCleanup
+        }
+
         # Skip output if AlertOnly and no alerts
         if (-not $AlertOnly -or $metrics.Alerts.Count -gt 0) {
             switch ($OutputFormat) {
@@ -1445,13 +1481,32 @@ try {
     }
 
     $duration = (Get-Date) - $script:StartTime
-    Write-Success "=== Performance monitoring completed in $($duration.TotalSeconds.ToString('0.00'))s ==="
-}
-catch {
-    Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
-    if (Get-Command Write-ContextualError -ErrorAction SilentlyContinue) {
-        Write-ContextualError -ErrorRecord $_ -Context "running performance monitor" -Suggestion "Check permissions and system access"
+        Write-Success "=== Performance monitoring completed in $($duration.TotalSeconds.ToString('0.00'))s ==="
+        return 0
     }
-    exit 1
+    catch {
+        Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
+        if (Get-Command Write-ContextualError -ErrorAction SilentlyContinue) {
+            Write-ContextualError -ErrorRecord $_ -Context "running performance monitor" -Suggestion "Check permissions and system access"
+        }
+        return 1
+    }
+}
+
+if ($MyInvocation.InvocationName -ne '.') {
+    $invokeArgs = @{
+        OutputFormat        = $OutputFormat
+        OutputPath          = $OutputPath
+        SampleCount         = $SampleCount
+        SampleInterval      = $SampleInterval
+        MonitorDuration     = $MonitorDuration
+        AlertOnly           = $AlertOnly
+        IncludeProcesses    = $IncludeProcesses
+        TopProcessCount     = $TopProcessCount
+        IncludeDiskAnalysis = $IncludeDiskAnalysis
+        AutoCleanup         = $AutoCleanup
+    }
+    $exitCode = Invoke-SystemPerformance @invokeArgs
+    if ($exitCode -ne 0) { exit $exitCode }
 }
 #endregion
