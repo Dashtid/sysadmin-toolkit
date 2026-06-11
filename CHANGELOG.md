@@ -6,6 +6,20 @@ not strictly adhere to semantic versioning (it is a personal toolkit, not a
 published library) but minor bumps signal new public surface and patch bumps
 signal bug fixes only.
 
+## [2.3.3] - 2026-06-11
+
+### Fixed
+
+- `ci.yml`: repoint `EnricoMi/publish-unit-test-result-action` pin from
+  the broken SHA `170bf24d...c0f46f5bb5800e9ce` (commented as v2.18.0
+  but never an actual git object - first 23 chars matched, then
+  diverged; the real v2.18.0 SHA ends in `403b73ed297e6645b`) to the
+  current v2.23.0 SHA `c950f6fb...8838901040` (Feb 2026). Surfaced
+  via private-toolkit's post-session audit on 2026-06-11 - the broken
+  pin had made CI fail on every push since it was added, including
+  v2.3.2's kubernetes-cli exclude commit. Updates two call sites:
+  Windows Pester job and Linux Pester job.
+
 ## [2.3.2] - 2026-06-10
 
 ### Changed

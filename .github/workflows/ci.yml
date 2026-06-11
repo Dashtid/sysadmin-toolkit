@@ -266,7 +266,7 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: EnricoMi/publish-unit-test-result-action/windows@170bf24d20d201b842d7a52c0f46f5bb5800e9ce  # v2.18.0
+        uses: EnricoMi/publish-unit-test-result-action/windows@c950f6fb443cb5af20a377fd0dfaa78838901040  # v2.23.0
         with:
           files: test-results-windows.xml
           check_name: Windows Test Results
@@ -364,7 +364,7 @@ jobs:
       - name: Publish test results
         if: always()
         continue-on-error: true
-        uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52c0f46f5bb5800e9ce  # v2.18.0
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040  # v2.23.0
         with:
           files: test-results-linux-pester.xml
           check_name: Linux Test Results
