@@ -785,8 +785,31 @@ function Export-JSONReport {
 #endregion
 
 #region Main Execution
-try {
-    Write-Host ""
+function Invoke-SystemStateExport {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    [OutputType([int])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Destination,
+
+        [ValidateSet('All', 'Drivers', 'Registry', 'Network', 'Tasks', 'Features', 'Services', 'Packages')]
+        [string[]]$Include = @('All'),
+
+        [switch]$Compress,
+
+        [ValidateSet('Console', 'HTML', 'JSON', 'All')]
+        [string]$OutputFormat = 'Console',
+
+        [switch]$IncludeEventLogs,
+
+        [ValidateRange(1, 365)]
+        [int]$EventLogDays = 7,
+
+        [switch]$DryRun
+    )
+
+    try {
+        Write-Host ""
     Write-InfoMessage "========================================"
     Write-InfoMessage "  System State Export v$script:ScriptVersion"
     Write-InfoMessage "========================================"
@@ -882,14 +905,29 @@ try {
 
     Write-Success "Export complete: $script:ExportFolder"
 
-    if ($script:Stats.Errors.Count -gt 0) {
-        exit 1
+        if ($script:Stats.Errors.Count -gt 0) {
+            return 1
+        }
+        return 0
     }
-    exit 0
+    catch {
+        Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
+        Write-ErrorMessage "Stack trace: $($_.ScriptStackTrace)"
+        return 1
+    }
 }
-catch {
-    Write-ErrorMessage "Fatal error: $($_.Exception.Message)"
-    Write-ErrorMessage "Stack trace: $($_.ScriptStackTrace)"
-    exit 1
+
+if ($MyInvocation.InvocationName -ne '.') {
+    $invokeArgs = @{
+        Destination      = $Destination
+        Include          = $Include
+        Compress         = $Compress
+        OutputFormat     = $OutputFormat
+        IncludeEventLogs = $IncludeEventLogs
+        EventLogDays     = $EventLogDays
+        DryRun           = $DryRun
+    }
+    $exitCode = Invoke-SystemStateExport @invokeArgs
+    if ($exitCode -ne 0) { exit $exitCode }
 }
 #endregion

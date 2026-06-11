@@ -9,12 +9,12 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 
 ## Current state (2026-06-11)
 
-- **Windows behavioral coverage**: 37.27% overall (was 6.68% at session start, +30.59 pp cumulative).
-- **Pester tests**: 1248 passing, 0 failing.
+- **Windows behavioral coverage**: 40.83% overall (was 6.68% at session start, +34.15 pp cumulative).
+- **Pester tests**: 1266 passing, 0 failing.
 - **Production bugs found and fixed via testing**: 7 (5 from Sprint 1, 1 from Sprint 3.3, 1 from Sprint 4.2).
-- **Sprints 1, 2, and 3 complete. Sprint 4 in progress (4.1 + 4.2 + 4.3 done).**
+- **Sprints 1, 2, and 3 complete. Sprint 4 in progress (4.1-4.4 done).**
 
-Next: Sprint 4.4 (`Export-SystemState.ps1`, 895 lines, L).
+Next: Sprint 4.5 (`Test-BackupIntegrity.ps1`, 869 lines, L).
 After Sprint 4, two scripts (Get-SystemPerformance, Test-DevEnvironment) need substantial refactor before they can be tested cleanly.
 
 ---
@@ -45,8 +45,8 @@ Every test must be sandboxed in `$TestDrive`; nothing touches the real user prof
 | 4.1 | `Windows/backup/Backup-DeveloperEnvironment.ps1` | 252 | S | DONE | 16 tests, +0.47 pp. |
 | 4.2 | `Windows/backup/Backup-UserData.ps1` | ~1050 | L | DONE | 37 tests, +2.91 pp, 1 bug. |
 | 4.3 | `Windows/backup/Backup-BrowserProfiles.ps1` | ~1130 | L | DONE | 34 tests, +3.73 pp. |
-| 4.4 | `Windows/backup/Export-SystemState.ps1` | 895 | L | NEXT | Registry/service export. |
-| 4.5 | `Windows/backup/Test-BackupIntegrity.ps1` | 869 | L | -- | Backup verifier — read-only but checksums real archives. |
+| 4.4 | `Windows/backup/Export-SystemState.ps1` | ~920 | L | DONE | 18 tests, +3.56 pp. |
+| 4.5 | `Windows/backup/Test-BackupIntegrity.ps1` | 869 | L | NEXT | Backup verifier — read-only but checksums real archives. |
 
 ---
 
@@ -105,6 +105,7 @@ Carried from ROADMAP.md. Not in the sprint plan above because nothing in this li
 
 ## Sprint 4 closeouts (backup & state, in progress)
 
+- 2026-06-11: `test(backup): behavioral coverage for Export-SystemState` (Sprint 4.4) - 18 tests across 12 helper functions + Invoke-SystemStateExport top-level. Same wrap-and-mirror refactor pattern as 4.2/4.3: top-level try/catch wrapped in Invoke-SystemStateExport with explicit params, inner `exit N` replaced with `return N`, testability guard forwards script params. Tests cover Get-ExportComponents (All vs explicit), New-ExportFolder timestamp+subdirs, Export-Drivers (Get-PnpDevice + Get-PnpDeviceProperty success and throw), Export-Services, Export-WindowsFeatures, Export-NetworkConfig (adapters/ip-config/dns/routes/firewall), Export-ScheduledTasks (Microsoft\* filter exclusion verified), Export-EventLogs, New-ExportManifest, Compress-ExportFolder (zip+remove and failure fallback), Export-HTMLReport, Export-JSONReport, Invoke-SystemStateExport DryRun returns 0, fatal-error returns 1, dispatcher only invokes listed components. Coverage 37.27% -> 40.83% (+3.56 pp, crossed the 40% threshold).
 - 2026-06-11: `test(backup): behavioral coverage for Backup-BrowserProfiles` (Sprint 4.3) - 34 tests across 11 helpers + Invoke-BrowserProfileBackup top-level. Renamed `Main` to `Invoke-BrowserProfileBackup` with a mirrored param() block so the testability guard forwards all script params explicitly (same pattern as Sprint 4.2). Replaced inner `exit N` with `return N`. Added explicit `-Path` to Get-BackupDirectory and `-BackupDir` to Get-BackupList so they are independently testable. **New Pester gotcha documented**: Get-Content's `-Path` and `-LiteralPath` are separate parameters; a ParameterFilter on `$Path` does not see `-LiteralPath` values, so when tests verify written files via `Get-Content -LiteralPath`, the mock's filter still fires and returns the mocked content instead of the real file. Workaround: read verification files via `[System.IO.File]::ReadAllText()` to bypass Pester's mock entirely. Coverage 33.54% -> 37.27% (+3.73 pp).
 - 2026-06-11: `test(backup): behavioral coverage for Backup-UserData` (Sprint 4.2) - 37 tests across 11 helper functions + Invoke-UserDataBackup top-level. Wrapped 160-line main try/catch in Invoke-UserDataBackup function; replaced inner `exit 1` with `return 1` so the main flow returns an exit code cleanly. **Pester scope discovery**: helpers in the original script read `$VerifyBackup`, `$CompressionLevel`, `$RetentionCount`, `$RetentionDays`, `$DryRun`, etc. via dynamic scope from the script's param block. Pester 5 isolates the dot-sourced script's variables in a scope NOT reachable by `$script:` or `$global:` from the It block, so the test cannot override them after the fact. Solution was to refactor the helpers to take explicit parameters (`Copy-BackupFiles -ComputeHash`, `Compress-BackupFolder -Level`, `Remove-OldBackups -KeepCount/-KeepDays`) and add a full mirrored `param()` block to Invoke-UserDataBackup with the testability guard forwarding all script params. The refactor improves the production code too — explicit beats implicit dynamic scope reads. **Fixed one production bug**: the script accepts `-CompressionLevel SmallestSize` (mapped to `[System.IO.Compression.CompressionLevel]::SmallestSize` enum) but `Compress-Archive`'s `-CompressionLevel` parameter is `[string]` with ValidateSet limited to `Optimal`/`Fastest`/`NoCompression` — so any user picking SmallestSize hit the silent catch path and got "Compression failed". Removed SmallestSize from the script's and helper's ValidateSets and switched the Compress-Archive call to pass the string name. Coverage 30.63% -> 33.54% (+2.91 pp).
 - 2026-06-10: `test(backup): behavioral coverage for Backup-DeveloperEnvironment` (Sprint 4.1) - 16 tests. Wrapped straight-line body in `Invoke-DeveloperEnvironmentBackup` with `[CmdletBinding(SupportsShouldProcess=$true)]`; replaced inner `exit 1` with `return $null`; added testability guard. **Pester quirk discovered**: in PS7, `Out-File`'s `-Encoding` parameter has an `ArgumentTransformationAttribute` that converts strings like `"UTF8"` to encoding objects; Pester's `Mock Out-File` replicates the parameter type but NOT the transformer, so mocking `Out-File` breaks the script's `-Encoding UTF8` call with a binding error. Workaround: tests that need the manifest/extensions code paths leave `Out-File` and `New-Item` unmocked so real cmdlets write into `$TestDrive`. Documented inline at the top of the test file. Coverage 30.16% -> 30.63% (+0.47 pp).
