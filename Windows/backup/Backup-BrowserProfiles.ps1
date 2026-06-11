@@ -238,8 +238,10 @@ $script:ExcludePatterns = @(
 
 #region Helper Functions
 function Get-BackupDirectory {
-    if ($OutputPath) {
-        $backupDir = $OutputPath
+    param([string]$Path)
+
+    if ($Path) {
+        $backupDir = $Path
     }
     else {
         $logDir = Get-LogDirectory
@@ -625,7 +627,14 @@ function Remove-OldBackups {
 }
 
 function Get-BackupList {
-    $backupDir = Get-BackupDirectory
+    param([string]$BackupDir)
+
+    if (-not $BackupDir) {
+        $backupDir = Get-BackupDirectory
+    }
+    else {
+        $backupDir = $BackupDir
+    }
     $backups = @()
 
     $zipFiles = Get-ChildItem -Path $backupDir -Filter "*.zip" -ErrorAction SilentlyContinue
@@ -939,16 +948,43 @@ function Export-HtmlReport {
 #endregion
 
 #region Main Execution
-function Main {
+function Invoke-BrowserProfileBackup {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    [OutputType([int])]
+    param(
+        [ValidateSet('Chrome', 'Edge', 'Firefox', 'Brave', 'All')]
+        [string]$Browser = 'All',
+
+        [string]$OutputPath,
+
+        [switch]$IncludeCookies,
+        [switch]$IncludeHistory,
+        [switch]$IncludePasswords,
+        [switch]$Compress,
+
+        [ValidateRange(0, 365)]
+        [int]$RetentionDays = 30,
+
+        [string]$Restore,
+
+        [ValidateSet('Chrome', 'Edge', 'Firefox', 'Brave')]
+        [string]$RestoreTarget,
+
+        [switch]$ListBackups,
+
+        [ValidateSet('Console', 'HTML', 'JSON')]
+        [string]$OutputFormat = 'Console'
+    )
+
     Write-InfoMessage "Browser Profile Backup v$($script:ScriptVersion)"
     Write-InfoMessage "Started at: $($script:StartTime)"
 
     # Handle List mode
     if ($ListBackups) {
-        $backups = Get-BackupList
+        $backups = Get-BackupList -BackupDir (Get-BackupDirectory -Path $OutputPath)
         if ($backups.Count -eq 0) {
             Write-WarningMessage "No backups found"
-            return
+            return 0
         }
 
         Write-Host ""
@@ -957,25 +993,25 @@ function Main {
         foreach ($backup in $backups) {
             Write-Host "$($backup.Browser.PadRight(12)) | $($backup.BackupDate.ToString('yyyy-MM-dd HH:mm')) | $($backup.SizeMB) MB | $($backup.FileName)" -ForegroundColor White
         }
-        return
+        return 0
     }
 
     # Handle Restore mode
     if ($Restore) {
         if (-not $RestoreTarget) {
             Write-ErrorMessage "Please specify -RestoreTarget (Chrome, Edge, Firefox, or Brave)"
-            exit 1
+            return 1
         }
 
         if ($PSCmdlet.ShouldProcess($RestoreTarget, "Restore browser profile from $Restore")) {
             $success = Restore-BrowserProfile -BackupPath $Restore -TargetBrowser $RestoreTarget
-            exit $(if ($success) { 0 } else { 1 })
+            return $(if ($success) { 0 } else { 1 })
         }
-        return
+        return 0
     }
 
     # Backup mode
-    $backupDir = Get-BackupDirectory
+    $backupDir = Get-BackupDirectory -Path $OutputPath
     Write-InfoMessage "Backup directory: $backupDir"
 
     # Determine which browsers to backup
@@ -1070,9 +1106,24 @@ Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
                 elseif ($successCount -gt 0) { 1 }
                 else { 2 }
 
-    exit $exitCode
+    return $exitCode
 }
 
-# Run main function
-Main
+if ($MyInvocation.InvocationName -ne '.') {
+    $invokeArgs = @{
+        Browser          = $Browser
+        OutputPath       = $OutputPath
+        IncludeCookies   = $IncludeCookies
+        IncludeHistory   = $IncludeHistory
+        IncludePasswords = $IncludePasswords
+        Compress         = $Compress
+        RetentionDays    = $RetentionDays
+        Restore          = $Restore
+        RestoreTarget    = $RestoreTarget
+        ListBackups      = $ListBackups
+        OutputFormat     = $OutputFormat
+    }
+    $exitCode = Invoke-BrowserProfileBackup @invokeArgs
+    if ($exitCode -ne 0) { exit $exitCode }
+}
 #endregion
