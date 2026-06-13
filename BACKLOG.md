@@ -12,9 +12,9 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 - **Windows behavioral coverage**: 46.76% overall (was 6.68% at session start, +40.08 pp cumulative).
 - **Pester tests**: 1316 passing, 0 failing.
 - **Production bugs found and fixed via testing**: 8 (5 from Sprint 1, 1 from Sprint 3.3, 1 from Sprint 4.2, 1 from Sprint 5.1).
-- **Sprints 1, 2, 3, 4, and 5 complete (5.2 shipped as refactor-only).**
+- **Sprints 1, 2, 3, 4, 5 complete (5.2 shipped as refactor-only). Sprint 6.1 done.**
 
-Next: Sprint 6.1 (unify `tests/run-tests.ps1` to invoke BATS when available).
+Next: Sprint 6.2 (PR template, optional) and 6.3 (Restore-VsCodeExtension retry/backoff). Both low priority; can park here.
 
 ---
 
@@ -66,7 +66,7 @@ Small items carried over from the prior backlog.
 
 | # | Item | Size | Notes |
 |---|------|------|-------|
-| 6.1 | Unify `tests/run-tests.ps1` to invoke BATS when available | S | Currently runs Pester (Windows) only. Linux BATS tests are invoked by CI separately. Single-command local test runner would be a quality-of-life win. |
+| 6.1 | Unify `tests/run-tests.ps1` to invoke BATS when available | S | DONE 2026-06-14. Added `-Linux` switch + auto-detect both runners when no flags. `bats --tap` per file with TAP plan-line parsing for the summary. Skips Linux with a warning when bats isn't on PATH (errors only when `-Linux` was explicit). |
 | 6.2 | `.github/PULL_REQUEST_TEMPLATE.md` (optional) | S | Toolkit has no PR template. Decide whether one would actually help (single-author repo, mostly direct commits) before adding. |
 | 6.3 | Add `Restore-VsCodeExtension` retry/backoff | M | When a vscode-marketplace install times out, retry once with backoff. Low priority -- current behavior just logs and continues. |
 
