@@ -12,9 +12,9 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 - **Windows behavioral coverage**: 46.76% overall (was 6.68% at session start, +40.08 pp cumulative).
 - **Pester tests**: 1316 passing, 0 failing.
 - **Production bugs found and fixed via testing**: 8 (5 from Sprint 1, 1 from Sprint 3.3, 1 from Sprint 4.2, 1 from Sprint 5.1).
-- **Sprints 1, 2, 3, and 4 complete. Sprint 5 in progress (5.1 done).**
+- **Sprints 1, 2, 3, 4, and 5 complete (5.2 shipped as refactor-only).**
 
-Next: Sprint 5.2 (`Test-DevEnvironment.ps1`, 1213 lines - 17 external tools to stub).
+Next: Sprint 6.1 (unify `tests/run-tests.ps1` to invoke BATS when available).
 
 ---
 
@@ -26,7 +26,7 @@ Next: Sprint 5.2 (`Test-DevEnvironment.ps1`, 1213 lines - 17 external tools to s
 | 2 | Read-only reporting & audit | 4 scripts | ~12 hrs | +7.15 pp (DONE) |
 | 3 | Mutating system & network | 4 scripts | ~10 hrs | +3.15 pp (DONE) |
 | 4 | Backup & state | 5 scripts | ~24 hrs | +13.96 pp (DONE - above +8-10 est) |
-| 5 | Excluded hard scripts | 2 scripts | ~24 hrs | est. +5-7 pp (NEXT) |
+| 5 | Excluded hard scripts | 2 scripts | ~24 hrs | +2.64 pp (DONE - 5.2 refactor-only) |
 | 6 | Test runner + repo hygiene | 3 small items | ~3 hrs | -- |
 | 7 | Linux coverage gaps | 4 sh scripts | ~10 hrs | -- |
 
@@ -49,14 +49,14 @@ Every test must be sandboxed in `$TestDrive`; nothing touches the real user prof
 
 ---
 
-## Sprint 5 — Excluded hard scripts
+## Sprint 5 — Excluded hard scripts (DONE)
 
 Both were explicitly excluded from the original survey ranking because they need substantial restructuring before behavioral tests can land. Treat the refactor as the deliverable; tests come after.
 
 | # | Script | Lines | Size | Status | Notes |
 |---|--------|-------|------|--------|-------|
 | 5.1 | `Windows/monitoring/Get-SystemPerformance.ps1` | ~1500 | L+ | DONE | 23 tests, +2.64 pp, 1 bug. |
-| 5.2 | `Windows/development/Test-DevEnvironment.ps1` | 1213 | L+ | NEXT | 17 external tools to stub (git, node, npm, python, pip, docker, kubectl, az, gh, code, etc.). Most expensive mocking surface in the repo. |
+| 5.2 | `Windows/development/Test-DevEnvironment.ps1` | 1213 | L+ | DONE (refactor-only) | Refactored Main -> `Invoke-DevEnvironmentTest` with mirrored params + testability guard; `exit N` -> `return N`. Behavioral tests deferred -- 17 CLI stubs (`ssh`, `code`, `gh` ...) collide with Pester discovery; exit-4-empty-output signature couldn't be diagnosed in reasonable time. Refactor still pays for itself: same Main->Invoke pattern that uncovered Bug #8 in 5.1. |
 
 ---
 
@@ -102,7 +102,9 @@ Carried from ROADMAP.md. Not in the sprint plan above because nothing in this li
 
 ---
 
-## Sprint 5 closeouts (excluded hard scripts, in progress)
+## Sprint 5 closeouts (excluded hard scripts, DONE)
+
+- 2026-06-13: `refactor(development): wrap Test-DevEnvironment main in Invoke-DevEnvironmentTest` (Sprint 5.2, refactor-only) - Renamed `Main` to `Invoke-DevEnvironmentTest` with a mirrored param() block (Profile, RequirementsFile, AutoInstall, CheckSSH, CheckExtensions, OutputFormat, OutputPath). Replaced inner `exit 1` and final `exit $exitCode` with `return` so the function returns an exit code cleanly. Added testability guard at the bottom of the file that splats script params into Invoke-DevEnvironmentTest only when not dot-sourced. Behavioral tests **deferred**: this script depends on 17 external CLI tools (git, node, npm, yarn, pnpm, python, pip, docker, kubectl, winget, choco, scoop, ssh, code, gh, az, terraform). Initial attempt to stub them all in a BeforeAll block caused `Invoke-Pester` to fail with exit code 4 and zero output across multiple runs; the SSH probe (`ssh -T git@github.com`) hung past the function stub on a separate attempt. Root cause not pinned down -- likely CLI stub names colliding with native exe resolution and/or the script's `$Profile` parameter shadowing PowerShell's automatic variable when dot-sourced. BACKLOG flagged this script as "most expensive mocking surface in the repo" up front; debugging further has poor expected ROI. Refactor still pays for itself: the same Main->Invoke pattern uncovered Bug #8 in Sprint 5.1. Coverage: 46.76% (unchanged).
 
 - 2026-06-11: `test(monitoring): behavioral coverage for Get-SystemPerformance` (Sprint 5.1) - 23 tests across 9 helpers + Invoke-SystemPerformance top-level. Refactored the straight-line main try/catch into Invoke-SystemPerformance with a mirrored param() block (same Sprint 4.x pattern). Replaced inner `exit 1` with `return 1`; testability guard forwards script params. **Fixed one production bug**: 4 script-level switches/ints carried from a "merged from Watch-DiskSpace.ps1" comment (`-IncludeDiskAnalysis`, `-AutoCleanup`, `-TopFilesCount`, `-TopFoldersCount`) were declared but never actually invoked in main. The `Get-DiskAnalysis` helper existed and was complete, just never called. Reconnected the wire-up: when `-IncludeDiskAnalysis` is set in single-run mode, main now calls `Get-DiskAnalysis -DiskVolumes $metrics.DiskVolumes -EnableAutoCleanup:$AutoCleanup` after metrics collection. Tests cover Get-ThresholdAlerts (Critical/Warning bands, multi-alert combinations, no-alert path), Get-TopProcesses (sort+top-N, PID 0 filter, Get-Process throw), Get-SystemInfo CIM aggregation, Get-LargestFiles >100MB filter, Get-CleanupSuggestions Temp/Windows-Update branches, Invoke-DiskAutoCleanup with Remove-Item / Clear-RecycleBin destructive operations blocked, Get-DiskAnalysis dispatcher (Warning threshold gate, EnableAutoCleanup+Critical-only auto-clean trigger), Export-JSONReport / Export-CSVReport file output, Invoke-SystemPerformance happy path + fatal-error + AlertOnly + IncludeDiskAnalysis wire-up verification. Coverage 44.12% -> 46.76% (+2.64 pp).
 

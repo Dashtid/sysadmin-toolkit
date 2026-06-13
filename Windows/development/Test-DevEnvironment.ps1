@@ -991,7 +991,25 @@ function Export-HtmlReport {
 #endregion
 
 #region Main Execution
-function Main {
+function Invoke-DevEnvironmentTest {
+    [CmdletBinding()]
+    [OutputType([int])]
+    param(
+        [ValidateSet('WebDev', 'Python', 'DevOps', 'FullStack', 'Custom')]
+        [string]$Profile = 'FullStack',
+
+        [string]$RequirementsFile,
+
+        [switch]$AutoInstall,
+        [switch]$CheckSSH,
+        [switch]$CheckExtensions,
+
+        [ValidateSet('Console', 'HTML', 'JSON')]
+        [string]$OutputFormat = 'Console',
+
+        [string]$OutputPath
+    )
+
     Write-InfoMessage "Development Environment Validator v$($script:ScriptVersion)"
     Write-InfoMessage "Profile: $Profile"
     Write-Host ""
@@ -1003,7 +1021,7 @@ function Main {
         }
         else {
             Write-ErrorMessage "Requirements file not found: $RequirementsFile"
-            exit 1
+            return 1
         }
     }
     else {
@@ -1205,9 +1223,20 @@ function Main {
                 elseif ($outdatedCount -gt 0) { 1 }
                 else { 0 }
 
-    exit $exitCode
+    return $exitCode
 }
 
-# Run main function
-Main
+if ($MyInvocation.InvocationName -ne '.') {
+    $invokeArgs = @{
+        Profile          = $Profile
+        RequirementsFile = $RequirementsFile
+        AutoInstall      = $AutoInstall
+        CheckSSH         = $CheckSSH
+        CheckExtensions  = $CheckExtensions
+        OutputFormat     = $OutputFormat
+        OutputPath       = $OutputPath
+    }
+    $exitCode = Invoke-DevEnvironmentTest @invokeArgs
+    if ($exitCode -ne 0) { exit $exitCode }
+}
 #endregion
