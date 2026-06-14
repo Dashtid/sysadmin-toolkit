@@ -29,7 +29,7 @@ jobs:
         continue-on-error: true
 
       - name: Run TruffleHog
-        uses: trufflesecurity/trufflehog@fb74f38f7d00949e1ddd4e49e59ba5dd17f2bb46  # v3.88.1
+        uses: trufflesecurity/trufflehog@d411fff7b8879a62509f3fa98c07f247ac089a51  # v3.95.5
         continue-on-error: true
         with:
           path: ./
