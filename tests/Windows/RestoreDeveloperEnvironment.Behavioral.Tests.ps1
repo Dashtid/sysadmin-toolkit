@@ -197,20 +197,56 @@ Describe 'Restore-DeveloperEnvironment.ps1 - Restore-VsCodeExtension' {
         }
     }
 
-    Context 'When some extensions fail to install' {
+    Context 'When an extension fails on first attempt but succeeds on retry' {
         BeforeEach {
             Mock Get-Command { [PSCustomObject]@{ Name = 'code' } } -ParameterFilter { $Name -eq 'code' }
+            Mock Start-Sleep {}
             $script:CallCount = 0
             Mock code {
                 $script:CallCount++
+                # 2nd extension fails first try (call #2), succeeds on retry (call #3).
                 $global:LASTEXITCODE = if ($script:CallCount -eq 2) { 1 } else { 0 }
             }
         }
 
-        It 'Continues iterating past failures and reports partial count' {
+        It 'Counts the extension as installed after successful retry' {
+            $result = Restore-VsCodeExtension -ExtensionsItem $script:ExtItem
+            $result.Installed | Should -Be 3
+            $result.Total | Should -Be 3
+        }
+
+        It 'Invokes code once per extension plus one extra for the retry' {
+            $null = Restore-VsCodeExtension -ExtensionsItem $script:ExtItem
+            Should -Invoke code -Times 4
+        }
+
+        It 'Sleeps once between the failed attempt and the retry' {
+            $null = Restore-VsCodeExtension -ExtensionsItem $script:ExtItem
+            Should -Invoke Start-Sleep -Times 1
+        }
+    }
+
+    Context 'When an extension fails on both attempts' {
+        BeforeEach {
+            Mock Get-Command { [PSCustomObject]@{ Name = 'code' } } -ParameterFilter { $Name -eq 'code' }
+            Mock Start-Sleep {}
+            $script:CallCount = 0
+            Mock code {
+                $script:CallCount++
+                # 2nd extension: calls #2 (attempt 1) and #3 (retry) both fail.
+                $global:LASTEXITCODE = if ($script:CallCount -eq 2 -or $script:CallCount -eq 3) { 1 } else { 0 }
+            }
+        }
+
+        It 'Reports the extension as not installed and keeps iterating' {
             $result = Restore-VsCodeExtension -ExtensionsItem $script:ExtItem
             $result.Installed | Should -Be 2
             $result.Total | Should -Be 3
+        }
+
+        It 'Invokes code 4 times total (3 extensions + 1 retry for the failure)' {
+            $null = Restore-VsCodeExtension -ExtensionsItem $script:ExtItem
+            Should -Invoke code -Times 4
         }
     }
 

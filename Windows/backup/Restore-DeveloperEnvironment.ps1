@@ -209,6 +209,8 @@ function Restore-VsCodeExtension {
     $totalExtensions = ($extensions | Measure-Object).Count
     $installedCount = 0
 
+    $retryDelaySeconds = 5
+
     foreach ($extension in $extensions) {
         $extension = $extension.Trim()
         if ([string]::IsNullOrWhiteSpace($extension)) {
@@ -216,18 +218,35 @@ function Restore-VsCodeExtension {
         }
 
         if ($PSCmdlet.ShouldProcess($extension, "Install VSCode extension")) {
-            try {
-                Write-InfoMessage "Installing: $extension"
-                $null = & code --install-extension $extension --force 2>&1
-                if ($LASTEXITCODE -eq 0) {
-                    $installedCount++
+            $installed = $false
+            for ($attempt = 1; $attempt -le 2; $attempt++) {
+                try {
+                    if ($attempt -eq 1) {
+                        Write-InfoMessage "Installing: $extension"
+                    }
+                    else {
+                        Write-InfoMessage "Retrying ($retryDelaySeconds s backoff): $extension"
+                        Start-Sleep -Seconds $retryDelaySeconds
+                    }
+
+                    $null = & code --install-extension $extension --force 2>&1
+                    if ($LASTEXITCODE -eq 0) {
+                        $installed = $true
+                        break
+                    }
                 }
-                else {
-                    Write-WarningMessage "Failed to install: $extension"
+                catch {
+                    if ($attempt -eq 2) {
+                        Write-WarningMessage "Error installing $extension : $($_.Exception.Message)"
+                    }
                 }
             }
-            catch {
-                Write-WarningMessage "Error installing $extension : $($_.Exception.Message)"
+
+            if ($installed) {
+                $installedCount++
+            }
+            else {
+                Write-WarningMessage "Failed to install after retry: $extension"
             }
         }
     }

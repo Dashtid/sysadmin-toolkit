@@ -7,14 +7,14 @@ Sizing: **S** under an hour, **M** 1-3 hours, **L** half-day or more.
 
 ---
 
-## Current state (2026-06-11)
+## Current state (2026-06-14)
 
 - **Windows behavioral coverage**: 46.76% overall (was 6.68% at session start, +40.08 pp cumulative).
-- **Pester tests**: 1316 passing, 0 failing.
+- **Pester tests**: 1320 passing, 0 failing.
 - **Production bugs found and fixed via testing**: 8 (5 from Sprint 1, 1 from Sprint 3.3, 1 from Sprint 4.2, 1 from Sprint 5.1).
-- **Sprints 1, 2, 3, 4, 5 complete (5.2 shipped as refactor-only). Sprint 6.1 done.**
+- **Sprints 1, 2, 3, 4, 5 complete (5.2 shipped as refactor-only). Sprint 6.1 and 6.3 done.**
 
-Next: Sprint 6.2 (PR template, optional) and 6.3 (Restore-VsCodeExtension retry/backoff). Both low priority; can park here.
+Next: Sprint 6.2 (PR template, optional) -- decide whether single-author repo warrants one. Sprint 7 (Linux gaps) is the next substantive block of work; still uncommitted.
 
 ---
 
@@ -68,7 +68,7 @@ Small items carried over from the prior backlog.
 |---|------|------|-------|
 | 6.1 | Unify `tests/run-tests.ps1` to invoke BATS when available | S | DONE 2026-06-14. Added `-Linux` switch + auto-detect both runners when no flags. `bats --tap` per file with TAP plan-line parsing for the summary. Skips Linux with a warning when bats isn't on PATH (errors only when `-Linux` was explicit). |
 | 6.2 | `.github/PULL_REQUEST_TEMPLATE.md` (optional) | S | Toolkit has no PR template. Decide whether one would actually help (single-author repo, mostly direct commits) before adding. |
-| 6.3 | Add `Restore-VsCodeExtension` retry/backoff | M | When a vscode-marketplace install times out, retry once with backoff. Low priority -- current behavior just logs and continues. |
+| 6.3 | Add `Restore-VsCodeExtension` retry/backoff | M | DONE 2026-06-14. One retry per extension with a 5 s backoff; final "Failed to install after retry" log line on persistent failure. 4 new behavioral tests cover retry-success-on-second-attempt and retry-failure-on-both-attempts (Pester 1316 -> 1320). |
 
 ---
 
@@ -101,6 +101,12 @@ Carried from ROADMAP.md. Not in the sprint plan above because nothing in this li
 | Compliance reporting | 3-4 hr | From ROADMAP.md |
 
 ---
+
+## Sprint 6 closeouts (test runner + repo hygiene)
+
+- 2026-06-14: `feat(backup): retry once with 5 s backoff on vscode-extension install` (Sprint 6.3) - `Restore-VsCodeExtension` now wraps the `code --install-extension` call in a 2-attempt loop. First attempt logs "Installing: ..." as before; on non-zero `$LASTEXITCODE` (or thrown exception caught by the try block), the helper logs "Retrying (5 s backoff): ..." and `Start-Sleep -Seconds 5` before the second attempt. `$installedCount` only increments after a successful attempt; persistent failure logs "Failed to install after retry: ...". Behavior under success path is unchanged (still 1 invocation per extension). 4 new tests (net): retry-success context (3 tests -- count reflects retry success, code invoked Total+1 times, Start-Sleep invoked once) and retry-failure context (2 tests -- count reflects failure, code still invoked Total+1 times). Replaces the prior single "Continues iterating past failures" test. Coverage unchanged at 46.76% (this script was already covered in Sprint 0; the change is behavioral fidelity, not new coverage).
+
+- 2026-06-14: `chore(tests): unify run-tests.ps1 to also invoke BATS (Sprint 6.1)` (commit 2b1c504) - Added `-Linux` switch to `tests/run-tests.ps1` plus auto-detect when no flags are given (runs both Pester and BATS if both runners are available). BATS files are invoked individually with `bats --tap`; the TAP plan line is parsed to aggregate the per-file summary into the overall test totals. Skipping logic: when BATS is requested but `bats` is not on PATH, the script warns and continues for the auto-detect path, errors for explicit `-Linux`. No coverage change (test runner only).
 
 ## Sprint 5 closeouts (excluded hard scripts, DONE)
 
@@ -162,4 +168,4 @@ The current behavioral-testing push started 2026-06-05. Coverage went from 6.68%
 - 2026-05-25: `chore: remove dotfiles/claude-config + Windows/ssh, add CmdletBinding to 4 setup scripts` (commit 02a7709)
 
 ---
-**Last Updated**: 2026-06-10
+**Last Updated**: 2026-06-14
