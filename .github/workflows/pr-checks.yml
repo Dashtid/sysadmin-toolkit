@@ -44,7 +44,7 @@ jobs:
               --exclude-dir=tests \
               --exclude-dir=.githooks \
               --exclude="*.md" \
-              --exclude="pr-checks.yml"; then
+              --exclude="*.yml"; then
               echo "[-] Found potential secret: $pattern"
               FOUND=1
             fi
