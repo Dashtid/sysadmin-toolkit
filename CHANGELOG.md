@@ -6,6 +6,36 @@ not strictly adhere to semantic versioning (it is a personal toolkit, not a
 published library) but minor bumps signal new public surface and patch bumps
 signal bug fixes only.
 
+## [3.0.0] - 2026-06-14
+
+### Removed (ghost-code cull)
+
+Driven by a 2026-06-14 audit (web research + git archaeology) that found ~13 KLOC of production scripts and ~8 KLOC of tests defending behavior with no operational consumer on a single-user laptop. Most categories duplicated either native Windows tools (Task Manager, Event Viewer, `wsl.exe`, Settings) or the lab-server stack on q-lab (Prometheus/Grafana for monitoring, Velero for backup, k9s for Kubernetes). See [BACKLOG.md](BACKLOG.md) for the full rationale.
+
+- **Windows monitoring (entire category):** `Get-ApplicationHealth.ps1`, `Get-EventLogAnalysis.ps1`, `Get-SystemPerformance.ps1`, `Test-NetworkHealth.ps1`, `Watch-ServiceHealth.ps1` + corresponding tests + dir README.
+- **Windows backup (5 of 6):** `Backup-BrowserProfiles.ps1`, `Backup-UserData.ps1`, `Export-SystemState.ps1`, `Restore-DeveloperEnvironment.ps1`, `Test-BackupIntegrity.ps1` + corresponding tests. `Backup-DeveloperEnvironment.ps1` survives (snapshot before rebuild).
+- **Windows development (2 of 4):** `Test-DevEnvironment.ps1`, `Manage-WSL.ps1` + corresponding tests. `Manage-Docker.ps1` and `remote-development-setup.ps1` survive.
+- **Windows reporting:** `Get-SystemReport.ps1` + test + dir README.
+- **Windows security:** `Get-UserAccountAudit.ps1` + test + dir README.
+- **Windows network (1 of 2):** `Manage-VPN.ps1` + test. `Set-StaticIP.ps1` survives.
+- **Linux maintenance (3 of 4):** `log-cleanup.sh`, `restore-previous-state.sh`, `system-update.sh` + tests. `disk-cleanup.sh` survives.
+- **Linux monitoring:** `service-health-monitor.sh` + test + dir README (Grafana dashboards in this folder kept as reference).
+- **Linux docker:** `docker-cleanup.sh` + tests + dir README.
+- **Linux kubernetes:** `pod-health-monitor.sh` + tests + dir README.
+- **Linux security:** `security-hardening.sh` + test + dir README (security work lives in `defensive-toolkit`).
+- **Umbrella Pester tests:** `Backup.Tests.ps1`, `Monitoring.Tests.ps1`, `Tier2Scripts.Tests.ps1`, `Tier3Scripts.Tests.ps1`, `DeveloperEnvironment.Tests.ps1`. These pre-dated the per-script `*.Behavioral.Tests.ps1` files and were now redundant or referenced deleted scripts.
+
+### Changed
+
+- `README.md`, `QUICKSTART.md`, `BACKLOG.md`, `docs/ROADMAP.md` rewritten to reflect the post-cull scope.
+- Subdirectory READMEs (`Windows/backup`, `Windows/network`, `Windows/development`, `Linux/maintenance`, `Linux/monitoring`) updated with scope notes and surviving-script tables.
+- `tests/Linux/maintenance.bats` trimmed to cover only `disk-cleanup.sh` (was covering 4 scripts, 3 now deleted).
+
+### Policy
+
+- Cancelled Sprint 7 (Linux coverage gaps) — would have produced more ghost code.
+- New rule: any script that goes 6 months without a `fix:` commit triggered by real failure is a candidate for archival, not for additional test scaffolding.
+
 ## [2.3.3] - 2026-06-11
 
 ### Fixed

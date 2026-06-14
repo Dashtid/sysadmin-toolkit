@@ -13,17 +13,9 @@ setup() {
     [ -f "${LINUX_MAINTENANCE}/disk-cleanup.sh" ]
 }
 
-@test "system-update.sh exists" {
-    [ -f "${LINUX_MAINTENANCE}/system-update.sh" ]
-}
-
 # Test script permissions
 @test "disk-cleanup.sh is executable" {
     [ -x "${LINUX_MAINTENANCE}/disk-cleanup.sh" ]
-}
-
-@test "system-update.sh is executable" {
-    [ -x "${LINUX_MAINTENANCE}/system-update.sh" ]
 }
 
 # Test script syntax (bash -n checks syntax without executing)
@@ -31,17 +23,9 @@ setup() {
     bash -n "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-@test "system-update.sh has valid bash syntax" {
-    bash -n "${LINUX_MAINTENANCE}/system-update.sh"
-}
-
 # Test for proper shebang
 @test "disk-cleanup.sh has bash shebang" {
     head -1 "${LINUX_MAINTENANCE}/disk-cleanup.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
-}
-
-@test "system-update.sh has bash shebang" {
-    head -1 "${LINUX_MAINTENANCE}/system-update.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
 }
 
 # Test for no emojis (per CLAUDE.md rules)
@@ -50,18 +34,9 @@ setup() {
     ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-@test "system-update.sh contains no emojis" {
-    # Check for common emoji byte sequences (UTF-8 emoji range)
-    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/system-update.sh"
-}
-
 # Test for ASCII markers [+] [-] [i] [!]
 @test "disk-cleanup.sh uses ASCII markers" {
     grep -q '\[\+\]\|\[-\]\|\[i\]\|\[!\]' "${LINUX_MAINTENANCE}/disk-cleanup.sh"
-}
-
-@test "system-update.sh uses ASCII markers" {
-    grep -q '\[\+\]\|\[-\]\|\[i\]\|\[!\]' "${LINUX_MAINTENANCE}/system-update.sh"
 }
 
 # Test for no hardcoded credentials
@@ -69,115 +44,32 @@ setup() {
     ! grep -i "password=" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-@test "system-update.sh contains no API keys" {
-    ! grep -i "api[_-]\?key=" "${LINUX_MAINTENANCE}/system-update.sh"
-}
-
 # Test for error handling
 @test "disk-cleanup.sh has error handling" {
     grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-@test "system-update.sh has error handling" {
-    grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/system-update.sh"
-}
-
 # Test for logging approach (either functions or colored echo)
-@test "scripts have logging approach" {
-    # Check for logging functions OR colored echo output
+@test "disk-cleanup.sh has logging approach" {
     grep -q "^log()\|^info()\|^error()\|^warning()\|echo -e.*\[" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-# Test for sudo checks where needed
-@test "scripts check for appropriate privileges" {
-    grep -q "EUID\|whoami\|sudo" "${LINUX_MAINTENANCE}/system-update.sh"
-}
-
-# Test script help output (dry run)
-@test "disk-cleanup.sh accepts --help flag" {
-    run bash -c "grep -q '\-\-help\|-h' '${LINUX_MAINTENANCE}/disk-cleanup.sh'"
-    [ "$status" -eq 0 ] || skip "Script doesn't implement --help"
-}
-
-# Test for safe rm commands (should use -i or -I or have confirmation)
-@test "scripts use safe rm operations" {
+# Test for safe rm commands (should use confirmation or DRY_RUN guard)
+@test "disk-cleanup.sh uses safe rm operations" {
     if grep -q "rm -rf" "${LINUX_MAINTENANCE}/disk-cleanup.sh"; then
-        # If using rm -rf, should have safety checks or confirmation
         grep -q "read.*confirm\|--force\|DRY_RUN" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
     else
-        # No rm -rf found, which is safe
         true
     fi
 }
 
-# Test for apt/yum/dnf update patterns
-@test "system-update.sh uses apt or yum/dnf" {
-    grep -q "apt.*update\|yum.*update\|dnf.*update" "${LINUX_MAINTENANCE}/system-update.sh"
-}
-
-# Test for cleanup of package caches
+# Test for cleanup of package manager caches
 @test "disk-cleanup.sh cleans package manager caches" {
     grep -q "apt.*clean\|apt.*autoclean\|apt.*autoremove\|yum.*clean" "${LINUX_MAINTENANCE}/disk-cleanup.sh"
 }
 
-# ============================================================================
-# LOG-CLEANUP.SH TESTS
-# ============================================================================
-
-@test "log-cleanup.sh exists" {
-    [ -f "${LINUX_MAINTENANCE}/log-cleanup.sh" ]
-}
-
-@test "log-cleanup.sh is executable" {
-    [ -x "${LINUX_MAINTENANCE}/log-cleanup.sh" ]
-}
-
-@test "log-cleanup.sh has valid bash syntax" {
-    bash -n "${LINUX_MAINTENANCE}/log-cleanup.sh"
-}
-
-@test "log-cleanup.sh has bash shebang" {
-    head -1 "${LINUX_MAINTENANCE}/log-cleanup.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
-}
-
-@test "log-cleanup.sh contains no emojis" {
-    # Check for common emoji byte sequences (UTF-8 emoji range)
-    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/log-cleanup.sh"
-}
-
-@test "log-cleanup.sh has error handling" {
-    grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/log-cleanup.sh"
-}
-
-@test "log-cleanup.sh targets log files" {
-    grep -q "/var/log\|\.log\|journalctl" "${LINUX_MAINTENANCE}/log-cleanup.sh"
-}
-
-# ============================================================================
-# RESTORE-PREVIOUS-STATE.SH TESTS
-# ============================================================================
-
-@test "restore-previous-state.sh exists" {
-    [ -f "${LINUX_MAINTENANCE}/restore-previous-state.sh" ]
-}
-
-@test "restore-previous-state.sh is executable" {
-    [ -x "${LINUX_MAINTENANCE}/restore-previous-state.sh" ]
-}
-
-@test "restore-previous-state.sh has valid bash syntax" {
-    bash -n "${LINUX_MAINTENANCE}/restore-previous-state.sh"
-}
-
-@test "restore-previous-state.sh has bash shebang" {
-    head -1 "${LINUX_MAINTENANCE}/restore-previous-state.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
-}
-
-@test "restore-previous-state.sh contains no emojis" {
-    # Check for common emoji byte sequences (UTF-8 emoji range)
-    ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/restore-previous-state.sh"
-}
-
-@test "restore-previous-state.sh has error handling" {
-    grep -q "set -e\|set -u\|set -o pipefail\|trap" "${LINUX_MAINTENANCE}/restore-previous-state.sh"
+# Test for --help flag support
+@test "disk-cleanup.sh accepts --help flag" {
+    run bash -c "grep -q '\-\-help\|-h' '${LINUX_MAINTENANCE}/disk-cleanup.sh'"
+    [ "$status" -eq 0 ] || skip "Script does not implement --help"
 }
