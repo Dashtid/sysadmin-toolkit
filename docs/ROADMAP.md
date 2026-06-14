@@ -1,113 +1,51 @@
 # Roadmap
 
-Future enhancements for Windows & Linux Sysadmin Toolkit.
+Strategic direction for the Windows & Linux Sysadmin Toolkit.
 
-## Status Summary
+> **2026-06-14:** this document was rewritten after the ghost-code cull. The pre-cull Tier 1-5 structure (Monitoring / Backup / Network / Cloud / Observability) no longer reflects the codebase. See [BACKLOG.md](../BACKLOG.md) for the audit summary and rationale.
 
-| Tier | Focus | Status | Completed |
-|------|-------|--------|-----------|
-| 1 | Core Monitoring | Complete | 2025-11-30 |
-| 2 | Backup & Recovery | Complete | 2025-11-30 |
-| 3 | Network & Troubleshooting | Complete | 2025-11-30 |
-| 4 | Cloud & Advanced | Pending | - |
-| 5 | Observability & DevEx | Complete | 2025-12-26 |
+## Scope
 
-**Windows Completion**: ~90% | **Linux Scope**: Server-focused subset (see [Linux Coverage](#linux-coverage) below)
+The toolkit deliberately does **not** try to cover everything a sysadmin might do. It covers the gaps in the author's existing stack:
 
----
+- **Native Windows tools** already cover monitoring (Task Manager, Performance Monitor, Reliability Monitor, Event Viewer), backup (File History/OneDrive), VPN (OpenVPN GUI), WSL (`wsl.exe`), and network audit (Settings).
+- **The lab server (q-lab)** covers operational monitoring (Prometheus + Grafana), backups (Velero + etcd snapshots to q-backup), Kubernetes (k9s + `kubectl`), and Docker (`docker system prune`). See [`~/.claude/docs/INFRASTRUCTURE.md`](../../../.claude/docs/INFRASTRUCTURE.md).
+- **A separate repo (`defensive-toolkit`)** handles Linux security hardening.
 
-## Completed Features
+What's left for this toolkit:
 
-### Monitoring (Tier 1)
-- Get-SystemPerformance.ps1 - CPU, RAM, disk, network with Prometheus export
-- Watch-ServiceHealth.ps1 - Auto-restart failed services
-- Get-EventLogAnalysis.ps1 - Security and error log analysis
-- Get-ApplicationHealth.ps1 - Crash detection, version tracking
+| Area | Why it's here |
+|------|---------------|
+| Windows first-time setup | Re-imaging happens; package lists need to survive |
+| Weekly Windows update automation | One scheduled task with retry/exclude logic |
+| Pre-rebuild dev-environment snapshot | OneDrive doesn't sync VSCode/Terminal/Git/SSH configs the way I want |
+| Docker Desktop convenience helper | Wraps the 5 things I actually do with Docker Desktop |
+| One-shot static IP | Settings UI is fine, but scripted is easier when I'm setting up a fresh box |
+| Common-issue repair | DNS/network/Windows Update fix-it routines I've needed enough times to script |
+| q-lab GPU exporter | Prometheus doesn't expose NVIDIA metrics by default |
+| q-lab disk cleanup | Wraps APT cache + journal + Docker leftover cleanup in one safe `--whatif`-aware command |
+| Headless Ubuntu provisioning | First-boot setup for q-lab-shaped servers |
 
-### Backup & Recovery (Tier 2)
-- Backup-UserData.ps1 - Documents, desktop, downloads
-- Backup-BrowserProfiles.ps1 - Chrome, Firefox, Edge, Brave
-- Export-SystemState.ps1 - Drivers, registry, network, services
-- Test-BackupIntegrity.ps1 - Validation and test restore
-- Backup-DeveloperEnvironment.ps1 - VSCode, Terminal, Git, SSH
-- Restore-DeveloperEnvironment.ps1 - Manifest-based restore
+## Active initiatives
 
-### Network & Troubleshooting (Tier 3)
-- Test-NetworkHealth.ps1 - Connectivity, DNS, port testing
-- Manage-VPN.ps1 - VPN connection management
-- Repair-CommonIssues.ps1 - DNS, network, Windows Update fixes
+See [BACKLOG.md](../BACKLOG.md) for the tactical list. In strategic terms:
 
-### Observability (Tier 5)
-- Export-PrometheusMetrics - CommonFunctions.psm1 function
-- Prometheus output format in Get-SystemPerformance.ps1
+1. **Shrink the survivors** — `system-updates.ps1`, `Manage-Docker.ps1`, `Repair-CommonIssues.ps1`, `Set-StaticIP.ps1` are all 2-10x larger than they need to be. The audit recommended specific LOC targets; trim against those.
+2. **Replace `fresh-windows-setup.ps1` with a `winget configure` YAML** — declarative configuration is now the Microsoft-supported path; the bespoke setup script can become ~200 LOC of YAML plus thin wrappers around `export-current-packages` / `install-from-exported-packages`.
 
-### Maintenance
-- Install-SystemUpdatesTask.ps1 - Register system-updates.ps1 as a scheduled task
+## Not planned
 
-### Linux Scripts
-- security-hardening.sh - SSH, firewall, kernel hardening
-- service-health-monitor.sh - Service monitoring with Prometheus
-- docker-cleanup.sh - Image cleanup with retention
-- nvidia-gpu-exporter.sh - GPU metrics for Prometheus
+| Initiative | Why not |
+|------------|---------|
+| Re-adding monitoring/reporting/security tiers | q-lab Prometheus stack + defensive-toolkit already cover this. Single-user laptop monitoring has no consumer. |
+| Re-adding full backup tier | OneDrive + browser sync + Velero (on q-lab) cover this. Single-user laptop backups duplicate consumer SaaS. |
+| Linux parity with Windows | Linux scope is intentionally narrow: GPU exporter, disk cleanup, headless server setup. Everything else lives in the q-lab stack or in `defensive-toolkit`. |
+| Cloud (Azure/AWS) wrappers | Each cloud has its own CLI/SDK; wrapping them in PowerShell adds maintenance burden without value. |
+| "Behavioral coverage" sprints for scripts with no usage signal | The 2026-06-14 cull deleted exactly this category of work. New policy: a script with no `fix:` commit from real failure in 6 months is a candidate for archival, not test scaffolding. |
+
+## Test policy
+
+Tests cover what survives. The ratio target is **smoke tests for the setup scripts** (they DO run on fresh machines) and **unit tests for the lib modules** (CommonFunctions / ErrorHandling / common-functions.sh are sourced everywhere). The pre-cull 0.65 test:prod ratio was a symptom — not a goal.
 
 ---
-
-## Linux Coverage
-
-The Linux side is intentionally narrower than Windows: it targets headless server use (q-lab), not desktop workstations. Windows-only categories below are out of scope unless explicitly added to the backlog.
-
-| Category | Windows | Linux | Status |
-|----------|---------|-------|--------|
-| Monitoring | 5 scripts | 1 script (service-health) | Partial - K8s/GPU exporters cover specific needs |
-| Maintenance | 2 scripts | 3 scripts (system-update, log-cleanup, restore) | At parity |
-| Backup | 5 scripts | 0 scripts | Windows-only by design (browser, dev env) |
-| Development | 3 scripts | 0 scripts | Windows-only by design |
-| Reporting | 1 script | 0 scripts | Gap - candidate for backlog |
-| Troubleshooting | 1 script | 0 scripts | Gap - candidate for backlog |
-| Network | 2 scripts | 0 scripts | Gap - candidate for backlog |
-| Security | 1 script | 1 script (security-hardening) | At parity |
-| First-time-setup | 4 scripts | 1 script (headless-server-setup) | At parity for server scope |
-| Docker | (via Manage-Docker) | docker-cleanup | At parity |
-| Kubernetes | (none) | 2 scripts (pod-health, pvc) | Linux-only by design |
-| GPU | (none) | nvidia-gpu-exporter | Linux-only by design |
-
-**Realistic gaps**: Linux-side reporting, troubleshooting, and network scripts. Tracked in `BACKLOG.md` under "Linux coverage gaps".
-
----
-
-## Pending Features (Tier 4)
-
-### Cloud Integration
-| Feature | Effort | Priority |
-|---------|--------|----------|
-| Azure resource management | 4-5 hours | Low |
-| AWS resource management | 4-5 hours | Low |
-| OneDrive sync automation | 2-3 hours | Low |
-
-### Advanced Reporting
-| Feature | Effort | Priority |
-|---------|--------|----------|
-| System change log tracker | 4-5 hours | Low |
-| Configuration drift detection | 3-4 hours | Low |
-| Compliance reporting | 3-4 hours | Low |
-
----
-
-## Integration Points
-
-New scripts should integrate with:
-- **CommonFunctions.psm1** - Logging, admin checks, Prometheus export
-- **ErrorHandling.psm1** - Contextual errors, retry logic
-- **common-functions.sh** - Bash logging, validation, metrics
-
----
-
-## Test Coverage
-
-| Platform | Files | Tests |
-|----------|-------|-------|
-| Windows (Pester) | 9 | 800+ |
-| Linux (BATS) | 5 | 200+ |
-
----
-**Last Updated**: 2026-05-27
+**Last Updated**: 2026-06-14

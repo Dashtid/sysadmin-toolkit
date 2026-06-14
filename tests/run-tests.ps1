@@ -1,8 +1,10 @@
 # Test Runner Script
-# Automatically runs tests with appropriate Pester version
+# Runs Pester (Windows) and BATS (Linux) tests. Auto-detects which runners
+# are available; skip-with-warning rather than error when one is missing.
 
 param(
     [switch]$Windows,
+    [switch]$Linux,
     [switch]$UpdatePester
 )
 
@@ -11,104 +13,158 @@ function Write-Success { param([string]$Message) Write-Host "[+] $Message" -Fore
 function Write-Warning { param([string]$Message) Write-Host "[!] $Message" -ForegroundColor Yellow }
 function Write-Error { param([string]$Message) Write-Host "[-] $Message" -ForegroundColor Red }
 
-# Check Pester installation
-$PesterModule = Get-Module -ListAvailable -Name Pester | Sort-Object Version -Descending | Select-Object -First 1
-
-if (!$PesterModule) {
-    Write-Error "Pester is not installed"
-    Write-Info "Install Pester with: Install-Module -Name Pester -Force -Scope CurrentUser"
-    exit 1
-}
-
-$PesterVersion = $PesterModule.Version
-Write-Info "Pester version: $PesterVersion"
-
-if ($PesterVersion.Major -lt 5) {
-    Write-Warning "Pester v$PesterVersion detected - Tests are designed for Pester v5+"
-    Write-Info "To update Pester:"
-    Write-Info "  1. Close all PowerShell windows except this one"
-    Write-Info "  2. Run: Install-Module -Name Pester -Force -Scope CurrentUser -SkipPublisherCheck"
-    Write-Info "  3. Restart PowerShell"
-    Write-Info ""
-
-    if ($UpdatePester) {
-        Write-Info "Attempting to update Pester..."
-        try {
-            Install-Module -Name Pester -Force -Scope CurrentUser -SkipPublisherCheck -AllowClobber
-            Write-Success "Pester updated. Please restart PowerShell and run tests again."
-            exit 0
-        }
-        catch {
-            Write-Error "Failed to update Pester: $($_.Exception.Message)"
-            Write-Info "Please update manually"
-            exit 1
-        }
-    }
-
-    Write-Warning "Running with limited test support for Pester v3/v4"
-    Write-Info "Some assertions may fail due to syntax differences"
-    Write-Info ""
-}
-
-# Run tests
 $ProjectRoot = Split-Path $PSScriptRoot -Parent
 
-if ($Windows) {
-    Write-Info "Running Windows tests..."
-    $TestPath = Join-Path $ProjectRoot "tests\Windows"
+# Determine which suites to run. No flags = both (whichever is available).
+$RunWindows = $Windows -or (-not $Windows -and -not $Linux)
+$RunLinux = $Linux -or (-not $Windows -and -not $Linux)
 
-    if ($PesterVersion.Major -ge 5) {
-        $Config = New-PesterConfiguration
-        $Config.Run.Path = $TestPath
-        $Config.Output.Verbosity = 'Detailed'
-        Invoke-Pester -Configuration $Config
+$WindowsTotal = 0
+$WindowsPassed = 0
+$WindowsFailed = 0
+$WindowsRan = $false
+
+$LinuxTotal = 0
+$LinuxPassed = 0
+$LinuxFailed = 0
+$LinuxRan = $false
+
+# ----- Windows (Pester) -----
+if ($RunWindows) {
+    $PesterModule = Get-Module -ListAvailable -Name Pester | Sort-Object Version -Descending | Select-Object -First 1
+
+    if (!$PesterModule) {
+        if ($Windows) {
+            Write-Error "Pester is not installed"
+            Write-Info "Install with: Install-Module -Name Pester -Force -Scope CurrentUser"
+            exit 1
+        }
+        else {
+            Write-Warning "Pester not installed -- skipping Windows tests"
+        }
     }
     else {
-        Invoke-Pester -Path $TestPath -Verbose
+        $PesterVersion = $PesterModule.Version
+        Write-Info "Pester version: $PesterVersion"
+
+        if ($PesterVersion.Major -lt 5) {
+            Write-Warning "Pester v$PesterVersion detected -- tests are designed for Pester v5+"
+
+            if ($UpdatePester) {
+                Write-Info "Attempting to update Pester..."
+                try {
+                    Install-Module -Name Pester -Force -Scope CurrentUser -SkipPublisherCheck -AllowClobber
+                    Write-Success "Pester updated. Please restart PowerShell and run tests again."
+                    exit 0
+                }
+                catch {
+                    Write-Error "Failed to update Pester: $($_.Exception.Message)"
+                    exit 1
+                }
+            }
+
+            Write-Warning "Running with limited test support for Pester v3/v4"
+        }
+
+        $TestPath = Join-Path $ProjectRoot "tests\Windows"
+        $TestFiles = Get-ChildItem -Path $TestPath -Filter "*.Tests.ps1"
+
+        Write-Info "Running Windows tests ($($TestFiles.Count) files)..."
+
+        foreach ($TestFile in $TestFiles) {
+            if ($PesterVersion.Major -ge 5) {
+                $Config = New-PesterConfiguration
+                $Config.Run.Path = $TestFile.FullName
+                $Config.Run.PassThru = $true
+                $Config.Output.Verbosity = 'Normal'
+                $Result = Invoke-Pester -Configuration $Config
+            }
+            else {
+                $Result = Invoke-Pester -Path $TestFile.FullName -PassThru
+            }
+
+            $WindowsTotal += $Result.TotalCount
+            $WindowsPassed += $Result.PassedCount
+            $WindowsFailed += $Result.FailedCount
+        }
+
+        $WindowsRan = $true
+    }
+}
+
+# ----- Linux (BATS) -----
+if ($RunLinux) {
+    $BatsCmd = Get-Command bats -ErrorAction SilentlyContinue
+
+    if (!$BatsCmd) {
+        if ($Linux) {
+            Write-Error "bats is not installed or not on PATH"
+            Write-Info "Install on Debian/Ubuntu: sudo apt install bats"
+            Write-Info "Install on macOS: brew install bats-core"
+            Write-Info "On Windows: run under WSL or Git Bash with bats-core installed"
+            exit 1
+        }
+        else {
+            Write-Warning "bats not on PATH -- skipping Linux tests"
+        }
+    }
+    else {
+        $LinuxTestPath = Join-Path $ProjectRoot "tests\Linux"
+        $BatsFiles = Get-ChildItem -Path $LinuxTestPath -Filter "*.bats" -ErrorAction SilentlyContinue
+
+        if (!$BatsFiles -or $BatsFiles.Count -eq 0) {
+            Write-Warning "No .bats files found in $LinuxTestPath -- skipping Linux tests"
+        }
+        else {
+            Write-Info "Running Linux tests ($($BatsFiles.Count) files via $($BatsCmd.Source))..."
+
+            foreach ($BatsFile in $BatsFiles) {
+                Write-Info "Running $($BatsFile.Name)..."
+                # bats prints TAP; parse "ok N" / "not ok N" / "1..N" lines for counts.
+                $Output = & bats --tap $BatsFile.FullName 2>&1
+                $Output | ForEach-Object { Write-Host $_ }
+
+                $PlanLine = $Output | Where-Object { $_ -match '^1\.\.\d+$' } | Select-Object -First 1
+                $OkLines = @($Output | Where-Object { $_ -match '^ok \d+' })
+                $NotOkLines = @($Output | Where-Object { $_ -match '^not ok \d+' })
+
+                if ($PlanLine -and $PlanLine -match '^1\.\.(\d+)$') {
+                    $LinuxTotal += [int]$Matches[1]
+                }
+                else {
+                    $LinuxTotal += ($OkLines.Count + $NotOkLines.Count)
+                }
+                $LinuxPassed += $OkLines.Count
+                $LinuxFailed += $NotOkLines.Count
+            }
+
+            $LinuxRan = $true
+        }
+    }
+}
+
+# ----- Summary -----
+if ($WindowsRan -or $LinuxRan) {
+    Write-Info ""
+    Write-Info "===== TEST SUMMARY ====="
+
+    if ($WindowsRan) {
+        Write-Info "Windows (Pester): $WindowsTotal total, $WindowsPassed passed, $WindowsFailed failed"
+    }
+    if ($LinuxRan) {
+        Write-Info "Linux (BATS):     $LinuxTotal total, $LinuxPassed passed, $LinuxFailed failed"
+    }
+
+    $GrandFailed = $WindowsFailed + $LinuxFailed
+    if ($GrandFailed -gt 0) {
+        Write-Error "Total failures: $GrandFailed"
+        exit 1
+    }
+    else {
+        Write-Success "All tests passed"
     }
 }
 else {
-    # Run all tests
-    Write-Info "Running all Windows tests..."
-    Write-Info ""
-
-    $TestFiles = Get-ChildItem -Path (Join-Path $ProjectRoot "tests\Windows") -Filter "*.Tests.ps1"
-
-    $TotalTests = 0
-    $PassedTests = 0
-    $FailedTests = 0
-
-    foreach ($TestFile in $TestFiles) {
-        Write-Info "Running $($TestFile.Name)..."
-
-        if ($PesterVersion.Major -ge 5) {
-            $Config = New-PesterConfiguration
-            $Config.Run.Path = $TestFile.FullName
-            $Config.Run.PassThru = $true
-            $Config.Output.Verbosity = 'Normal'
-            $Result = Invoke-Pester -Configuration $Config
-
-            $TotalTests += $Result.TotalCount
-            $PassedTests += $Result.PassedCount
-            $FailedTests += $Result.FailedCount
-        }
-        else {
-            $Result = Invoke-Pester -Path $TestFile.FullName -PassThru
-
-            $TotalTests += $Result.TotalCount
-            $PassedTests += $Result.PassedCount
-            $FailedTests += $Result.FailedCount
-        }
-    }
-
-    Write-Info ""
-    Write-Info "===== TEST SUMMARY ====="
-    Write-Info "Total: $TotalTests"
-    Write-Success "Passed: $PassedTests"
-    if ($FailedTests -gt 0) {
-        Write-Error "Failed: $FailedTests"
-    }
-    else {
-        Write-Success "Failed: 0"
-    }
+    Write-Warning "No test runners available -- nothing ran"
+    exit 1
 }

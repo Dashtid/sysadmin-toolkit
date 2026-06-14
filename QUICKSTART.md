@@ -19,7 +19,7 @@ SSH_KEY_PATH=~/.ssh/id_ed25519
 
 ## 2. Run Your First Script
 
-### Windows: Schedule Weekly Updates
+### Windows: Schedule weekly updates
 
 ```powershell
 # From an elevated pwsh
@@ -28,34 +28,43 @@ SSH_KEY_PATH=~/.ssh/id_ed25519
 Start-ScheduledTask -TaskName SystemUpdates
 ```
 
-### Windows: System Monitoring
+### Windows: Snapshot the dev environment before a rebuild
 
 ```powershell
-.\Windows\monitoring\Get-SystemPerformance.ps1 -OutputFormat HTML
-.\Windows\monitoring\Test-NetworkHealth.ps1
+.\Windows\backup\Backup-DeveloperEnvironment.ps1 -BackupPath "D:\DevBackups"
 ```
 
-### Linux: Maintenance
+### Windows: Provision a fresh machine
+
+```powershell
+.\Windows\first-time-setup\fresh-windows-setup.ps1
+# Then restore your previously-exported package list:
+.\Windows\first-time-setup\install-from-exported-packages.ps1 -Manifest .\Windows\package-lists\my-packages.json
+```
+
+### Linux: Maintenance on q-lab
 
 ```bash
-./Linux/maintenance/system-updates.sh --whatif
-./Linux/docker/docker-cleanup.sh --keep-versions 2
+./Linux/maintenance/disk-cleanup.sh --whatif
+./Linux/server/headless-server-setup.sh
 ```
 
 ## 3. Common Commands
 
 | Task | Command |
 |------|---------|
-| Backup user data | `.\Windows\backup\Backup-UserData.ps1 -Destination "D:\Backups"` |
-| Check dev environment | `.\Windows\development\Test-DevEnvironment.ps1` |
-| Fix common issues | `.\Windows\troubleshooting\Repair-CommonIssues.ps1 -Diagnose` |
-| Run tests | `.\tests\run-tests.ps1` |
+| Run all tests | `.\tests\run-tests.ps1` |
+| Snapshot dev env | `.\Windows\backup\Backup-DeveloperEnvironment.ps1` |
+| Schedule weekly updates | `.\Windows\maintenance\Install-SystemUpdatesTask.ps1` |
+| Repair DNS/network | `.\Windows\troubleshooting\Repair-CommonIssues.ps1` |
+| Clean Docker images | `.\Windows\development\Manage-Docker.ps1 -Cleanup` |
 
 ## 4. Documentation
 
 | Document | Purpose |
 |----------|---------|
 | [README.md](README.md) | Full script listing |
+| [BACKLOG.md](BACKLOG.md) | What's planned, what was killed |
 | [SECURITY.md](SECURITY.md) | Security best practices |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Coding standards |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues |

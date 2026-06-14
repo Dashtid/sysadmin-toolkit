@@ -34,7 +34,9 @@ Describe "nvidia-gpu-exporter.sh - Script Quality" {
         }
 
         It "Checks for nvidia-smi availability" {
-            $ScriptContent | Should -Match 'command\s+-v\s+nvidia-smi'
+            # Either the raw `command -v nvidia-smi` form or the
+            # `check_command nvidia-smi` helper from common-functions.sh.
+            $ScriptContent | Should -Match '(command\s+-v\s+nvidia-smi|check_command\s+nvidia-smi)'
         }
 
         It "Queries GPU metrics" {
@@ -60,7 +62,9 @@ Describe "nvidia-gpu-exporter.sh - Script Quality" {
         }
 
         It "Uses centralized metrics directory" {
-            $ScriptContent | Should -Match 'METRICS_DIR="/var/lib/prometheus/node-exporter"'
+            # The script makes METRICS_DIR overridable via env var:
+            # METRICS_DIR="${METRICS_DIR:-/var/lib/prometheus/node-exporter}"
+            $ScriptContent | Should -Match 'METRICS_DIR=.*?/var/lib/prometheus/node-exporter'
         }
     }
 }

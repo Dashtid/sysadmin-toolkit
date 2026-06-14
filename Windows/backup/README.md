@@ -1,36 +1,24 @@
 # Windows Backup Scripts
 
-Backup, export, and validation utilities for Windows systems.
+Snapshot the developer environment (VSCode, Terminal, Git, SSH) before a machine rebuild.
+
+> **Scope note (2026-06-14):** the broader backup tier (`Backup-UserData`, `Backup-BrowserProfiles`, `Export-SystemState`, `Test-BackupIntegrity`, `Restore-DeveloperEnvironment`) was removed in the ghost-code cull. User data is covered by OneDrive sync; browser bookmarks/extensions sync natively; lab-server backups live on q-backup via Velero. See [BACKLOG.md](../../BACKLOG.md) for rationale.
 
 ## Scripts
 
 | Script | Purpose |
 |--------|---------|
-| [Backup-UserData.ps1](Backup-UserData.ps1) | Backup user documents, desktop, downloads with compression |
-| [Backup-BrowserProfiles.ps1](Backup-BrowserProfiles.ps1) | Backup browser bookmarks, extensions, settings |
-| [Export-SystemState.ps1](Export-SystemState.ps1) | Export drivers, registry, network, tasks, services |
-| [Test-BackupIntegrity.ps1](Test-BackupIntegrity.ps1) | Validate backup archives and test restores |
+| [Backup-DeveloperEnvironment.ps1](Backup-DeveloperEnvironment.ps1) | Snapshot VSCode settings, Windows Terminal config, Git config, SSH keys |
 
-## Quick Examples
+## Quick Example
 
 ```powershell
-# Backup user data
-.\Backup-UserData.ps1 -Destination "D:\Backups" -Compress
-
-# Export system configuration
-.\Export-SystemState.ps1 -Destination "D:\SystemState" -Include All -Compress
-
-# Validate a backup
-.\Test-BackupIntegrity.ps1 -BackupPath "D:\Backups\backup.zip" -TestType Full
-
-# Test restore to temp location
-.\Test-BackupIntegrity.ps1 -BackupPath "D:\Backups" -TestType Restore -RestoreTarget "C:\Temp\TestRestore" -CleanupAfterTest
+# Snapshot before a rebuild
+.\Backup-DeveloperEnvironment.ps1 -BackupPath "D:\DevBackups"
 ```
 
-## Output Formats
-
-All scripts support `-OutputFormat Console|HTML|JSON|All`.
+The script writes a manifest alongside the archive so the contents are self-describing.
 
 ---
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2026-06-14

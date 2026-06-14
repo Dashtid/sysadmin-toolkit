@@ -3,60 +3,38 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.0+-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![CI Tests](https://github.com/Dashtid/sysadmin-toolkit/workflows/CI%20-%20Automated%20Testing/badge.svg)](https://github.com/Dashtid/sysadmin-toolkit/actions/workflows/ci.yml)
-[![Security Scan](https://github.com/Dashtid/sysadmin-toolkit/workflows/Security%20Scanning/badge.svg)](https://github.com/Dashtid/sysadmin-toolkit/actions/workflows/security-scan.yml)
 
-Personal system administration scripts for Windows and Linux. SSH configuration, monitoring, backup, and maintenance automation.
+Personal system administration scripts for Windows and Linux. Narrow scope: fresh-machine setup, weekly update automation, a Docker convenience wrapper, and a GPU exporter for the lab server.
 
-> **Note**: Security hardening scripts are in [defensive-toolkit](https://github.com/Dashtid/defensive-toolkit).
+> **Note:** Security hardening lives in [defensive-toolkit](https://github.com/Dashtid/defensive-toolkit). Monitoring and backup happen on the lab server via Prometheus/Grafana and Velero, not here.
 
-## Quick Start
-
-```bash
-git clone https://github.com/Dashtid/sysadmin-toolkit.git
-cd sysadmin-toolkit
-cp .env.example .env.local  # Configure your values
-```
+> **2026-06-14:** the toolkit was deliberately culled. Monitoring/reporting/security/most-backup/VPN/WSL/Test-DevEnvironment scripts were removed because they duplicated native tools (Task Manager, Event Viewer, `wsl.exe`, Settings) or the lab-server stack. See [BACKLOG.md](BACKLOG.md) for the new scope and rationale.
 
 ## Windows Scripts
 
 | Category | Script | Purpose |
 |----------|--------|---------|
-| **Monitoring** | [Get-SystemPerformance.ps1](Windows/monitoring/) | CPU, RAM, disk, network metrics with Prometheus export |
-| | [Watch-ServiceHealth.ps1](Windows/monitoring/) | Service monitoring with auto-restart |
-| | [Test-NetworkHealth.ps1](Windows/monitoring/) | Connectivity, DNS, port testing |
-| | [Get-EventLogAnalysis.ps1](Windows/monitoring/) | Security and error log analysis |
-| | [Get-ApplicationHealth.ps1](Windows/monitoring/) | Application crash and version monitoring |
-| **Backup** | [Backup-UserData.ps1](Windows/backup/) | User documents with compression |
-| | [Backup-BrowserProfiles.ps1](Windows/backup/) | Browser bookmarks and settings |
-| | [Backup-DeveloperEnvironment.ps1](Windows/backup/) | VSCode, Terminal, Git, SSH configs |
-| | [Export-SystemState.ps1](Windows/backup/) | Drivers, registry, network, services |
-| | [Test-BackupIntegrity.ps1](Windows/backup/) | Backup validation and restore testing |
-| **Setup** | [fresh-windows-setup.ps1](Windows/first-time-setup/) | Automated Windows 11 setup |
-| | [export-current-packages.ps1](Windows/first-time-setup/) | Export Winget/Chocolatey packages |
-| **Development** | [Test-DevEnvironment.ps1](Windows/development/) | Validate dev tool installation |
-| | [Manage-Docker.ps1](Windows/development/) | Docker Desktop management |
-| | [Manage-WSL.ps1](Windows/development/) | WSL2 backup and configuration |
-| **Maintenance** | [system-updates.ps1](Windows/maintenance/) | Windows Update automation |
-| | [Install-SystemUpdatesTask.ps1](Windows/maintenance/) | Register system-updates.ps1 as a scheduled task |
-| **Troubleshooting** | [Repair-CommonIssues.ps1](Windows/troubleshooting/) | Fix DNS, network, update issues |
-| **Security** | [Get-UserAccountAudit.ps1](Windows/security/) | User and admin account audit |
-| **Network** | [Manage-VPN.ps1](Windows/network/) | VPN connection management |
-| **Reporting** | [Get-SystemReport.ps1](Windows/reporting/) | Comprehensive system report |
+| **Setup** | [fresh-windows-setup.ps1](Windows/first-time-setup/) | Automated Windows 11 setup (Winget + Chocolatey) |
+| | [export-current-packages.ps1](Windows/first-time-setup/) | Export installed Winget/Choco packages to a list |
+| | [install-from-exported-packages.ps1](Windows/first-time-setup/) | Restore an exported package list on a fresh box |
+| | [Compare-SoftwareInventory.ps1](Windows/first-time-setup/) | Diff two package inventories |
+| **Maintenance** | [system-updates.ps1](Windows/maintenance/) | Weekly Winget/Choco/Windows Update automation |
+| | [Install-SystemUpdatesTask.ps1](Windows/maintenance/) | Register `system-updates.ps1` as a scheduled task |
+| **Backup** | [Backup-DeveloperEnvironment.ps1](Windows/backup/) | Snapshot VSCode, Terminal, Git, SSH configs before a rebuild |
+| **Development** | [Manage-Docker.ps1](Windows/development/) | Docker Desktop start/stop/cleanup helper |
+| | [remote-development-setup.ps1](Windows/development/) | Configure SSH client for remote development |
+| **Network** | [Set-StaticIP.ps1](Windows/network/) | One-shot static IP/DNS/gateway helper |
+| **Troubleshooting** | [Repair-CommonIssues.ps1](Windows/troubleshooting/) | DNS, network, and Windows Update fix-it routines |
 
 ## Linux Scripts
 
+Scope is narrow on purpose: the lab server (q-lab) covers most operational needs via Prometheus/Grafana/Velero/k9s; the survivors here are the bits those tools don't cover.
+
 | Category | Script | Purpose |
 |----------|--------|---------|
-| **Monitoring** | [pod-health-monitor.sh](Linux/kubernetes/) | Kubernetes pod health and restart detection |
-| | [pvc-monitor.sh](Linux/kubernetes/) | PVC usage monitoring |
-| | [service-health-monitor.sh](Linux/monitoring/) | Service monitoring with alerts |
-| **Maintenance** | [system-updates.sh](Linux/maintenance/) | APT/Snap updates with rollback |
-| | [log-cleanup.sh](Linux/maintenance/) | Log rotation and cleanup |
-| | [restore-previous-state.sh](Linux/maintenance/) | System state restoration |
-| **Docker** | [docker-cleanup.sh](Linux/docker/) | Image cleanup with retention policy |
-| **GPU** | [nvidia-gpu-exporter.sh](Linux/gpu/) | NVIDIA GPU metrics for Prometheus |
-| **Security** | [security-hardening.sh](Linux/security/) | SSH, firewall, kernel hardening |
-| **Server** | [headless-server-setup.sh](Linux/server/) | Ubuntu server provisioning |
+| **GPU** | [nvidia-gpu-exporter.sh](Linux/gpu/) | NVIDIA GPU metrics for Prometheus (scraped by Grafana) |
+| **Maintenance** | [disk-cleanup.sh](Linux/maintenance/) | APT cache + journal + Docker leftover cleanup |
+| **Server** | [headless-server-setup.sh](Linux/server/) | Ubuntu server provisioning for a fresh q-lab-style box |
 
 ## Shared Modules
 
@@ -71,9 +49,10 @@ cp .env.example .env.local  # Configure your values
 | Document | Purpose |
 |----------|---------|
 | [QUICKSTART.md](QUICKSTART.md) | 5-minute setup guide |
+| [BACKLOG.md](BACKLOG.md) | Tactical work queue and post-cull scope |
 | [SECURITY.md](SECURITY.md) | Security policy and best practices |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Coding standards and PR process |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Feature roadmap and progress |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Strategic direction (post-cull) |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 
 ## Prerequisites
@@ -88,4 +67,4 @@ cp .env.example .env.local  # Configure your values
 MIT License - See [LICENSE](LICENSE)
 
 ---
-**Author**: David Dashti | **Version**: 2.3.0 | **Updated**: 2026-06-05
+**Author**: David Dashti | **Version**: 3.0.0 | **Updated**: 2026-06-14
