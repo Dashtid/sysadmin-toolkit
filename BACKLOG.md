@@ -20,14 +20,24 @@ The 2026-06-14 ghost-code audit (driven by web research + git archaeology) cut ~
 
 ## Active work
 
-| Item | Size | Notes |
-|------|------|-------|
-| Shrink `system-updates.ps1` (873 -> ~150 LOC) | M | The audit flagged this as kept-but-over-engineered. The 3 real `fix:` commits from June 2026 prove it's used; the surrounding ceremony can go. |
-| Shrink `Manage-Docker.ps1` (1198 -> ~100 LOC) | M | Keep the cleanup/start/stop helpers; drop everything else. Docker's own CLI covers most of it. |
-| Shrink `Repair-CommonIssues.ps1` (677 -> ~200 LOC) | M | Keep DNS/network/Windows-Update fixers; drop the catch-all. |
-| Shrink `Set-StaticIP.ps1` (298 -> ~30 LOC) | S | It's wrapping `netsh`/`Set-NetIPAddress`. 30 lines suffices. |
-| Replace `fresh-windows-setup.ps1` with a [`winget configure`](https://learn.microsoft.com/en-us/windows/package-manager/configuration/) YAML | M | YAML is now the standard. Keep export/install as thin wrappers around it. |
-| `.github/PULL_REQUEST_TEMPLATE.md` | S | Single-author repo, mostly direct commits — decide whether one would actually help before adding. Park unless useful. |
+**Nothing planned.** This is intentional, not a gap.
+
+The toolkit is in maintenance mode. What survives the cull either has a real consumer (the scheduled `system-updates.ps1` task, the q-lab Prometheus scrape of `nvidia-gpu-exporter.sh`) or sits dormant for occasional lifecycle events (fresh-machine re-image, dev-environment snapshot before a rebuild). Marginal maintenance cost is approximately zero unless something actually breaks.
+
+The temptation to add to this list — "shrink X", "refactor Y", "add tests for Z" — is the exact ghost-code pattern that drove the 2026-06-14 cull. Resist it.
+
+### What WOULD legitimately add work here
+
+- A `fix:` commit triggered by a real failure (something broke in actual use). Land the fix, document it, move on.
+- A repeated manual workaround that's worth scripting (the "I keep typing this command" signal).
+- An external dependency change that forces a real edit (Windows API change, choco package rename, etc.).
+- A genuinely new external trigger (new scheduled job, new alert).
+
+### What WOULD NOT
+
+- "It would be cleaner if..." → keep as-is.
+- "I should add a test for..." → not without a failure to anchor the test.
+- "I could rewrite this in fewer lines" → see [[feedback_no_speculative_test_coverage]] and the cull rationale below.
 
 ---
 
@@ -35,6 +45,9 @@ The 2026-06-14 ghost-code audit (driven by web research + git archaeology) cut ~
 
 | Item | Reason |
 |------|--------|
+| Shrinks: `system-updates.ps1` 873→150, `Manage-Docker.ps1` 1198→100, `Repair-CommonIssues.ps1` 677→200, `Set-StaticIP.ps1` 298→30 | These were tentatively planned in the cull PR but cancelled the same day on reflection. The scripts work. The LOC targets are aesthetic, not functional. Days of work for a personal-use script with no consumer asking for the cleanup. If one of these scripts genuinely needs a fix from real failure later, shrink as part of that fix — not as a standalone sprint. |
+| Replace `fresh-windows-setup.ps1` with `winget configure` YAML | Modern alternative is real, but the current bespoke script works and the trigger (re-imaging) happens every 1-3 years. Migration cost ≈ next-rebuild's setup-from-scratch cost. Defer until the next rebuild forces the choice. |
+| `.github/PULL_REQUEST_TEMPLATE.md` | Single-author repo, mostly direct commits. Adding ceremony for solo work doesn't help. |
 | Sprint 7 — Linux coverage gaps (`system-report.sh`, `repair-common-issues.sh`, `test-network-health.sh`, additional service-health monitor) | All would have been more ghost code. q-lab's existing Prometheus/k9s/journalctl/apt stack covers each gap. |
 | Tier 4 (Azure/AWS/OneDrive/change-log/drift-detection/compliance) | Carried from old ROADMAP; nothing in this list is load-bearing today and most fall into the same "duplicates a SaaS" pattern that drove the cull. |
 
