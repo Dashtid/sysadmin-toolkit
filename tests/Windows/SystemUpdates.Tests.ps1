@@ -435,6 +435,24 @@ Describe "system-updates.ps1 - Security and Best Practices" {
             $content | Should -Match 'notepadplusplus\.install'
         }
 
+        It "Excludes grype from 'choco upgrade all' (QMS-validated instrument must not drift)" {
+            $content = Get-Content $ScriptPath -Raw
+            # grype is the scanner behind post-market surveillance reports and is formally
+            # validated at a specific version (GD-032). An unattended upgrade would replace a
+            # validated instrument and invalidate records produced afterwards. If this test
+            # fails, do not "fix" it by deleting the assertion - upgrading grype is a
+            # revalidation decision.
+            $content | Should -Match 'versionPinned\s*=\s*"[^"]*\bgrype\b'
+        }
+
+        It "Does not pin syft (version is recorded per test execution, not frozen)" {
+            $content = Get-Content $ScriptPath -Raw
+            # syft's validation records whichever version was used, and every pipeline command
+            # pins the CycloneDX spec version, so syft may float. Guards against someone
+            # pinning it by analogy with grype and then wondering why it never updates.
+            $content | Should -Not -Match 'versionPinned\s*=\s*"[^"]*\bsyft\b'
+        }
+
         It "Uses ShouldProcess for destructive operations" {
             $content = Get-Content $ScriptPath -Raw
             $content | Should -Match "ShouldProcess"

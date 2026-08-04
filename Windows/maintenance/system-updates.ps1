@@ -603,7 +603,16 @@ function Update-Chocolatey {
             # Version-pinned packages: skip the upgrade-all sweep so manual pins hold.
             # kubernetes-cli is pinned to v1.34.x to stay within +/-1 of the K3s v1.33.5
             # server on q-lab; bump manually when q-lab K3s upgrades.
-            $versionPinned = "kubernetes-cli"
+            #
+            # grype is pinned to the version formally validated under the QMS (0.112.0, per
+            # GD-032 in the HMS software-validation record set). It is the scanner behind
+            # post-market surveillance reports, so an unattended upgrade would silently
+            # replace a validated instrument and invalidate records produced afterwards.
+            # Upgrading it is a revalidation decision, never a maintenance sweep.
+            # syft is deliberately NOT pinned: its version is recorded at each test
+            # execution rather than frozen, and every pipeline command pins the CycloneDX
+            # spec version (@1.6) so a syft upgrade cannot change the output format.
+            $versionPinned = "kubernetes-cli,grype"
 
             $chocoExcludes = "$wingetOwned,$versionPinned"
             $chocoOutput = & choco upgrade all -y --no-progress --except="'$chocoExcludes'" 2>&1
