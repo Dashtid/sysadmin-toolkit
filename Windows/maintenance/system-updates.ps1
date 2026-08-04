@@ -604,11 +604,17 @@ function Update-Chocolatey {
             # kubernetes-cli is pinned to v1.34.x to stay within +/-1 of the K3s v1.33.5
             # server on q-lab; bump manually when q-lab K3s upgrades.
             #
-            # grype is pinned to the version formally validated under the QMS (0.112.0, per
-            # GD-032 in the HMS software-validation record set). It is the scanner behind
-            # post-market surveillance reports, so an unattended upgrade would silently
-            # replace a validated instrument and invalidate records produced afterwards.
-            # Upgrading it is a revalidation decision, never a maintenance sweep.
+            # grype is the scanner behind post-market surveillance reports and is formally
+            # validated at version 0.112.0 (GD-032, HMS software-validation record set). An
+            # unattended upgrade would silently replace a validated instrument and invalidate
+            # records produced afterwards, so upgrading it is a revalidation decision, never a
+            # maintenance sweep.
+            # It is deliberately NOT installed via choco: the community feed does not retain
+            # arbitrary old versions (as of 2026-08 it offered 0.114.0 then 0.110.0, with no
+            # 0.112.0), so it cannot host a validated instrument at all. grype is installed by
+            # hand from the immutable GitHub release and checksum-verified by
+            # software-validation/scripts/verify-toolchain.ps1. This exclusion stays as a guard
+            # so a future 'choco install grype' cannot reintroduce a drifting second copy.
             # syft is deliberately NOT pinned: its version is recorded at each test
             # execution rather than frozen, and every pipeline command pins the CycloneDX
             # spec version (@1.6) so a syft upgrade cannot change the output format.
