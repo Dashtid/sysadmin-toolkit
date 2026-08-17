@@ -28,10 +28,14 @@ What's left for this toolkit:
 
 ## Active initiatives
 
-See [BACKLOG.md](../BACKLOG.md) for the tactical list. In strategic terms:
+**None. The toolkit is in maintenance mode** — this is deliberate, not a gap. See [BACKLOG.md](../BACKLOG.md) for the tactical list; its "Active work" section is empty by design.
 
-1. **Shrink the survivors** — `system-updates.ps1`, `Manage-Docker.ps1`, `Repair-CommonIssues.ps1`, `Set-StaticIP.ps1` are all 2-10x larger than they need to be. The audit recommended specific LOC targets; trim against those.
-2. **Replace `fresh-windows-setup.ps1` with a `winget configure` YAML** — declarative configuration is now the Microsoft-supported path; the bespoke setup script can become ~200 LOC of YAML plus thin wrappers around `export-current-packages` / `install-from-exported-packages`.
+Two initiatives were tentatively planned during the 2026-06-14 cull and **cancelled the same day on reflection** (they now live in BACKLOG's Cancelled list):
+
+1. **Shrink the survivors** — `system-updates.ps1`, `Manage-Docker.ps1`, `Repair-CommonIssues.ps1`, `Set-StaticIP.ps1` were candidates for aggressive LOC trims. The scripts work; the targets were aesthetic, not functional. If one needs a fix from real failure later, shrink as part of that fix — not as a standalone sprint.
+2. **Replace `fresh-windows-setup.ps1` with a `winget configure` YAML** — the declarative path is real, but the bespoke script works and its trigger (re-imaging) fires every 1-3 years. Deferred until the next rebuild forces the choice.
+
+The strategic test is the one BACKLOG codifies: a script that goes 6 months without a `fix:` commit from real failure is a candidate for archival, not for a refactor sprint.
 
 ## Not planned
 
