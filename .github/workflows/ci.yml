@@ -41,6 +41,13 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          # The hosted runner image no longer ships with PSGallery
+          # pre-registered, so Set-PSRepository fails outright with
+          # "No repository with the name 'PSGallery' was found".
+          # Register the defaults first when it is absent.
+          if (-not (Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue)) {
+            Register-PSRepository -Default
+          }
           Set-PSRepository PSGallery -InstallationPolicy Trusted
 
           $installed = Get-Module -ListAvailable -Name PSScriptAnalyzer |
@@ -205,6 +212,13 @@ jobs:
       - name: Install Pester
         shell: pwsh
         run: |
+          # The hosted runner image no longer ships with PSGallery
+          # pre-registered, so Set-PSRepository fails outright with
+          # "No repository with the name 'PSGallery' was found".
+          # Register the defaults first when it is absent.
+          if (-not (Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue)) {
+            Register-PSRepository -Default
+          }
           Set-PSRepository PSGallery -InstallationPolicy Trusted
 
           $installed = Get-Module -ListAvailable -Name Pester |
@@ -305,6 +319,13 @@ jobs:
       - name: Install Pester
         shell: pwsh
         run: |
+          # The hosted runner image no longer ships with PSGallery
+          # pre-registered, so Set-PSRepository fails outright with
+          # "No repository with the name 'PSGallery' was found".
+          # Register the defaults first when it is absent.
+          if (-not (Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue)) {
+            Register-PSRepository -Default
+          }
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module -Name Pester -MinimumVersion $env:PESTER_VERSION -Force -Scope CurrentUser
           Import-Module Pester -PassThru
