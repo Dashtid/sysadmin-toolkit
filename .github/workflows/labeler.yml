@@ -3,8 +3,6 @@ name: Auto Labeler
 on:
   pull_request:
     types: [opened, synchronize]
-  push:
-    branches: [main]
 
 jobs:
   label-pr:
@@ -88,63 +86,6 @@ jobs:
                 owner,
                 repo,
                 issue_number: prNumber,
-                labels: Array.from(labels)
-              });
-
-              core.info(`Applied labels: ${Array.from(labels).join(', ')}`);
-            }
-
-  label-issue:
-    name: Auto Label Issue
-    runs-on: ubuntu-latest
-    if: github.event_name == 'issues'
-
-    permissions:
-      contents: read
-      issues: write
-
-    steps:
-      - name: Auto label based on title/body
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const issue = context.payload.issue;
-            const title = issue.title.toLowerCase();
-            const body = (issue.body || '').toLowerCase();
-            const labels = new Set();
-
-            // Label logic based on keywords
-            if (title.includes('bug') || body.includes('bug')) {
-              labels.add('bug');
-            }
-
-            if (title.includes('feature') || title.includes('enhancement')) {
-              labels.add('enhancement');
-            }
-
-            if (title.includes('question') || title.includes('help')) {
-              labels.add('question');
-            }
-
-            if (title.includes('windows') || body.includes('windows')) {
-              labels.add('windows');
-            }
-
-            if (title.includes('linux') || body.includes('linux')) {
-              labels.add('linux');
-            }
-
-            if (title.includes('security') || body.includes('security')) {
-              labels.add('security');
-            }
-
-            // Apply labels
-            if (labels.size > 0) {
-              await github.rest.issues.addLabels({
-                owner,
-                repo,
-                issue_number: issue.number,
                 labels: Array.from(labels)
               });
 

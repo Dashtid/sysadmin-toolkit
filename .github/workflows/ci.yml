@@ -394,7 +394,12 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [windows-tests, linux-tests]
+    # All four, not just the two test jobs: windows-tests needs
+    # powershell-analysis and linux-tests needs bash-validation, so when a lint
+    # job fails its test job is SKIPPED rather than failed - and a summary that
+    # inspects only the test jobs reports success over a red pipeline. Exactly
+    # what happened 2026-08-17: PowerShell Analysis failure, Test Summary success.
+    needs: [powershell-analysis, bash-validation, windows-tests, linux-tests]
     if: always()
 
     steps:
@@ -425,3 +430,29 @@ jobs:
           if [ -f ./results/coverage-windows.xml ]; then
             echo "[+] Windows coverage report available" >> $GITHUB_STEP_SUMMARY
           fi
+
+      # The summary above is a report, not a gate. Without this step the job
+      # concludes success even when an upstream job failed, so requiring
+      # "Test Summary" as a branch-protection check would be false assurance.
+      - name: Gate on upstream results
+        run: |
+          set -euo pipefail
+          failed=0
+          for entry in \
+            "PowerShell Analysis=${{ needs.powershell-analysis.result }}" \
+            "Bash Validation=${{ needs.bash-validation.result }}" \
+            "Windows Pester Tests=${{ needs.windows-tests.result }}" \
+            "Linux Tests=${{ needs.linux-tests.result }}"; do
+            name="${entry%%=*}"; result="${entry##*=}"
+            if [ "$result" != "success" ]; then
+              # 'skipped' counts as a failure: these jobs are unconditional, so
+              # a skip means an upstream dependency failed and cascaded.
+              echo "::error::$name concluded '$result'"
+              failed=1
+            fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "[-] CI gate failed"
+            exit 1
+          fi
+          echo "[+] all CI jobs passed"

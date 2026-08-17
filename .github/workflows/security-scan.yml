@@ -249,3 +249,30 @@ jobs:
           echo "| License | ${{ needs.license-check.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "View details in the Security tab" >> $GITHUB_STEP_SUMMARY
+
+      # The summary above is a report, not a gate. Without this step the job
+      # concludes success even when a scanner failed, so requiring "Security
+      # Summary" as a branch-protection check would be false assurance.
+      # Deliberately gates on the four security-critical scanners only -
+      # markdown-links and powershell-modules-check stay advisory so external
+      # link rot and module drift cannot block a merge.
+      - name: Gate on scanner results
+        run: |
+          set -euo pipefail
+          failed=0
+          for entry in \
+            "Secret Detection=${{ needs.secret-detection.result }}" \
+            "CodeQL=${{ needs.codeql-analysis.result }}" \
+            "Trivy=${{ needs.trivy-scan.result }}" \
+            "License Compliance=${{ needs.license-check.result }}"; do
+            name="${entry%%=*}"; result="${entry##*=}"
+            if [ "$result" != "success" ]; then
+              echo "::error::$name concluded '$result'"
+              failed=1
+            fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            echo "[-] security gate failed"
+            exit 1
+          fi
+          echo "[+] all security scanners passed"
