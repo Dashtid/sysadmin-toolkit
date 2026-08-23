@@ -9,7 +9,7 @@ Strategic direction for the Windows & Linux Sysadmin Toolkit.
 The toolkit deliberately does **not** try to cover everything a sysadmin might do. It covers the gaps in the author's existing stack:
 
 - **Native Windows tools** already cover monitoring (Task Manager, Performance Monitor, Reliability Monitor, Event Viewer), backup (File History/OneDrive), VPN (OpenVPN GUI), WSL (`wsl.exe`), and network audit (Settings).
-- **The lab server (q-lab)** covers operational monitoring (Prometheus + Grafana), backups (Velero + etcd snapshots to q-backup), Kubernetes (k9s + `kubectl`), and Docker (`docker system prune`). See [`~/.claude/docs/INFRASTRUCTURE.md`](../../../.claude/docs/INFRASTRUCTURE.md).
+- **The lab server (q-lab)** covers operational monitoring (Prometheus + Grafana), backups (Velero + etcd snapshots to q-backup), Kubernetes (k9s + `kubectl`), and Docker (`docker system prune`). See `~/.claude/docs/INFRASTRUCTURE.md` (local machine notes, not part of this repo).
 - **A separate repo (`defensive-toolkit`)** handles Linux security hardening.
 
 What's left for this toolkit:
