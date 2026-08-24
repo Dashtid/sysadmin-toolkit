@@ -196,7 +196,7 @@ Exit Codes:
 
 Version: ${SCRIPT_VERSION} (${SCRIPT_DATE})
 Author: David Dashti
-Repository: https://github.com/Dashtid/windows-linux-sysadmin-toolkit
+Repository: https://github.com/Dashtid/sysadmin-toolkit
 EOF
 }
 

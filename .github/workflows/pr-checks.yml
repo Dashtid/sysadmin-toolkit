@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Nothing here writes anywhere - all five jobs only read the checkout.
+permissions:
+  contents: read
+
 jobs:
   # Check for sensitive data
   secret-scan:

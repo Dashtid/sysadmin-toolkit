@@ -8,8 +8,9 @@ Automated CI/CD for testing, security scanning, and PR management.
 |----------|---------|---------|
 | [ci.yml](ci.yml) | Push, PR | PSScriptAnalyzer, shellcheck, Pester, BATS tests |
 | [pr-checks.yml](pr-checks.yml) | PR | Secret scan, file size, YAML lint, TODO check |
-| [labeler.yml](labeler.yml) | PR, Issues | Auto-apply labels (windows, linux, tests, etc.) |
+| [labeler.yml](labeler.yml) | PR | Auto-apply labels (windows, linux, tests, etc.) |
 | [security-scan.yml](security-scan.yml) | Push, Weekly | CodeQL, Trivy, dependency review |
+| [release.yml](release.yml) | Tags `v*.*.*` | Build changelog + GitHub Release |
 
 ## Status Badges
 

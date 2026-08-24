@@ -72,7 +72,7 @@
     - 1.0.0 (2025-10-12): Initial example script creation
 
 .LINK
-    https://github.com/Dashtid/windows-linux-sysadmin-toolkit
+    https://github.com/Dashtid/sysadmin-toolkit
 
 .LINK
     docs/SCRIPT_TEMPLATE.md
