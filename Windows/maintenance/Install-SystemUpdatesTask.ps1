@@ -38,6 +38,15 @@
 .PARAMETER Force
     Replace an existing task with the same name. Without -Force, the script fails if the task exists.
 
+.PARAMETER WrapperVbs
+    Optional path to a GUI-subsystem VBScript launcher (e.g. run-hidden.vbs) that accepts
+    /script:"..." and /exe:"..." named arguments. When set, the task runs
+    wscript.exe <wrapper> instead of pwsh.exe directly. Why you would want this:
+    pwsh.exe is a CONSOLE-subsystem binary, so Task Scheduler launching it paints a
+    console window before -WindowStyle Hidden is ever parsed - the flash is the OS,
+    not the shell. A GUI-subsystem wrapper is the only genuinely silent launch. The
+    wrapper must propagate the child exit code (bWaitOnReturn) or LastTaskResult lies.
+
 .EXAMPLE
     .\Install-SystemUpdatesTask.ps1
     Registers SystemUpdates to run as the current user every Sunday at 10:00.
@@ -79,7 +88,10 @@ param(
     [switch]$SystemAccount,
 
     [Parameter()]
-    [switch]$Force
+    [switch]$Force,
+
+    [Parameter()]
+    [string]$WrapperVbs = ''
 )
 
 # Import CommonFunctions for consistent logging
@@ -120,9 +132,20 @@ if ($existing) {
 }
 
 # Build action
-$scriptArgs = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$updateScript`""
-if ($AutoReboot) { $scriptArgs += ' -AutoReboot' }
-$action = New-ScheduledTaskAction -Execute $pwshPath -Argument $scriptArgs -WorkingDirectory $PSScriptRoot
+if ($WrapperVbs) {
+    if (-not (Test-Path $WrapperVbs)) {
+        Write-ErrorMessage "WrapperVbs not found: $WrapperVbs"
+        exit 1
+    }
+    $wrapperArgs = '"{0}" /script:"{1}" /exe:"{2}"' -f $WrapperVbs, $updateScript, $pwshPath
+    if ($AutoReboot) { $wrapperArgs += ' /args:"-AutoReboot"' }
+    $action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument $wrapperArgs -WorkingDirectory $PSScriptRoot
+}
+else {
+    $scriptArgs = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$updateScript`""
+    if ($AutoReboot) { $scriptArgs += ' -AutoReboot' }
+    $action = New-ScheduledTaskAction -Execute $pwshPath -Argument $scriptArgs -WorkingDirectory $PSScriptRoot
+}
 
 # Build trigger
 $triggerTime = [DateTime]::Parse($Time)
