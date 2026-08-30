@@ -94,8 +94,6 @@ $RECYCLE.BIN/
 *.userosscache
 *.sln.docstates
 
-# Claude Code configuration (contains user-specific settings)
-.claude/
 
 # PowerShell profiles and local scripts
 Microsoft.PowerShell_profile.ps1
