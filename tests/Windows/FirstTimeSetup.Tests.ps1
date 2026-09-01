@@ -138,7 +138,7 @@ Describe "First-Time Setup Scripts" {
         }
     }
 
-    Context "No Emojis in Scripts (Per CLAUDE.md Rules)" {
+    Context "No Emojis in Scripts (Per Style Guide)" {
 
         It "Scripts don't contain common emojis" {
             $ScriptPath = Join-Path $WindowsScripts "export-current-packages.ps1"

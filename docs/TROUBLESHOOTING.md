@@ -8,7 +8,7 @@ Common issues and solutions.
 |-------|----------|
 | Keys not persisting after reboot | `Set-Service ssh-agent -StartupType Automatic; Start-Service ssh-agent; ssh-add ~/.ssh/id_ed25519` |
 | "Bad owner or permissions" | `icacls "$env:USERPROFILE\.ssh" /inheritance:r; icacls "$env:USERPROFILE\.ssh" /grant:r "$($env:USERNAME):(OI)(CI)F"` |
-| Claude Code can't access keys | Verify `$SSH_AUTH_SOCK` is `\\.\pipe\openssh-ssh-agent` |
+| Git client can't access keys | Verify `$SSH_AUTH_SOCK` is `\\.\pipe\openssh-ssh-agent` |
 | Passphrase prompt every time | `ssh-add -l` to check, then `ssh-add ~/.ssh/id_ed25519` |
 
 ## PowerShell

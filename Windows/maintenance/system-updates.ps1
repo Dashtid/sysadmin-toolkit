@@ -602,7 +602,7 @@ function Update-Chocolatey {
 
             # Version-pinned packages: skip the upgrade-all sweep so manual pins hold.
             # kubernetes-cli is pinned to v1.34.x to stay within +/-1 of the K3s v1.33.5
-            # server on q-lab; bump manually when q-lab K3s upgrades.
+            # server on the lab server; bump manually when its K3s upgrades.
             #
             # grype is the scanner behind post-market surveillance reports and is formally
             # validated at version 0.112.0 (GD-032, HMS software-validation record set). An

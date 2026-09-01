@@ -195,3 +195,7 @@ Linux/**/logs/
 /var/log/docker-cleanup/
 /var/log/log-cleanup/
 /var/log/gpu-monitor/
+
+# Local assistant/editor state - never tracked (it was in history once; see CHANGELOG)
+.claude/
+dotfiles/

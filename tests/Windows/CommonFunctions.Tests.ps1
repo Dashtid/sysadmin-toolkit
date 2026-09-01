@@ -340,7 +340,7 @@ Describe "CommonFunctions Module - Security and Best Practices" {
         }
     }
 
-    Context "No Emojis (CLAUDE.md Compliance)" {
+    Context "No Emojis (Style-Guide Compliance)" {
         It "Module does not contain emojis" {
             $content = Get-Content $ModulePath -Raw
             $content | Should -Not -Match '✅|❌|⚠️|ℹ️|🚀|📁|🔧'

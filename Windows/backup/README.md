@@ -2,7 +2,7 @@
 
 Snapshot the developer environment (VSCode, Terminal, Git, SSH) before a machine rebuild.
 
-> **Scope note (2026-06-14):** the broader backup tier (`Backup-UserData`, `Backup-BrowserProfiles`, `Export-SystemState`, `Test-BackupIntegrity`, `Restore-DeveloperEnvironment`) was removed in the ghost-code cull. User data is covered by OneDrive sync; browser bookmarks/extensions sync natively; lab-server backups live on q-backup via Velero. See [BACKLOG.md](../../BACKLOG.md) for rationale.
+> **Scope note (2026-06-14):** the broader backup tier (`Backup-UserData`, `Backup-BrowserProfiles`, `Export-SystemState`, `Test-BackupIntegrity`, `Restore-DeveloperEnvironment`) was removed in the ghost-code cull. User data is covered by OneDrive sync; browser bookmarks/extensions sync natively; lab-server backups live on a dedicated backup host via Velero. See [BACKLOG.md](../../BACKLOG.md) for rationale.
 
 ## Scripts
 

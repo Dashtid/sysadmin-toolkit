@@ -12,7 +12,7 @@ The 2026-06-14 ghost-code audit (driven by web research + git archaeology) cut ~
 
 - **What survived**: 4 first-time-setup scripts, `system-updates.ps1` + `Install-SystemUpdatesTask.ps1`, `Backup-DeveloperEnvironment.ps1`, `Manage-Docker.ps1`, `remote-development-setup.ps1`, `Set-StaticIP.ps1`, `Repair-CommonIssues.ps1`. Linux: `nvidia-gpu-exporter.sh`, `disk-cleanup.sh`, `headless-server-setup.sh`.
 - **What was killed**: all 5 `Windows/monitoring/*`, `Windows/reporting/Get-SystemReport.ps1`, `Windows/security/Get-UserAccountAudit.ps1`, `Windows/network/Manage-VPN.ps1`, `Windows/development/Test-DevEnvironment.ps1`, `Windows/development/Manage-WSL.ps1`, 5 of 6 `Windows/backup/*` (only Backup-DeveloperEnvironment survives), `Linux/docker/docker-cleanup.sh`, `Linux/kubernetes/pod-health-monitor.sh`, `Linux/monitoring/service-health-monitor.sh`, `Linux/security/security-hardening.sh`, `Linux/maintenance/{log-cleanup,system-update,restore-previous-state}.sh`.
-- **Why**: web research showed these duplicated native tools (Task Manager, Event Viewer, `wsl.exe`, `netsh`, OneDrive, Settings app) or the lab-server stack on q-lab (Prometheus/Grafana/Velero/k9s per `~/.claude/docs/INFRASTRUCTURE.md`). Git history showed 174 commits over 14 months, only ~3 looked like "ran it, broke, fixed". The rest was test backfill and refactor churn — the classic over-engineered-personal-toolkit shape.
+- **Why**: web research showed these duplicated native tools (Task Manager, Event Viewer, `wsl.exe`, `netsh`, OneDrive, Settings app) or the lab-server stack (Prometheus/Grafana/Velero/k9s). Git history showed 174 commits over 14 months, only ~3 looked like "ran it, broke, fixed". The rest was test backfill and refactor churn — the classic over-engineered-personal-toolkit shape.
 
 **Policy going forward**: any script that goes 6 months without a `fix:` commit triggered by real failure is a candidate for archival. No more "behavioral coverage" sprints — favor smoke tests for the surviving setup scripts; do not mock-pad scripts you do not invoke.
 
@@ -22,7 +22,7 @@ The 2026-06-14 ghost-code audit (driven by web research + git archaeology) cut ~
 
 **Nothing planned.** This is intentional, not a gap.
 
-The toolkit is in maintenance mode. What survives the cull either has a real consumer (the scheduled `system-updates.ps1` task, the q-lab Prometheus scrape of `nvidia-gpu-exporter.sh`) or sits dormant for occasional lifecycle events (fresh-machine re-image, dev-environment snapshot before a rebuild). Marginal maintenance cost is approximately zero unless something actually breaks.
+The toolkit is in maintenance mode. What survives the cull either has a real consumer (the scheduled `system-updates.ps1` task, the lab-server Prometheus scrape of `nvidia-gpu-exporter.sh`) or sits dormant for occasional lifecycle events (fresh-machine re-image, dev-environment snapshot before a rebuild). Marginal maintenance cost is approximately zero unless something actually breaks.
 
 The temptation to add to this list — "shrink X", "refactor Y", "add tests for Z" — is the exact ghost-code pattern that drove the 2026-06-14 cull. Resist it.
 
@@ -48,7 +48,7 @@ The temptation to add to this list — "shrink X", "refactor Y", "add tests for 
 | Shrinks: `system-updates.ps1` 873→150, `Manage-Docker.ps1` 1198→100, `Repair-CommonIssues.ps1` 677→200, `Set-StaticIP.ps1` 298→30 | These were tentatively planned in the cull PR but cancelled the same day on reflection. The scripts work. The LOC targets are aesthetic, not functional. Days of work for a personal-use script with no consumer asking for the cleanup. If one of these scripts genuinely needs a fix from real failure later, shrink as part of that fix — not as a standalone sprint. |
 | Replace `fresh-windows-setup.ps1` with `winget configure` YAML | Modern alternative is real, but the current bespoke script works and the trigger (re-imaging) happens every 1-3 years. Migration cost ≈ next-rebuild's setup-from-scratch cost. Defer until the next rebuild forces the choice. |
 | `.github/PULL_REQUEST_TEMPLATE.md` | Single-author repo, mostly direct commits. Adding ceremony for solo work doesn't help. |
-| Sprint 7 — Linux coverage gaps (`system-report.sh`, `repair-common-issues.sh`, `test-network-health.sh`, additional service-health monitor) | All would have been more ghost code. q-lab's existing Prometheus/k9s/journalctl/apt stack covers each gap. |
+| Sprint 7 — Linux coverage gaps (`system-report.sh`, `repair-common-issues.sh`, `test-network-health.sh`, additional service-health monitor) | All would have been more ghost code. the lab server's existing Prometheus/k9s/journalctl/apt stack covers each gap. |
 | Tier 4 (Azure/AWS/OneDrive/change-log/drift-detection/compliance) | Carried from old ROADMAP; nothing in this list is load-bearing today and most fall into the same "duplicates a SaaS" pattern that drove the cull. |
 
 ---

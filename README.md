@@ -28,13 +28,13 @@ Personal system administration scripts for Windows and Linux. Narrow scope: fres
 
 ## Linux Scripts
 
-Scope is narrow on purpose: the lab server (q-lab) covers most operational needs via Prometheus/Grafana/Velero/k9s; the survivors here are the bits those tools don't cover.
+Scope is narrow on purpose: the lab server covers most operational needs via Prometheus/Grafana/Velero/k9s; the survivors here are the bits those tools don't cover.
 
 | Category | Script | Purpose |
 |----------|--------|---------|
 | **GPU** | [nvidia-gpu-exporter.sh](Linux/gpu/) | NVIDIA GPU metrics for Prometheus (scraped by Grafana) |
 | **Maintenance** | [disk-cleanup.sh](Linux/maintenance/) | APT cache + journal + Docker leftover cleanup |
-| **Server** | [headless-server-setup.sh](Linux/server/) | Ubuntu server provisioning for a fresh q-lab-style box |
+| **Server** | [headless-server-setup.sh](Linux/server/) | Ubuntu server provisioning for a fresh headless box |
 
 ## Shared Modules
 

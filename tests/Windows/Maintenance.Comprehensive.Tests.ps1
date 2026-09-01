@@ -33,7 +33,7 @@ Describe "system-updates.ps1 - Comprehensive Coverage" {
             $ScriptContent | Should -Match '#Requires -RunAsAdministrator'
         }
 
-        It "Contains no emojis (CLAUDE.md compliance)" {
+        It "Contains no emojis (style-guide compliance)" {
             # Note: Using literal emoji chars as .NET regex doesn't support \x{XXXX} for high codepoints
             $ScriptContent | Should -Not -Match '✅|❌|🎉|⚠️|📁|🔄|✓|✗'
         }
@@ -270,7 +270,7 @@ Describe "Maintenance Scripts Integration" {
             }
         }
 
-        It "Scripts follow CLAUDE.md conventions" {
+        It "Scripts follow project conventions" {
             $scripts = Get-ChildItem $MaintenancePath -Filter "*.ps1"
             foreach ($script in $scripts) {
                 $content = Get-Content $script.FullName -Raw

@@ -10,7 +10,7 @@ signal bug fixes only.
 
 ### Removed (ghost-code cull)
 
-Driven by a 2026-06-14 audit (web research + git archaeology) that found ~13 KLOC of production scripts and ~8 KLOC of tests defending behavior with no operational consumer on a single-user laptop. Most categories duplicated either native Windows tools (Task Manager, Event Viewer, `wsl.exe`, Settings) or the lab-server stack on q-lab (Prometheus/Grafana for monitoring, Velero for backup, k9s for Kubernetes). See [BACKLOG.md](BACKLOG.md) for the full rationale.
+Driven by a 2026-06-14 audit (web research + git archaeology) that found ~13 KLOC of production scripts and ~8 KLOC of tests defending behavior with no operational consumer on a single-user laptop. Most categories duplicated either native Windows tools (Task Manager, Event Viewer, `wsl.exe`, Settings) or the lab-server stack (Prometheus/Grafana for monitoring, Velero for backup, k9s for Kubernetes). See [BACKLOG.md](BACKLOG.md) for the full rationale.
 
 - **Windows monitoring (entire category):** `Get-ApplicationHealth.ps1`, `Get-EventLogAnalysis.ps1`, `Get-SystemPerformance.ps1`, `Test-NetworkHealth.ps1`, `Watch-ServiceHealth.ps1` + corresponding tests + dir README.
 - **Windows backup (5 of 6):** `Backup-BrowserProfiles.ps1`, `Backup-UserData.ps1`, `Export-SystemState.ps1`, `Restore-DeveloperEnvironment.ps1`, `Test-BackupIntegrity.ps1` + corresponding tests. `Backup-DeveloperEnvironment.ps1` survives (snapshot before rebuild).
@@ -58,9 +58,9 @@ Driven by a 2026-06-14 audit (web research + git archaeology) that found ~13 KLO
   two named variables (`$wingetOwned`, `$versionPinned`) so each exclusion
   carries the reason it exists in the source. Added `kubernetes-cli` to
   `$versionPinned` - it's now pinned to v1.34.x to stay within the
-  supported +/-1 minor skew of the K3s v1.33.5 server on q-lab.
+  supported +/-1 minor skew of the K3s v1.33.5 lab server.
   Previously the weekly choco sweep would have bumped kubectl to v1.36.x
-  and reopened the skew gap. Bump manually when q-lab K3s upgrades.
+  and reopened the skew gap. Bump manually when the lab server's K3s upgrades.
 
 ## [2.3.1] - 2026-06-09
 
@@ -170,7 +170,7 @@ Driven by a 2026-06-14 audit (web research + git archaeology) that found ~13 KLO
 
 ### Removed
 
-- `dotfiles/claude-config/` -- out of scope for a sysadmin toolkit.
+- `dotfiles/` -- out of scope for a sysadmin toolkit.
 - `Windows/ssh/` -- the underlying SSH scripts had been pruned earlier;
   only docs remained, and they were already de-listed from the top-level
   README.

@@ -1,16 +1,16 @@
 # Grafana Dashboards
 
-Pre-configured Grafana dashboards for the lab server (q-lab).
+Pre-configured Grafana dashboards for the lab server.
 
-> **Scope note (2026-06-14):** the `service-health-monitor.sh` script was removed in the ghost-code cull — Prometheus + node-exporter + Grafana already covers service health on q-lab. The dashboards below are kept because they remain useful for the GPU exporter (and as references for Kubernetes/Docker views populated by other tooling on q-lab).
+> **Scope note (2026-06-14):** the `service-health-monitor.sh` script was removed in the ghost-code cull — Prometheus + node-exporter + Grafana already covers service health on the lab server. The dashboards below are kept because they remain useful for the GPU exporter (and as references for Kubernetes/Docker views populated by other tooling on the lab server).
 
 ## Dashboards
 
 | Dashboard | Purpose | Data source |
 |-----------|---------|-------------|
 | [grafana-dashboard-gpu.json](grafana-dashboard-gpu.json) | NVIDIA GPU metrics | `Linux/gpu/nvidia-gpu-exporter.sh` (scraped via node-exporter textfile collector) |
-| [grafana-dashboard-kubernetes.json](grafana-dashboard-kubernetes.json) | K8s pod health (reference) | kube-state-metrics on q-lab |
-| [grafana-dashboard-maintenance.json](grafana-dashboard-maintenance.json) | Docker/log cleanup (reference) | Existing q-lab exporters |
+| [grafana-dashboard-kubernetes.json](grafana-dashboard-kubernetes.json) | K8s pod health (reference) | kube-state-metrics on the lab server |
+| [grafana-dashboard-maintenance.json](grafana-dashboard-maintenance.json) | Docker/log cleanup (reference) | Existing lab-server exporters |
 
 ## Import a Dashboard
 
@@ -44,7 +44,7 @@ curl -X POST "$GRAFANA_URL/api/dashboards/db" \
 ## Verify
 
 ```bash
-curl http://10.143.31.18:9100/metrics | grep nvidia_gpu
+curl http://<lab-server>:9100/metrics | grep nvidia_gpu
 ```
 
 ---

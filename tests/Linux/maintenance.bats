@@ -28,7 +28,7 @@ setup() {
     head -1 "${LINUX_MAINTENANCE}/disk-cleanup.sh" | grep -q "^#!/usr/bin/env bash\|^#!/bin/bash"
 }
 
-# Test for no emojis (per CLAUDE.md rules)
+# Test for no emojis (per style guide)
 @test "disk-cleanup.sh contains no emojis" {
     # Check for common emoji byte sequences (UTF-8 emoji range)
     ! grep -P '\xE2\x9C|\xF0\x9F' "${LINUX_MAINTENANCE}/disk-cleanup.sh"

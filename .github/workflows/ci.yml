@@ -190,7 +190,7 @@ jobs:
             echo "[-] ERROR: Found emojis in scripts!"
             exit 1
           fi
-          echo "[+] No emojis found - CLAUDE.md compliant"
+          echo "[+] No emojis found - style-guide compliant"
 
   # Job 3: Windows Pester Tests
   windows-tests:

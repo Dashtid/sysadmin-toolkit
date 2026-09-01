@@ -42,7 +42,7 @@ Start-ScheduledTask -TaskName SystemUpdates
 .\Windows\first-time-setup\install-from-exported-packages.ps1 -Manifest .\Windows\package-lists\my-packages.json
 ```
 
-### Linux: Maintenance on q-lab
+### Linux: Maintenance on the lab server
 
 ```bash
 ./Linux/maintenance/disk-cleanup.sh --whatif

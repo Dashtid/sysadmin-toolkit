@@ -49,7 +49,7 @@ tests/
 
 - [x] Script syntax validation
 - [x] No hardcoded credentials
-- [x] CLAUDE.md compliance (no emojis, ASCII markers)
+- [x] Style-guide compliance (no emojis, ASCII markers)
 - [x] Required parameters defined
 - [x] Error handling present
 - [x] Documentation exists
