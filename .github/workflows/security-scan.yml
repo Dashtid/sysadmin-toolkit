@@ -10,6 +10,11 @@ on:
     - cron: '0 9 * * 1'
   workflow_dispatch:
 
+# Least privilege by default. codeql-analysis and trivy-scan add
+# security-events: write at job level; nothing here needs more.
+permissions:
+  contents: read
+
 jobs:
   # Secret Detection (merged from secret-scan.yml)
   secret-detection:

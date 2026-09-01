@@ -6,11 +6,11 @@ Automated CI/CD for testing, security scanning, and PR management.
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| [ci.yml](ci.yml) | Push, PR | PSScriptAnalyzer, shellcheck, Pester, BATS tests |
-| [pr-checks.yml](pr-checks.yml) | PR | Secret scan, file size, YAML lint, TODO check |
-| [labeler.yml](labeler.yml) | PR | Auto-apply labels (windows, linux, tests, etc.) |
-| [security-scan.yml](security-scan.yml) | Push, Weekly | CodeQL, Trivy, dependency review |
-| [release.yml](release.yml) | Tags `v*.*.*` | Build changelog + GitHub Release |
+| [ci.yml](ci.yml) | Push/PR (`main`, `develop`), manual | PSScriptAnalyzer, shellcheck, Pester, BATS tests |
+| [pr-checks.yml](pr-checks.yml) | PR (opened, synchronize, reopened) | Secret scan, file size, YAML lint, TODO check |
+| [labeler.yml](labeler.yml) | PR (opened, synchronize) | Auto-apply labels (windows, linux, tests, etc.) |
+| [security-scan.yml](security-scan.yml) | Push/PR (`main`), weekly (Mon 09:00 UTC), manual | Secret detection, CodeQL, Trivy, dependency review, license, links |
+| [release.yml](release.yml) | Tags `v*.*.*`, manual | Build changelog + GitHub Release |
 
 ## Status Badges
 
@@ -22,13 +22,17 @@ Automated CI/CD for testing, security scanning, and PR management.
 ## Repository Setup
 
 ### Required Permissions
-Settings → Actions → General:
-- [x] Read and write permissions
-- [x] Allow GitHub Actions to create and approve PRs
+Settings → Actions → General → Workflow permissions:
+- [x] Read repository contents and packages permissions (read-only default)
+
+Every workflow declares its own `permissions:` block, so the repo-wide default stays
+read-only. `release.yml` requests `contents: write` itself; no workflow creates or
+approves pull requests, so "Allow GitHub Actions to create and approve pull requests"
+stays OFF.
 
 ### Branch Protection (main)
 - [x] Require PR before merging
-- [x] Require status checks: PowerShell Analysis, Bash Validation, Pester Tests
+- [x] Require status checks: `PowerShell Analysis`, `Bash Validation (shellcheck)`, `Windows Pester Tests`, `Linux Tests`, `Test Summary`
 - [x] Require branches up to date
 
 ## Viewing Results
@@ -49,7 +53,7 @@ gh run download <run-id> -n windows-test-results
 ### Shellcheck Exclusions
 ```bash
 # In ci.yml bash-validation job
-shellcheck -S warning -e SC2034 -e SC2086 "$script"
+shellcheck -S warning -e SC2034 -e SC2086 -e SC2181 -e SC2155 \n  -e SC2046 -e SC2178 -e SC2128 "$script"
 ```
 
 ### PSScriptAnalyzer Exclusions
@@ -85,4 +89,4 @@ ci: update GitHub Actions workflow
 ```
 
 ---
-**Last Updated**: 2025-12-26
+**Last Updated**: 2026-09-01
