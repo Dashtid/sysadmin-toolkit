@@ -435,20 +435,19 @@ Describe "system-updates.ps1 - Security and Best Practices" {
             $content | Should -Match 'notepadplusplus\.install'
         }
 
-        It "Excludes grype from 'choco upgrade all' (QMS-validated instrument must not drift)" {
+        It "Excludes grype from 'choco upgrade all' (pinned instrument must not drift)" {
             $content = Get-Content $ScriptPath -Raw
-            # grype is the scanner behind post-market surveillance reports and is formally
-            # validated at a specific version (GD-032). An unattended upgrade would replace a
-            # validated instrument and invalidate records produced afterwards. If this test
-            # fails, do not "fix" it by deleting the assertion - upgrading grype is a
-            # revalidation decision.
+            # grype is pinned at a specific version because its output feeds records that must
+            # stay reproducible. An unattended upgrade would swap the instrument and invalidate
+            # everything produced afterwards. If this test fails, do not "fix" it by deleting
+            # the assertion - bumping grype is a deliberate re-qualification decision.
             $content | Should -Match 'versionPinned\s*=\s*"[^"]*\bgrype\b'
         }
 
-        It "Does not pin syft (version is recorded per test execution, not frozen)" {
+        It "Does not pin syft (version is recorded per run, not frozen)" {
             $content = Get-Content $ScriptPath -Raw
-            # syft's validation records whichever version was used, and every pipeline command
-            # pins the CycloneDX spec version, so syft may float. Guards against someone
+            # syft's version is recorded with each run rather than frozen, and every pipeline
+            # command pins the CycloneDX spec version, so syft may float. Guards against someone
             # pinning it by analogy with grype and then wondering why it never updates.
             $content | Should -Not -Match 'versionPinned\s*=\s*"[^"]*\bsyft\b'
         }
