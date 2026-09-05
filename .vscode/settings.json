@@ -17,7 +17,9 @@
   "powershell.codeFormatting.alignPropertyValuePairs": true,
   "powershell.codeFormatting.ignoreOneLineBlock": false,
   "powershell.scriptAnalysis.enable": true,
-  "powershell.scriptAnalysis.settingsPath": ".vscode/PSScriptAnalyzerSettings.psd1",
+  // Root-level file, shared with the pre-commit hook - one rule set for the
+  // editor and the commit gate, so the two cannot disagree.
+  "powershell.scriptAnalysis.settingsPath": "PSScriptAnalyzerSettings.psd1",
   "powershell.integratedConsole.showOnStartup": false,
 
   // Shell script settings
