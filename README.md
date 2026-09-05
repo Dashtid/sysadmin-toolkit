@@ -7,7 +7,7 @@
 Personal system administration scripts for Windows and Linux. Narrow scope: fresh-machine setup, weekly update automation, a Docker convenience wrapper, and a GPU exporter for the lab server.
 
 > **Note:** Security hardening lives in `defensive-toolkit` (a separate, private repo). Monitoring and backup happen on the lab server via Prometheus/Grafana and Velero, not here.
-
+>
 > **2026-06-14:** the toolkit was deliberately culled. Monitoring/reporting/security/most-backup/VPN/WSL/Test-DevEnvironment scripts were removed because they duplicated native tools (Task Manager, Event Viewer, `wsl.exe`, Settings) or the lab-server stack. See [BACKLOG.md](BACKLOG.md) for the new scope and rationale.
 
 ## Windows Scripts

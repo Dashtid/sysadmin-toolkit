@@ -119,6 +119,7 @@ main
 Use shared modules instead of custom implementations:
 
 **PowerShell** - [CommonFunctions.psm1](../Windows/lib/CommonFunctions.psm1):
+
 ```powershell
 Write-InfoMessage "Info"      # [i] blue
 Write-Success "Done"          # [+] green
@@ -127,6 +128,7 @@ Write-ErrorMessage "Error"    # [-] red
 ```
 
 **Bash** - [common-functions.sh](../Linux/lib/bash/common-functions.sh):
+
 ```bash
 log_info "Info"      # [i] blue
 log_success "Done"   # [+] green
@@ -137,6 +139,7 @@ log_error "Error"    # [-] red
 ## Error Handling
 
 **PowerShell**:
+
 ```powershell
 try {
     # operation
@@ -147,6 +150,7 @@ try {
 ```
 
 **Bash**:
+
 ```bash
 trap 'log_error "Error at line $LINENO"' ERR
 

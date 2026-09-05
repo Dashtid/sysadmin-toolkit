@@ -82,16 +82,20 @@ shellcheck Linux/**/*.sh
 2. Follow coding standards
 3. Write tests for changes
 4. Run validation:
+
    ```powershell
    Invoke-ScriptAnalyzer -Path .\Windows -Recurse
    .\tests\run-tests.ps1
    ```
+
 5. Commit with conventional format:
-   ```
+
+   ```text
    feat: add GPU alerting
    fix: resolve race condition
    docs: update SSH guide
    ```
+
 6. Submit PR with description and test results
 
 ## Checklist

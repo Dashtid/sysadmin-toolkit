@@ -5,6 +5,7 @@
 **Do not** create public GitHub issues for security vulnerabilities.
 
 **Report via email** to maintainer (available on GitHub profile):
+
 - Description of vulnerability
 - Steps to reproduce
 - Potential impact
@@ -29,6 +30,7 @@
 ## Security Scanning
 
 This repository uses:
+
 - GitHub Secret Scanning
 - Pre-commit hooks for local validation
 - GitHub Actions for CI security checks
@@ -57,10 +59,12 @@ This repository uses:
 
 1. **Immediately rotate/revoke** the credential
 2. **Remove from Git history**:
+
    ```bash
    git filter-repo --path path/to/secret --invert-paths
    git push origin --force --all
    ```
+
 3. **Notify collaborators** to re-clone (not pull)
 
 ## Security Tools

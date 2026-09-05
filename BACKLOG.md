@@ -74,6 +74,7 @@ This section preserves the closeouts from the pre-cull "behavioral coverage" spr
 ## Sprint 3 closeouts (mutating system & network)
 
 Coverage 28.09% -> 31.24% at the time. **One real production bug fixed.** `Repair-CommonIssues` and `Set-StaticIP` survive; `Manage-VPN`, `system-updates.ps1` survive (system-updates was Sprint 3.1).
+
 - 2026-06-10: `test(network): behavioral coverage for Manage-VPN` (commit 48d04e8, Sprint 3.3) — **Manage-VPN.ps1 deleted in cull**. The pipeline-emission bug fix is lost with the file.
 
 ## Sprint 2 closeouts (read-only reporting & audit)

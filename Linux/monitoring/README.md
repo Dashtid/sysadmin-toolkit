@@ -15,6 +15,7 @@ Pre-configured Grafana dashboards for the lab server.
 ## Import a Dashboard
 
 ### Grafana UI
+
 1. Open Grafana -> **Dashboards** -> **Import**
 2. Upload the JSON file
 3. Select your Prometheus data source

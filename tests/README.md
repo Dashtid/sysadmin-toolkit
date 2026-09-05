@@ -5,12 +5,14 @@ Comprehensive testing for Windows and Linux system administration scripts.
 ## Quick Start
 
 ### Windows (Pester)
+
 ```powershell
 Install-Module -Name Pester -Force -Scope CurrentUser
 Invoke-Pester -Path .\tests\Windows -Output Detailed
 ```
 
 ### Linux (BATS)
+
 ```bash
 sudo apt install bats
 bats tests/Linux/
@@ -18,7 +20,7 @@ bats tests/Linux/
 
 ## Test Structure
 
-```
+```text
 tests/
 ├── Windows/
 │   ├── CommonFunctions.Tests.ps1      # Core library (90%+ coverage target)
@@ -70,6 +72,7 @@ tests/
 ## CI/CD Integration
 
 Tests run automatically on:
+
 - Push to main/develop
 - Pull requests
 - Manual dispatch
@@ -79,6 +82,7 @@ Tests run automatically on:
 ## Writing Tests
 
 ### Pester Template
+
 ```powershell
 Describe "Script Tests" {
     It "Has valid syntax" {
@@ -91,6 +95,7 @@ Describe "Script Tests" {
 ```
 
 ### BATS Template
+
 ```bash
 @test "script has valid syntax" {
     bash -n "$SCRIPT_PATH"

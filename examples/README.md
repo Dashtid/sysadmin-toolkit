@@ -5,6 +5,7 @@ This directory contains example scripts demonstrating best practices for this re
 ## Purpose
 
 These examples serve as:
+
 - **Reference implementations** showing proper code structure
 - **Templates** for creating new scripts
 - **Learning resources** for contributors
@@ -33,6 +34,7 @@ These examples serve as:
 ### [example-powershell-script.ps1](example-powershell-script.ps1)
 
 Comprehensive PowerShell script demonstrating:
+
 - Comment-based help with full documentation
 - Parameter validation and multiple parameter types
 - WhatIf/Confirm support for safe execution
@@ -45,6 +47,7 @@ Comprehensive PowerShell script demonstrating:
 - Debug/verbose output support
 
 **Usage:**
+
 ```powershell
 # Basic usage
 .\example-powershell-script.ps1 -ServerName "192.0.2.10" -Operation Check
@@ -62,6 +65,7 @@ Get-Help .\example-powershell-script.ps1 -Full
 ### [example-bash-script.sh](example-bash-script.sh)
 
 Comprehensive Bash script demonstrating:
+
 - Proper script header with complete documentation
 - Strict mode (set -euo pipefail) for error handling
 - Color-coded output functions
@@ -74,6 +78,7 @@ Comprehensive Bash script demonstrating:
 - Professional help/usage output
 
 **Usage:**
+
 ```bash
 # Basic usage
 ./example-bash-script.sh -s "192.0.2.10" -o check
@@ -91,6 +96,7 @@ Comprehensive Bash script demonstrating:
 ## Best Practices Demonstrated
 
 ### Documentation
+
 - Comprehensive comment-based help
 - Clear parameter descriptions
 - Multiple usage examples
@@ -98,6 +104,7 @@ Comprehensive Bash script demonstrating:
 - Change log tracking
 
 ### Code Structure
+
 - Strict mode and error action preference
 - Constants section at top
 - Helper functions before main logic
@@ -105,6 +112,7 @@ Comprehensive Bash script demonstrating:
 - Clean separation of concerns
 
 ### Input Validation
+
 - Parameter validation attributes
 - Type constraints
 - Value range checking
@@ -112,6 +120,7 @@ Comprehensive Bash script demonstrating:
 - Mandatory vs optional parameters
 
 ### Error Handling
+
 - Try/catch blocks
 - Specific error messages
 - Stack trace output
@@ -119,6 +128,7 @@ Comprehensive Bash script demonstrating:
 - Retry logic for transient failures
 
 ### Output Formatting
+
 ```powershell
 [+] Success message      # Green
 [-] Error message        # Red
@@ -128,6 +138,7 @@ Comprehensive Bash script demonstrating:
 ```
 
 ### Security
+
 - No hardcoded credentials
 - RFC 5737 example IPs in documentation
 - Parameter-based configuration
@@ -135,6 +146,7 @@ Comprehensive Bash script demonstrating:
 - Input sanitization
 
 ### Features
+
 - WhatIf/Confirm support
 - Verbose/Debug output
 - File logging
@@ -145,6 +157,7 @@ Comprehensive Bash script demonstrating:
 ## Using Examples as Templates
 
 1. **Copy the example script**
+
    ```powershell
    cp examples/example-powershell-script.ps1 Windows/category/new-script.ps1
    ```
@@ -192,6 +205,7 @@ Get-Help .\examples\example-powershell-script.ps1
 ```
 
 Check the generated log:
+
 ```powershell
 Get-Content .\examples\logs\example-powershell-script.ps1-$(Get-Date -Format 'yyyyMMdd').log
 ```

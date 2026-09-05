@@ -22,7 +22,9 @@ Automated CI/CD for testing, security scanning, and PR management.
 ## Repository Setup
 
 ### Required Permissions
+
 Settings → Actions → General → Workflow permissions:
+
 - [x] Read repository contents and packages permissions (read-only default)
 
 Every workflow declares its own `permissions:` block, so the repo-wide default stays
@@ -31,6 +33,7 @@ approves pull requests, so "Allow GitHub Actions to create and approve pull requ
 stays OFF.
 
 ### Branch Protection (main)
+
 - [x] Require PR before merging
 - [x] Require status checks: `PowerShell Analysis`, `Bash Validation (shellcheck)`, `Windows Pester Tests`, `Linux Tests`, `Test Summary`
 - [x] Require branches up to date
@@ -51,18 +54,21 @@ gh run download <run-id> -n windows-test-results
 ## Customization
 
 ### Shellcheck Exclusions
+
 ```bash
 # In ci.yml bash-validation job
 shellcheck -S warning -e SC2034 -e SC2086 -e SC2181 -e SC2155 \n  -e SC2046 -e SC2178 -e SC2128 "$script"
 ```
 
 ### PSScriptAnalyzer Exclusions
+
 ```powershell
 # In script header
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
 ```
 
 ### Change Scan Schedule
+
 ```yaml
 # In security-scan.yml
 schedule:
@@ -80,7 +86,7 @@ schedule:
 
 ## Commit Message Format
 
-```
+```text
 feat: add new monitoring script
 fix: resolve shellcheck issues
 docs: update workflow documentation

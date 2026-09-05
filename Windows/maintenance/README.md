@@ -40,6 +40,7 @@ Copy-Item config.example.json config.json
 ## Configuration
 
 Create `config.json` from template:
+
 ```powershell
 Copy-Item config.example.json config.json
 ```
@@ -82,7 +83,7 @@ For GUI-based installs, see [examples/weekly-updates-task.xml](examples/weekly-u
 
 ## Log Files
 
-```
+```text
 <toolkit-root>/logs/
 ├── system-updates_YYYY-MM-DD.log           # Main log
 ├── transcript_system-updates_*.log         # Detailed transcript

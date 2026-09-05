@@ -11,6 +11,7 @@ cp .env.example .env.local
 ```
 
 Edit `.env.local` with your values:
+
 ```bash
 SERVER_IP=192.0.2.50
 SERVER_USER=admin

@@ -28,7 +28,7 @@ NVIDIA GPU metrics export for Prometheus.
 
 ## Metrics
 
-```
+```text
 nvidia_gpu_utilization_percent{gpu="0",name="RTX_5000"} 15
 nvidia_gpu_memory_used_bytes{gpu="0"} 6442450944
 nvidia_gpu_temperature_celsius{gpu="0"} 45
