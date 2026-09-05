@@ -75,7 +75,8 @@ declare -A CONFIG_DATA
 # Usage: log_info "message"
 log_info() {
     local message="$1"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo -e "${COLOR_CYAN}${MARKER_INFO}${COLOR_RESET} ${message}"
 
     if [[ -n "$LOG_FILE" ]]; then
@@ -87,7 +88,8 @@ log_info() {
 # Usage: log_success "message"
 log_success() {
     local message="$1"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo -e "${COLOR_GREEN}${MARKER_SUCCESS}${COLOR_RESET} ${message}"
 
     if [[ -n "$LOG_FILE" ]]; then
@@ -99,7 +101,8 @@ log_success() {
 # Usage: log_warning "message"
 log_warning() {
     local message="$1"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo -e "${COLOR_YELLOW}${MARKER_WARNING}${COLOR_RESET} ${message}"
 
     if [[ -n "$LOG_FILE" ]]; then
@@ -111,7 +114,8 @@ log_warning() {
 # Usage: log_error "message"
 log_error() {
     local message="$1"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo -e "${COLOR_RED}${MARKER_ERROR}${COLOR_RESET} ${message}" >&2
 
     if [[ -n "$LOG_FILE" ]]; then
@@ -124,7 +128,8 @@ log_error() {
 log_debug() {
     if [[ "$DEBUG" == "1" ]]; then
         local message="$1"
-        local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
         echo -e "${COLOR_BLUE}${MARKER_DEBUG}${COLOR_RESET} ${message}"
 
         if [[ -n "$LOG_FILE" ]]; then
@@ -373,7 +378,8 @@ get_config() {
 # Usage: init_prometheus_metrics <metrics_file>
 init_prometheus_metrics() {
     local metrics_file="$1"
-    local metrics_dir=$(dirname "$metrics_file")
+    local metrics_dir
+    metrics_dir=$(dirname "$metrics_file")
 
     # Create directory if it doesn't exist
     if [[ ! -d "$metrics_dir" ]]; then
@@ -394,7 +400,7 @@ export_prometheus_metric() {
     local metrics_file="$1"
     local metric_name="$2"
     local value="$3"
-    local labels="${4:-}"
+    local label_spec="${4:-}"
 
     # Validate metric name (alphanumeric and underscores only)
     if ! [[ "$metric_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
@@ -404,8 +410,8 @@ export_prometheus_metric() {
 
     # Build metric line
     local metric_line
-    if [[ -n "$labels" ]]; then
-        metric_line="${metric_name}{${labels}} ${value}"
+    if [[ -n "$label_spec" ]]; then
+        metric_line="${metric_name}{${label_spec}} ${value}"
     else
         metric_line="${metric_name} ${value}"
     fi
@@ -445,7 +451,8 @@ get_timestamp() {
 
 get_elapsed_time() {
     local start_time="$1"
-    local end_time=$(date +%s)
+    local end_time
+    end_time=$(date +%s)
     echo $((end_time - start_time))
 }
 

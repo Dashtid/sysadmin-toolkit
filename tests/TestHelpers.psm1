@@ -463,6 +463,12 @@ function New-TestCredential {
     #>
     [CmdletBinding()]
     [OutputType([PSCredential])]
+    # Same suppression as New-MockCredential in MockHelpers.psm1: a mock factory
+    # is the legitimate use of a plaintext password - fixture data, not a secret.
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
+        Justification = 'test helper fabricating a throwaway mock credential')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingUsernameAndPasswordParams', '',
+        Justification = 'mock factory - the strings are fixture data, not secrets')]
     param(
         [Parameter(Mandatory = $false)]
         [string]$Username = "TestUser",

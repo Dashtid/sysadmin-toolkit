@@ -66,8 +66,10 @@ IFS=$'\n\t'        # Set Internal Field Separator for safer word splitting
 # ============================================================================
 
 # Script metadata
-readonly SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+readonly SCRIPT_NAME
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
 readonly SCRIPT_VERSION="1.0.0"
 readonly SCRIPT_DATE="2025-10-12"
 
@@ -82,7 +84,8 @@ MAX_RETRIES=3
 
 # Log file
 readonly LOG_DIR="${SCRIPT_DIR}/logs"
-readonly LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}-$(date +%Y%m%d).log"
+LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}-$(date +%Y%m%d).log"
+readonly LOG_FILE
 
 # Colors for output (disabled if not a terminal)
 if [[ -t 1 ]]; then

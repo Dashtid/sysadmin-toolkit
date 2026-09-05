@@ -5,7 +5,6 @@
 setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     SCRIPT_PATH="${PROJECT_ROOT}/Linux/gpu/nvidia-gpu-exporter.sh"
-    LIB_PATH="${PROJECT_ROOT}/Linux/lib/bash/common-functions.sh"
 }
 
 # ============================================================================

@@ -19,6 +19,7 @@
 set -euo pipefail
 
 # Script configuration
+# shellcheck disable=SC2034  # read by common-functions.sh (SCRIPT_NAME fallback)
 SCRIPT_NAME=$(basename "$0")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -44,6 +45,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --debug)
+            # shellcheck disable=SC2034  # read by common-functions.sh log_debug
             DEBUG=1
             shift
             ;;
@@ -71,6 +73,7 @@ ensure_dir "$OUTPUT_DIR"
 ensure_dir "$METRICS_DIR"
 
 # Set up logging
+# shellcheck disable=SC2034  # read by common-functions.sh log_* file sink
 LOG_FILE="$OUTPUT_DIR/nvidia-gpu-exporter.log"
 log_info "NVIDIA GPU Metrics Exporter v2.0.0"
 log_debug "Configuration: OUTPUT_DIR=$OUTPUT_DIR, METRICS_DIR=$METRICS_DIR"
@@ -119,6 +122,7 @@ fi
 
 # Process GPU data and write metrics
 gpu_count=0
+# shellcheck disable=SC2034  # mem_free names its CSV column; derivable, unexported
 while IFS=',' read -r idx name util_gpu util_mem mem_total mem_used mem_free temp power; do
     # Clean values (remove whitespace)
     util_gpu=$(echo "$util_gpu" | tr -d ' ')

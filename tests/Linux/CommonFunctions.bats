@@ -11,6 +11,7 @@ setup() {
     SCRIPT_PATH="${PROJECT_ROOT}/Linux/lib/bash/common-functions.sh"
 
     # Source the common functions library
+    # shellcheck source=/dev/null
     source "$SCRIPT_PATH"
 
     # Create temporary directory for test files

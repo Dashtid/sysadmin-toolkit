@@ -401,6 +401,13 @@ function New-MockCredential {
     #>
     [CmdletBinding()]
     [OutputType([PSCredential])]
+    # A mock factory IS the legitimate use of a plaintext password: the value is
+    # fixture data for Pester, never a secret. Suppressed here with justification
+    # rather than excluded repo-wide, so both rules stay armed for real scripts.
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
+        Justification = 'test helper fabricating a throwaway mock credential')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingUsernameAndPasswordParams', '',
+        Justification = 'mock factory - the strings are fixture data, not secrets')]
     param(
         [Parameter()]
         [string]$Username = "TestUser",

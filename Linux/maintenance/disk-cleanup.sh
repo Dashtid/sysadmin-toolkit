@@ -89,7 +89,6 @@ echo -e "${BLUE}=== Current Disk Usage ===${NC}"
 df -h / | awk 'NR==1 || NR==2'
 echo ""
 
-SPACE_FREED=0
 
 # Clean old logs
 if [[ "$CLEAN_LOGS" == "true" ]]; then
@@ -99,7 +98,10 @@ if [[ "$CLEAN_LOGS" == "true" ]]; then
     OLD_LOGS=$(find /var/log -type f -name "*.log.*" -mtime +30 2>/dev/null || true)
 
     if [[ -n "$OLD_LOGS" ]]; then
-        LOG_SIZE=$(du -ch $(echo "$OLD_LOGS") 2>/dev/null | tail -1 | cut -f1 || echo "0")
+        # xargs -d newline keeps paths with spaces whole; the old unquoted
+        # $(echo ...) relied on word-splitting doing the right thing.
+        LOG_SIZE=$(echo "$OLD_LOGS" | xargs -d '
+' du -ch 2>/dev/null | tail -1 | cut -f1 || echo "0")
         echo "Found old log files: $LOG_SIZE"
 
         if [[ "$DRY_RUN" == "false" ]]; then

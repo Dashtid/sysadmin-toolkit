@@ -35,9 +35,12 @@ Describe "Integration Tests - Error Handling with Retry Logic" {
                 }
             }
 
-            # Act
+            # Act. Hostname via a variable, matching the test at the bottom of
+            # this file - PSAvoidUsingComputerNameHardcoded reads a literal here
+            # as a leaked machine name, even the RFC 2606 documentation domain.
+            $target = "example.com"
             $result = Retry-Command -ScriptBlock {
-                Test-Connection -ComputerName "example.com" -Count 1
+                Test-Connection -ComputerName $target -Count 1
             } -MaxAttempts 5 -DelaySeconds 1
 
             # Assert
