@@ -121,4 +121,3 @@ setup() {
 @test "headless-server-setup.sh creates log directory" {
     grep -q "mkdir.*log\|LOG_DIR" "$HEADLESS_SETUP"
 }
-
