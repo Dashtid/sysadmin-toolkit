@@ -64,11 +64,19 @@ if ($failed -gt 0) { exit 1 }
 if ($parseable.Count -eq 0) { exit 0 }
 
 # --- 2. analyse -------------------------------------------------------------
-# Absent module: say so and let the commit through. A missing analyser on one
-# machine is a setup problem, not a reason to block work - and a hook that fails
-# for a reason the author cannot act on gets bypassed with --no-verify, which
-# costs more than it saves. CI is where its absence should be fatal.
+# Absent module: say so and let the commit through - on a WORKSTATION. A missing
+# analyser on one machine is a setup problem, not a reason to block work - and a
+# hook that fails for a reason the author cannot act on gets bypassed with
+# --no-verify, which costs more than it saves. In CI the calculus inverts: an
+# image without the analyser would wave every finding through and report green,
+# so there the absence is fatal. GitHub and Gitea Actions both set CI=true.
 if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+    if ($env:CI) {
+        Write-Host '[-] PSScriptAnalyzer is not installed and CI is set - failing rather'
+        Write-Host '    than reporting green without analysing. Install it in the workflow:'
+        Write-Host '    Install-Module PSScriptAnalyzer -Force'
+        exit 1
+    }
     Write-Host '[!] PSScriptAnalyzer is not installed - parse check only.'
     Write-Host '    Install-Module PSScriptAnalyzer -Scope CurrentUser'
     exit 0
