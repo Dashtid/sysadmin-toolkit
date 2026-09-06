@@ -1,28 +1,76 @@
-# Dependabot configuration for automated dependency updates
-# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
-
+# Generated from estate/standards/dependabot.yml - edit it THERE, then re-run
+# `python standards/rollout.py --apply`.
+#
+# WHY THIS EXISTS. Every workflow in this estate pins its actions to a full
+# commit SHA, so a moved tag on a compromised action changes nothing here. That
+# safety is bought on credit: a SHA never updates itself. Eight repositories
+# were carrying the pins with nothing that moved them, which is the worse half
+# of the trade - a pin without an updater is just an action frozen at whatever
+# was current the day someone pasted it.
+#
+# SCOPE, deliberately: github-actions only. The repositories generated from
+# this file have no Python, npm or Docker manifest at all, so there is nothing
+# else here to update. Naming an ecosystem with no manifest behind it makes
+# Dependabot report a configuration error and do nothing. Repositories that DO
+# have a manifest keep a hand-written config; rollout.py lists them with the
+# reason.
+#
+# Low-noise on purpose. Non-major updates arrive as ONE grouped pull request a
+# month; the three actions these repositories share move rarely, so most months
+# produce nothing. Dependabot raises SECURITY updates outside the group and
+# outside the cooldown, so a known CVE fix still lands the day it exists.
 version: 2
 updates:
-  # GitHub Actions - keep workflows up to date
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "06:00"
-      timezone: "Europe/Stockholm"
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    # Seven days between a release and its adoption - the window in which a
+    # hijacked-package incident is typically caught and yanked. Security
+    # updates bypass cooldown automatically.
+    cooldown:
+      default-days: 7
+    groups:
+      actions-minor:
+        # applies-to is the load-bearing word. Without it the group also
+        # swallows SECURITY updates, which then wait for the monthly schedule
+        # and the cooldown above - delaying precisely the updates that must
+        # never wait. sysadmin-toolkit's hand-written config omitted it.
+        applies-to: version-updates
+        patterns:
+          - "*"
+        # Majors stay ungrouped and arrive one at a time, because an action
+        # major is a real change (checkout v4 -> v5 moved the Node runtime) and
+        # deserves its own red or green.
+        #
+        # [i] This shape is PROVEN to group in this estate, and the proof
+        # matters because the obvious reading of the upstream bug reports says
+        # otherwise. sysadmin-toolkit has run exactly this - patterns plus
+        # update-types - since 2025-12 and grouped correctly every time
+        # (PR #16 "with 6 updates", PR #21 "with 4 updates"), splitting the
+        # majors out beside them. What is genuinely broken is the same shape
+        # over PIP with unpinned lower bounds: jobhunt's five pull requests of
+        # 2026-09-01 arrived one per package because Dependabot handles
+        # `httpx>=0.28.1` as a REQUIREMENT update ("Update X requirement from
+        # >=a to >=b") with no single current version to classify, so
+        # minor/patch never matches and the dependency drops out of the group.
+        # That is a pip-with-ranges problem, not a grouping-syntax problem.
+        # Do not "fix" this block on the strength of it.
+        update-types:
+          - "minor"
+          - "patch"
+    # These repositories enforce Conventional Commits. Dependabot's default
+    # "Bump ..." subject is not one, and it is not editable after the fact
+    # without rewriting someone else's commit.
     commit-message:
       prefix: "ci"
       include: "scope"
     labels:
       - "dependencies"
-      - "github-actions"
-    open-pull-requests-limit: 5
-    groups:
-      # Group minor/patch updates together
-      actions-minor:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
+
+# ---------------------------------------------------------------------------
+# REPO-SPECIFIC UPDATES BELOW THIS LINE
+# Everything above is the shared standard and is replaced wholesale when the
+# standard is rolled out. Everything below is preserved.
+# ---------------------------------------------------------------------------
