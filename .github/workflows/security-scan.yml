@@ -244,16 +244,18 @@ jobs:
     steps:
       - name: Generate summary
         run: |
-          echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Scanner | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Secrets | ${{ needs.secret-detection.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| CodeQL  | ${{ needs.codeql-analysis.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Trivy   | ${{ needs.trivy-scan.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| License | ${{ needs.license-check.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "View details in the Security tab" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "# Security Scan Summary"
+            echo ""
+            echo "| Scanner | Status |"
+            echo "|---------|--------|"
+            echo "| Secrets | ${{ needs.secret-detection.result }} |"
+            echo "| CodeQL  | ${{ needs.codeql-analysis.result }} |"
+            echo "| Trivy   | ${{ needs.trivy-scan.result }} |"
+            echo "| License | ${{ needs.license-check.result }} |"
+            echo ""
+            echo "View details in the Security tab"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # The summary above is a report, not a gate. Without this step the job
       # concludes success even when a scanner failed, so requiring "Security

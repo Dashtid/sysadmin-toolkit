@@ -419,17 +419,19 @@ jobs:
 
       - name: Generate summary
         run: |
-          echo "# CI Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Windows Pester | ${{ needs.windows-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Linux BATS | ${{ needs.linux-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "# CI Test Results"
+            echo ""
+            echo "| Platform | Status |"
+            echo "|----------|--------|"
+            echo "| Windows Pester | ${{ needs.windows-tests.result }} |"
+            echo "| Linux BATS | ${{ needs.linux-tests.result }} |"
+            echo ""
 
-          if [ -f ./results/coverage-windows.xml ]; then
-            echo "[+] Windows coverage report available" >> $GITHUB_STEP_SUMMARY
-          fi
+            if [ -f ./results/coverage-windows.xml ]; then
+              echo "[+] Windows coverage report available"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # The summary above is a report, not a gate. Without this step the job
       # concludes success even when an upstream job failed, so requiring

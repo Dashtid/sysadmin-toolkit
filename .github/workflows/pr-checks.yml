@@ -83,7 +83,7 @@ jobs:
 
           if [ -n "$LARGE_FILES" ]; then
             echo "[-] Large files found:"
-            echo "$LARGE_FILES" | while read file; do
+            echo "$LARGE_FILES" | while read -r file; do
               SIZE=$(du -h "$file" | cut -f1)
               echo "  - $file ($SIZE)"
             done
@@ -155,7 +155,7 @@ jobs:
             --exclude="*.md" \
             --exclude="pr-checks.yml" | wc -l)
 
-          if [ $TODO_COUNT -gt 0 ]; then
+          if [ "$TODO_COUNT" -gt 0 ]; then
             echo "[!] Found $TODO_COUNT TODO/FIXME comments:"
             grep -rni "TODO\|FIXME" . \
               --exclude-dir=.git \
