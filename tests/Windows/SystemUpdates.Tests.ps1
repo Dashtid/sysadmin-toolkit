@@ -35,9 +35,9 @@ Describe "system-updates.ps1 v2.0.0 - Basic Validation" {
     }
 
     Context "Script Metadata" {
-        It "Script has version 2.0.0" {
+        It "Script has version 2.1.0" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Version:\s*2\.0\.0"
+            $content | Should -Match "Version:\s*2\.1\.0"
         }
 
         It "Script has comment-based help" {
@@ -135,6 +135,11 @@ Describe "system-updates.ps1 - Script Parameters" {
             $params = Get-ScriptParameters -Path $ScriptPath
             $params | Should -Contain "SkipRestorePoint"
         }
+
+        It "Has SkipNpm parameter (v2.1.0)" {
+            $params = Get-ScriptParameters -Path $ScriptPath
+            $params | Should -Contain "SkipNpm"
+        }
     }
 
     Context "CmdletBinding Support" {
@@ -180,6 +185,43 @@ Describe "system-updates.ps1 - Core Functionality" {
         It "Chocolatey function checks for choco command" {
             $content = Get-Content $ScriptPath -Raw
             $content | Should -Match "Get-Command choco"
+        }
+    }
+
+    Context "npm Global Updates (v2.1.0)" {
+        It "Has Update-NpmGlobal function" {
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "function Update-NpmGlobal"
+        }
+
+        It "Runs the npm stage in the main update flow" {
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "Update-Chocolatey\s+Update-NpmGlobal\s+Update-Windows"
+        }
+
+        It "Self-skips when no packages are configured (empty list is not an error)" {
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "No npm global packages configured"
+        }
+
+        It "Checks npm availability before updating" {
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "Get-Command \`$npmCmd"
+        }
+
+        It "Supports an absolute npm path and an explicit global prefix" {
+            $content = Get-Content $ScriptPath -Raw
+            # SYSTEM scheduled tasks do not see a user-profile node install on
+            # PATH, and npm -g targets the invoking account's prefix by default -
+            # NpmCommand and NpmPrefix exist so the config can pin both.
+            $content | Should -Match "NpmCommand"
+            $content | Should -Match "NpmPrefix"
+            $content | Should -Match "--prefix"
+        }
+
+        It "Tracks npm results in the update summary" {
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "UpdateSummary\.Npm"
         }
     }
 

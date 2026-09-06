@@ -9,6 +9,9 @@
     - Chocolatey packages
     - Winget packages
     - Windows Updates (via PSWindowsUpdate module)
+    - A configured list of global npm packages (npm CLI tools are invisible
+      to winget/choco and otherwise go stale on machines whose only updater
+      is this script)
 
     Features:
     - System restore point creation before updates
@@ -28,6 +31,10 @@
 
 .PARAMETER SkipWindowsUpdate
     Skip Windows Updates installation.
+
+.PARAMETER SkipNpm
+    Skip npm global package updates. The stage also self-skips when no
+    packages are listed in the config file's NpmGlobalPackages.
 
 .PARAMETER AutoReboot
     Automatically reboot the system if required after updates.
@@ -59,10 +66,17 @@
 
 .NOTES
     Author: Windows & Linux Sysadmin Toolkit
-    Version: 2.0.0
+    Version: 2.1.0
     Requires: PowerShell 7.0+ and Administrator privileges
 
 .CHANGELOG
+    2.1.0 - 2026-09-06
+        - Added npm global package update stage (Update-NpmGlobal),
+          config-driven: NpmGlobalPackages lists the packages, NpmCommand
+          may point at an absolute npm path (SYSTEM scheduled tasks do not
+          see a user-profile node on PATH), NpmPrefix targets a specific
+          npm global prefix. Empty list = stage skipped.
+
     2.0.0 - 2025-10-15
         - Refactored to use CommonFunctions module
         - Added system restore point creation
@@ -92,6 +106,9 @@ param(
 
     [Parameter()]
     [switch]$SkipWindowsUpdate,
+
+    [Parameter()]
+    [switch]$SkipNpm,
 
     [Parameter()]
     [switch]$AutoReboot,
@@ -126,6 +143,7 @@ $script:UpdateSummary = @{
     Chocolatey     = @{ Updated = 0; Failed = 0; Skipped = $false }
     Winget         = @{ Updated = 0; Failed = 0; Skipped = $false }
     WindowsUpdates = @{ Updated = 0; Failed = 0; Skipped = $false }
+    Npm            = @{ Updated = 0; Failed = 0; Skipped = $false }
     RestorePoint   = $null
     RebootRequired = $false
 }
@@ -148,6 +166,10 @@ $global:config = @{
     SkipChocolatey     = $SkipChocolatey.IsPresent
     SkipWinget         = $SkipWinget.IsPresent
     SkipRestorePoint   = $SkipRestorePoint.IsPresent
+    SkipNpm            = $SkipNpm.IsPresent
+    NpmGlobalPackages  = @()
+    NpmCommand         = 'npm'
+    NpmPrefix          = ''
     RebootDelaySeconds = $RebootDelaySeconds
     UpdateTypes        = @("Security", "Critical", "Important")
 }
@@ -175,6 +197,18 @@ if (Test-Path -Path $ConfigFile) {
         }
         if (-not $PSBoundParameters.ContainsKey('SkipRestorePoint')) {
             $global:config.SkipRestorePoint = [bool]$fileConfig.SkipRestorePoint
+        }
+        if (-not $PSBoundParameters.ContainsKey('SkipNpm')) {
+            $global:config.SkipNpm = [bool]$fileConfig.SkipNpm
+        }
+        if ($fileConfig.NpmGlobalPackages) {
+            $global:config.NpmGlobalPackages = @($fileConfig.NpmGlobalPackages)
+        }
+        if ($fileConfig.NpmCommand) {
+            $global:config.NpmCommand = [string]$fileConfig.NpmCommand
+        }
+        if ($fileConfig.NpmPrefix) {
+            $global:config.NpmPrefix = [string]$fileConfig.NpmPrefix
         }
         if ($fileConfig.UpdateTypes) {
             $global:config.UpdateTypes = $fileConfig.UpdateTypes
@@ -634,6 +668,83 @@ function Update-Chocolatey {
     }
 }
 
+function Update-NpmGlobal {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param()
+    <#
+    .SYNOPSIS
+        Updates a configured list of global npm packages.
+    .DESCRIPTION
+        Winget and Chocolatey do not manage npm global installs, so CLI
+        tools installed with 'npm install -g' silently go stale on machines
+        whose only updater is this script. The package list is
+        machine-specific and lives in config.json (NpmGlobalPackages); with
+        an empty list the stage self-skips. NpmCommand may be an absolute
+        npm path for contexts where npm is not on PATH (a SYSTEM scheduled
+        task with a user-profile node install), and NpmPrefix targets a
+        specific npm global prefix so the right installation is updated
+        rather than the invoking account's default prefix.
+    #>
+    if ($global:config.SkipNpm) {
+        Write-InfoMessage "Skipping npm global updates (disabled in configuration)"
+        $script:UpdateSummary.Npm.Skipped = $true
+        return
+    }
+
+    $packages = @($global:config.NpmGlobalPackages)
+    if ($packages.Count -eq 0) {
+        Write-InfoMessage "No npm global packages configured (NpmGlobalPackages) - skipping"
+        $script:UpdateSummary.Npm.Skipped = $true
+        return
+    }
+
+    Write-InfoMessage "=== Starting npm Global Updates ==="
+
+    try {
+        $npmCmd = $global:config.NpmCommand
+        if (!(Get-Command $npmCmd -ErrorAction SilentlyContinue)) {
+            Write-WarningMessage "npm is not installed or not available at '$npmCmd'"
+            $script:UpdateSummary.Npm.Skipped = $true
+            return
+        }
+
+        $prefixArgs = @()
+        if ($global:config.NpmPrefix) {
+            $prefixArgs = @('--prefix', $global:config.NpmPrefix)
+        }
+
+        $updated = 0
+        $count = 0
+        foreach ($package in $packages) {
+            $count++
+            if ($PSCmdlet.ShouldProcess("npm global package $package", "Update to latest")) {
+                $percentComplete = [math]::Round(($count / $packages.Count) * 100)
+                Write-Progress -Activity "Updating npm Global Packages" -Status $package -PercentComplete $percentComplete
+                Write-InfoMessage "Updating npm global package: $package"
+
+                $npmOutput = & $npmCmd install -g "$package@latest" @prefixArgs 2>&1
+                Write-LogMessage ($npmOutput | Out-String) -NoConsole
+
+                if ($LASTEXITCODE -eq 0) {
+                    $updated++
+                }
+                else {
+                    Write-ErrorMessage "npm install -g failed for package '$package' (exit code $LASTEXITCODE)"
+                    $script:UpdateSummary.Npm.Failed++
+                }
+            }
+        }
+
+        Write-Progress -Activity "Updating npm Global Packages" -Completed
+        $script:UpdateSummary.Npm.Updated = $updated
+        Write-Success "npm global updates completed"
+    }
+    catch {
+        Write-ErrorMessage "Error updating npm global packages: $($_.Exception.Message)"
+        $script:UpdateSummary.Npm.Failed = 1
+    }
+}
+
 function Update-Windows {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param()
@@ -758,6 +869,16 @@ function Show-UpdateSummary {
         Write-Host "$wingetStatus Winget: $($script:UpdateSummary.Winget.Updated) packages updated" -ForegroundColor $wingetColor
     }
 
+    # npm global packages
+    if ($script:UpdateSummary.Npm.Skipped) {
+        Write-Host "[i] npm globals: Skipped" -ForegroundColor Yellow
+    }
+    else {
+        $npmStatus = if ($script:UpdateSummary.Npm.Failed -gt 0) { "[-]" } else { "[+]" }
+        $npmColor = if ($script:UpdateSummary.Npm.Failed -gt 0) { "Red" } else { "Green" }
+        Write-Host "$npmStatus npm globals: $($script:UpdateSummary.Npm.Updated) packages updated" -ForegroundColor $npmColor
+    }
+
     # Windows Updates
     if ($script:UpdateSummary.WindowsUpdates.Skipped) {
         Write-Host "[i] Windows Updates: Skipped" -ForegroundColor Yellow
@@ -802,7 +923,7 @@ function Invoke-SystemUpdates {
     try {
         Write-InfoMessage "=== Windows System Update Script Started ==="
     Write-InfoMessage "PowerShell Version: $($PSVersionTable.PSVersion)"
-    Write-InfoMessage "Script Version: 2.0.0"
+    Write-InfoMessage "Script Version: 2.1.0"
     Write-InfoMessage "Log file: $logFile"
 
     if ($WhatIfPreference) {
@@ -844,6 +965,7 @@ function Invoke-SystemUpdates {
     # Run updates
     Update-Winget
     Update-Chocolatey
+    Update-NpmGlobal
     Update-Windows
 
     # Clean up old logs

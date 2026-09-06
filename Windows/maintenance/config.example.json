@@ -8,6 +8,10 @@
   "SkipChocolatey": false,
   "SkipWinget": false,
   "SkipRestorePoint": false,
+  "SkipNpm": false,
+  "NpmGlobalPackages": [],
+  "NpmCommand": "npm",
+  "NpmPrefix": "",
 
   "UpdateTypes": [
     "Security",
@@ -16,6 +20,7 @@
   ],
 
   "_updateTypesNote": "Valid values: Security, Critical, Important, Recommended, Optional",
+  "_npmNote": "npm global CLI tools are invisible to winget/choco - list their package names in NpmGlobalPackages (e.g. \"@anthropic-ai/claude-code\") to keep them updated; an empty list skips the stage. NpmCommand may be an absolute path to npm.cmd for SYSTEM scheduled tasks where a user-profile node is not on PATH. NpmPrefix targets a specific npm global prefix (the directory whose bin holds the tools) instead of the invoking account's default.",
   "_autoRebootNote": "If true, system will automatically reboot after updates if required",
   "_logRetentionNote": "Logs older than this many days will be automatically deleted",
   "_skipRestorePointNote": "If true, no system restore point will be created before updates"
