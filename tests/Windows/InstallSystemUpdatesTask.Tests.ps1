@@ -130,8 +130,13 @@ Describe 'Install-SystemUpdatesTask.ps1 - Task Registration Logic' {
             $ScriptContent | Should -Match '-MultipleInstances\s+IgnoreNew'
         }
 
-        It 'Caps execution at 3 hours' {
-            $ScriptContent | Should -Match 'New-TimeSpan\s+-Hours\s+3'
+        It 'Caps execution at 3 hours by default, via the parameter' {
+            # 5bb8849 turned the hardcoded cap into -ExecutionTimeLimitHours so
+            # david-desktop could be re-registered at PT6H. Assert the default and
+            # the wiring, not the literal - the old regex broke the moment the
+            # number moved into a parameter.
+            $ScriptContent | Should -Match '\[int\]\$ExecutionTimeLimitHours\s*=\s*3'
+            $ScriptContent | Should -Match 'New-TimeSpan\s+-Hours\s+\$ExecutionTimeLimitHours'
         }
     }
 
