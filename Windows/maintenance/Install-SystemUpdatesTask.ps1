@@ -12,7 +12,7 @@
     - Weekly on the chosen day/time (default: Sunday 10:00)
     - StartWhenAvailable so a missed window catches up after wake/logon
     - Battery-friendly: starts and continues on battery
-    - 3-hour execution cap; concurrent runs ignored
+    - 3-hour execution cap by default (-ExecutionTimeLimitHours); concurrent runs ignored
 
     Use -SystemAccount to run as SYSTEM instead (server scenarios where no user is logged in).
     Note: SYSTEM context misses user-scope winget packages -- only use when you understand
@@ -38,6 +38,19 @@
 .PARAMETER Force
     Replace an existing task with the same name. Without -Force, the script fails if the task exists.
 
+.PARAMETER ExecutionTimeLimitHours
+    Task Scheduler execution cap, 1-24 hours (default: 3). Three hours suits a laptop.
+    It is not a universal number and a machine that outgrows it fails in a way nobody
+    sees: the task is killed at the mark and reports 0x41306 SCHED_S_TASK_TERMINATED,
+    which is a scheduled-task result, not an error anyone is shown.
+
+    Measured on david-desktop 2026-09-06: `choco upgrade all` alone ran 2h16m against
+    10 outdated packages (three .NET SDKs among them) over a VPN link, leaving 44
+    minutes for Windows Update, and the run was killed mid-sweep. Size this against the
+    machine's actual package set, not against the default -- and read the chocolatey
+    log's timestamps rather than guessing, because a long run and a hung run look
+    identical from the task result alone.
+
 .PARAMETER WrapperVbs
     Optional path to a GUI-subsystem VBScript launcher (e.g. run-hidden.vbs) that accepts
     /script:"..." and /exe:"..." named arguments. When set, the task runs
@@ -59,6 +72,11 @@
     .\Install-SystemUpdatesTask.ps1 -SystemAccount -AutoReboot
     Registers the task to run as SYSTEM and auto-reboot if updates require it.
     Suitable for headless servers.
+
+.EXAMPLE
+    .\Install-SystemUpdatesTask.ps1 -SystemAccount -AutoReboot -ExecutionTimeLimitHours 6 -Force
+    The david-desktop registration. Six hours because that machine's Chocolatey sweep
+    alone measured 2h16m and the 3-hour default killed the run before Windows Update.
 
 .NOTES
     Author: Windows & Linux Sysadmin Toolkit
@@ -89,6 +107,10 @@ param(
 
     [Parameter()]
     [switch]$Force,
+
+    [Parameter()]
+    [ValidateRange(1, 24)]
+    [int]$ExecutionTimeLimitHours = 3,
 
     [Parameter()]
     [string]$WrapperVbs = ''
@@ -166,7 +188,7 @@ $settings = New-ScheduledTaskSettingsSet `
     -DontStopIfGoingOnBatteries `
     -AllowStartIfOnBatteries `
     -MultipleInstances IgnoreNew `
-    -ExecutionTimeLimit (New-TimeSpan -Hours 3)
+    -ExecutionTimeLimit (New-TimeSpan -Hours $ExecutionTimeLimitHours)
 
 # Register
 $description = "Weekly system updates (Winget + Chocolatey + Windows Update) via system-updates.ps1. Installed by Install-SystemUpdatesTask.ps1."
