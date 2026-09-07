@@ -278,7 +278,8 @@ function Install-ProfilePackage {
         'Notepad++.Notepad++',
         'geeksoftwareGmbH.PDF24Creator',
         'Obsidian.Obsidian',
-        'JohnMacFarlane.Pandoc'
+        'JohnMacFarlane.Pandoc',
+        'Anthropic.Claude'
     )
 
     # Profile-specific Winget packages
@@ -319,7 +320,12 @@ function Install-ProfilePackage {
             foreach ($Package in $AllWinget) {
                 Write-InfoMessage "Installing $Package..."
                 try {
-                    winget install --id $Package --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
+                    # Claude Desktop publishes two mutually destructive installer
+                    # variants: an exe (Squirrel, per-user, self-updating) and an
+                    # MSIX. Pinning user scope keeps every machine on the Squirrel
+                    # build; mixing them needs a manual uninstall to recover.
+                    $ScopeArgs = if ($Package -eq 'Anthropic.Claude') { @('--scope', 'user') } else { @() }
+                    winget install --id $Package --silent --accept-package-agreements --accept-source-agreements @ScopeArgs 2>&1 | Out-Null
                 }
                 catch {
                     Write-WarningMessage "Failed to install winget package $Package : $($_.Exception.Message)"
