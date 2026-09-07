@@ -66,10 +66,20 @@
 
 .NOTES
     Author: Windows & Linux Sysadmin Toolkit
-    Version: 2.1.0
+    Version: 2.2.0
     Requires: PowerShell 7.0+ and Administrator privileges
 
 .CHANGELOG
+    2.2.0 - 2026-09-07
+        - Winget stage resolves its executable through Resolve-WingetCommand
+          instead of a bare PATH lookup. winget reaches PATH via a per-user
+          App Execution Alias, which a SYSTEM scheduled task does not have,
+          so the whole stage silently self-skipped under SYSTEM; the resolver
+          falls back to the machine-wide App Installer package directory.
+          WingetCommand config key overrides the resolver. Note this widens
+          coverage to machine-scope packages only - a SYSTEM context cannot
+          see or upgrade user-scope installs by any means.
+
     2.1.0 - 2026-09-06
         - Added npm global package update stage (Update-NpmGlobal),
           config-driven: NpmGlobalPackages lists the packages, NpmCommand
@@ -170,6 +180,7 @@ $global:config = @{
     NpmGlobalPackages  = @()
     NpmCommand         = 'npm'
     NpmPrefix          = ''
+    WingetCommand      = 'winget'
     RebootDelaySeconds = $RebootDelaySeconds
     UpdateTypes        = @("Security", "Critical", "Important")
 }
@@ -209,6 +220,9 @@ if (Test-Path -Path $ConfigFile) {
         }
         if ($fileConfig.NpmPrefix) {
             $global:config.NpmPrefix = [string]$fileConfig.NpmPrefix
+        }
+        if ($fileConfig.WingetCommand) {
+            $global:config.WingetCommand = [string]$fileConfig.WingetCommand
         }
         if ($fileConfig.UpdateTypes) {
             $global:config.UpdateTypes = $fileConfig.UpdateTypes
@@ -468,6 +482,75 @@ function New-SystemRestorePoint {
     return $null
 }
 
+function Resolve-WingetCommand {
+    <#
+    .SYNOPSIS
+        Resolves an invocable winget command, including under SYSTEM.
+    .DESCRIPTION
+        winget normally reaches PATH through a per-user App Execution Alias in
+        %LOCALAPPDATA%\Microsoft\WindowsApps. A SYSTEM scheduled task has no
+        user profile carrying that alias, so a bare Get-Command lookup fails
+        and the whole Winget stage self-skips. The real binary lives in the
+        machine-wide App Installer package directory, which SYSTEM can read.
+        That directory name carries the App Installer version and is renamed
+        whenever App Installer updates itself, so it is globbed at runtime and
+        never stored.
+
+        Every candidate is validated by executing '--version'. Get-Command on
+        its own is not sufficient: it succeeds on the zero-byte alias reparse
+        point, which then fails on invocation - turning an honest "Skipped"
+        into a swallowed failure.
+
+        Resolution is attempted once per run and cached.
+    .OUTPUTS
+        [string] An invocable winget command, or $null when none works.
+    #>
+    [OutputType([string])]
+    param()
+
+    if ($script:ResolvedWingetCommand) {
+        return $script:ResolvedWingetCommand
+    }
+
+    $candidates = [System.Collections.Generic.List[string]]::new()
+
+    # Configured command first: 'winget' by default, which covers any context
+    # that has the alias on PATH (an interactive or logged-on-user task).
+    if ($global:config.WingetCommand) {
+        $candidates.Add([string]$global:config.WingetCommand)
+    }
+
+    # Machine-wide App Installer package. Present for SYSTEM, and for any
+    # context whose PATH lacks the per-user alias. Newest package first.
+    $packageGlob = Join-Path -Path $env:ProgramFiles `
+        -ChildPath 'WindowsApps\Microsoft.DesktopAppInstaller_*_8wekyb3d8bbwe\winget.exe'
+    Get-ChildItem -Path $packageGlob -ErrorAction SilentlyContinue |
+        Sort-Object -Property Name -Descending |
+        ForEach-Object { $candidates.Add($_.FullName) }
+
+    foreach ($candidate in $candidates) {
+        if (!(Get-Command $candidate -ErrorAction SilentlyContinue)) {
+            continue
+        }
+        try {
+            $null = & $candidate --version 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                if ($candidate -ne 'winget') {
+                    Write-InfoMessage "Resolved winget to: $candidate"
+                }
+                $script:ResolvedWingetCommand = $candidate
+                return $candidate
+            }
+        }
+        catch {
+            # Candidate is not invocable in this context - try the next one.
+            Write-Debug "winget candidate '$candidate' failed to execute: $($_.Exception.Message)"
+        }
+    }
+
+    return $null
+}
+
 function Export-PreUpdateState {
     <#
     .SYNOPSIS
@@ -493,9 +576,10 @@ function Export-PreUpdateState {
             }
 
             # Export Winget packages
-            if (Get-Command winget -ErrorAction SilentlyContinue) {
+            $wingetCmd = Resolve-WingetCommand
+            if ($wingetCmd) {
                 # Winget list output is harder to parse, storing raw output
-                $state.Winget = & winget list | Out-String
+                $state.Winget = & $wingetCmd list --accept-source-agreements --disable-interactivity | Out-String
             }
 
             $state | ConvertTo-Json -Depth 10 | Set-Content -Path $stateFile
@@ -530,8 +614,9 @@ function Update-Winget {
 
     # try winget updates with comprehensive error handling
     try {
-        if (!(Get-Command winget -ErrorAction SilentlyContinue)) {
-            Write-WarningMessage "Winget is not installed or not available in PATH"
+        $wingetCmd = Resolve-WingetCommand
+        if (!$wingetCmd) {
+            Write-WarningMessage "Winget is not installed or could not be resolved to an invocable path"
             $script:UpdateSummary.Winget.Skipped = $true
             return
         }
@@ -541,14 +626,14 @@ function Update-Winget {
             Write-InfoMessage "Updating Winget sources..."
             try {
                 # ErrorAction Stop for winget source update
-                $null = & winget source update --disable-interactivity 2>&1
+                $null = & $wingetCmd source update --disable-interactivity 2>&1
             }
             catch {
                 Write-WarningMessage "Winget source update warning: $($_.Exception.Message)"
             }
 
             Write-InfoMessage "Checking for available Winget updates..."
-            $upgradeList = & winget upgrade --include-unknown 2>&1 | Out-String
+            $upgradeList = & $wingetCmd upgrade --include-unknown --accept-source-agreements --disable-interactivity 2>&1 | Out-String
             Write-LogMessage $upgradeList -NoConsole
 
             # Check if there are any upgrades available
@@ -567,7 +652,7 @@ function Update-Winget {
             Write-InfoMessage "Upgrading all Winget packages..."
             Write-Progress -Activity "Updating Winget Packages" -Status "In progress..." -PercentComplete 50
 
-            $wingetOutput = & winget upgrade --all --silent --accept-source-agreements --accept-package-agreements --disable-interactivity 2>&1 | Out-String
+            $wingetOutput = & $wingetCmd upgrade --all --silent --accept-source-agreements --accept-package-agreements --disable-interactivity 2>&1 | Out-String
             Write-LogMessage $wingetOutput -NoConsole
 
             Write-Progress -Activity "Updating Winget Packages" -Completed

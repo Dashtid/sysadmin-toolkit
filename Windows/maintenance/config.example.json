@@ -12,6 +12,7 @@
   "NpmGlobalPackages": [],
   "NpmCommand": "npm",
   "NpmPrefix": "",
+  "WingetCommand": "winget",
 
   "UpdateTypes": [
     "Security",
@@ -21,6 +22,7 @@
 
   "_updateTypesNote": "Valid values: Security, Critical, Important, Recommended, Optional",
   "_npmNote": "npm global CLI tools are invisible to winget/choco - list their package names in NpmGlobalPackages (e.g. \"@anthropic-ai/claude-code\") to keep them updated; an empty list skips the stage. NpmCommand may be an absolute path to npm.cmd for SYSTEM scheduled tasks where a user-profile node is not on PATH. NpmPrefix targets a specific npm global prefix (the directory whose bin holds the tools) instead of the invoking account's default.",
+  "_wingetNote": "Leave WingetCommand as \"winget\" unless you have a reason not to. winget reaches PATH through a per-user App Execution Alias, which a SYSTEM scheduled task does not have; the script falls back on its own to globbing C:\\Program Files\\WindowsApps\\Microsoft.DesktopAppInstaller_*_8wekyb3d8bbwe\\winget.exe, so no configuration is needed for that case. Set an absolute path here only to override the search. Never point it at %LOCALAPPDATA%\\Microsoft\\WindowsApps\\winget.exe - that is a zero-byte alias stub that resolves but does not execute outside its owning user session. A SYSTEM context sees machine-scope packages only; user-scope installs (per-user apps such as browsers, Discord, VS Code User setup) are invisible to it regardless of this setting - sweep those with a separate at-logon task running as the interactive user.",
   "_autoRebootNote": "If true, system will automatically reboot after updates if required",
   "_logRetentionNote": "Logs older than this many days will be automatically deleted",
   "_skipRestorePointNote": "If true, no system restore point will be created before updates"

@@ -167,14 +167,14 @@ Describe 'system-updates.ps1 - Update-Winget' {
         }
     }
 
-    It 'Marks Winget.Skipped=$true when winget is missing from PATH' {
-        Mock Get-Command { $null } -ParameterFilter { $Name -eq 'winget' }
+    It 'Marks Winget.Skipped=$true when winget cannot be resolved' {
+        Mock Resolve-WingetCommand { $null }
         Update-Winget
         $script:UpdateSummary.Winget.Skipped | Should -Be $true
     }
 
     It 'Returns early (no upgrade run) when output reports "No available upgrade found"' {
-        Mock Get-Command { [PSCustomObject]@{ Name = 'winget' } } -ParameterFilter { $Name -eq 'winget' }
+        Mock Resolve-WingetCommand { 'winget' }
         Mock winget {
             $global:LASTEXITCODE = 0
             'No available upgrade found.'
@@ -183,6 +183,51 @@ Describe 'system-updates.ps1 - Update-Winget' {
         $script:UpdateSummary.Winget.Skipped | Should -Be $false
         $script:UpdateSummary.Winget.Updated | Should -Be 0
         $script:UpdateSummary.Winget.Failed | Should -Be 0
+    }
+
+    It 'Invokes the resolved command, not a bare winget from PATH' {
+        Mock Resolve-WingetCommand { 'winget' }
+        Mock winget {
+            $global:LASTEXITCODE = 0
+            'No available upgrade found.'
+        }
+        Update-Winget
+        Should -Invoke Resolve-WingetCommand -Times 1 -Exactly
+    }
+}
+
+Describe 'system-updates.ps1 - Resolve-WingetCommand' {
+    BeforeEach {
+        Mock Write-InfoMessage { }
+        # The resolver caches its answer for the run; clear it between cases.
+        Set-Variable -Name ResolvedWingetCommand -Scope Script -Value $null
+        Mock Get-ChildItem { @() }
+    }
+
+    It 'Returns the configured command when it executes successfully' {
+        $global:config.WingetCommand = 'winget'
+        Mock Get-Command { [PSCustomObject]@{ Name = 'winget' } }
+        Mock winget { $global:LASTEXITCODE = 0; 'v1.0.0' }
+
+        Resolve-WingetCommand | Should -Be 'winget'
+    }
+
+    It 'Returns $null when no candidate is invocable' {
+        $global:config.WingetCommand = 'winget'
+        Mock Get-Command { $null }
+
+        Resolve-WingetCommand | Should -BeNullOrEmpty
+    }
+
+    It 'Rejects a candidate that resolves but fails to execute (alias stub)' {
+        # %LOCALAPPDATA%\Microsoft\WindowsApps\winget.exe is a zero-byte reparse
+        # point: Get-Command succeeds on it, invocation does not. Resolving it
+        # would turn an honest "Skipped" into a swallowed failure.
+        $global:config.WingetCommand = 'winget'
+        Mock Get-Command { [PSCustomObject]@{ Name = 'winget' } }
+        Mock winget { $global:LASTEXITCODE = 1; '' }
+
+        Resolve-WingetCommand | Should -BeNullOrEmpty
     }
 }
 

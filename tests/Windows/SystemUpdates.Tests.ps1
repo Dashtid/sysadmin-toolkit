@@ -35,9 +35,9 @@ Describe "system-updates.ps1 v2.0.0 - Basic Validation" {
     }
 
     Context "Script Metadata" {
-        It "Script has version 2.1.0" {
+        It "Script has version 2.2.0" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Version:\s*2\.1\.0"
+            $content | Should -Match "Version:\s*2\.2\.0"
         }
 
         It "Script has comment-based help" {
@@ -177,9 +177,25 @@ Describe "system-updates.ps1 - Core Functionality" {
             $content | Should -Match "function Update-Windows"
         }
 
-        It "Winget function checks for winget command" {
+        It "Winget function resolves its winget command" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Get-Command winget"
+            $content | Should -Match "function Resolve-WingetCommand"
+            $content | Should -Match '\$wingetCmd = Resolve-WingetCommand'
+        }
+
+        It "Never invokes a bare winget from PATH (v2.2.0)" {
+            # A SYSTEM scheduled task has no per-user App Execution Alias, so
+            # every call site must go through the resolver. Leaving one bare
+            # turns a clean skip into a swallowed failure.
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Not -Match '&\s+winget\s'
+            $content | Should -Not -Match 'Get-Command winget\b'
+        }
+
+        It "Resolver validates candidates by executing them (v2.2.0)" {
+            # Get-Command alone succeeds on the zero-byte alias reparse point.
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match '&\s+\$candidate\s+--version'
         }
 
         It "Chocolatey function checks for choco command" {
@@ -222,6 +238,43 @@ Describe "system-updates.ps1 - Core Functionality" {
         It "Tracks npm results in the update summary" {
             $content = Get-Content $ScriptPath -Raw
             $content | Should -Match "UpdateSummary\.Npm"
+        }
+    }
+
+    Context "Winget Resolution (v2.2.0)" {
+        It "Defaults WingetCommand to plain winget" {
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "WingetCommand\s*=\s*'winget'"
+        }
+
+        It "Reads WingetCommand from the config file" {
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match '\$fileConfig\.WingetCommand'
+        }
+
+        It "Falls back to the machine-wide App Installer package directory" {
+            # The per-user App Execution Alias does not exist for SYSTEM; the
+            # real binary does, under Program Files\WindowsApps.
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "Microsoft\.DesktopAppInstaller_\*"
+        }
+
+        It "Globs the package directory at runtime rather than storing a version" {
+            # The directory name carries the App Installer version and is
+            # renamed whenever App Installer updates itself - which this very
+            # stage does. A stored path goes stale silently.
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "Get-ChildItem -Path \`$packageGlob"
+        }
+
+        It "Caches the resolved command for the run" {
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "\`$script:ResolvedWingetCommand"
+        }
+
+        It "Uses the resolver when exporting pre-update state" {
+            $content = Get-Content $ScriptPath -Raw
+            $content | Should -Match "\`$state\.Winget = & \`$wingetCmd list"
         }
     }
 

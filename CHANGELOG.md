@@ -6,6 +6,51 @@ not strictly adhere to semantic versioning (it is a personal toolkit, not a
 published library) but minor bumps signal new public surface and patch bumps
 signal bug fixes only.
 
+## [3.1.0] - 2026-09-07
+
+### Fixed
+
+- `Windows/maintenance/system-updates.ps1` (script 2.1.0 -> 2.2.0): the Winget
+  stage silently self-skipped whenever the script ran as SYSTEM, logging only
+  `[!] Winget is not installed or not available in PATH`. `winget` reaches PATH
+  through a **per-user** App Execution Alias in
+  `%LOCALAPPDATA%\Microsoft\WindowsApps`; a SYSTEM scheduled task has no user
+  profile carrying that alias, so the `Get-Command winget` guard was correct and
+  the stage never ran. Found on david-desktop, whose weekly `SystemUpdates` task
+  runs as SYSTEM — every winget package there had gone unpatched.
+
+  New `Resolve-WingetCommand` resolves the executable instead: the configured
+  `WingetCommand` first, then a runtime glob of
+  `C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_8wekyb3d8bbwe\winget.exe`,
+  which SYSTEM can read. Candidates are validated by **executing** `--version`,
+  not by `Get-Command` alone — `Get-Command` succeeds on the zero-byte alias
+  reparse point, which then fails on invocation and would convert an honest
+  "Skipped" into a swallowed failure. Resolution is cached per run, and all six
+  call sites (pre-update state export, availability guard, `source update`,
+  `upgrade --include-unknown`, `upgrade --all`) go through it.
+
+  **Scope limit, deliberately not worked around:** a SYSTEM context can see and
+  upgrade machine-scope packages only. User-scope installs (browsers, Discord,
+  VS Code User setup, Claude Desktop) are invisible to it by any path, flag or
+  module. Sweeping those needs a separate at-logon task running as the
+  interactive user.
+
+### Added
+
+- `WingetCommand` config key (default `winget`) with a `_wingetNote` in
+  `config.example.json`. It is an override for the resolver, not the mechanism —
+  the App Installer directory name carries its version and is renamed on every
+  App Installer update, so an absolute path stored in config goes stale
+  silently.
+- Pester coverage: a `Resolve-WingetCommand` behavioral block (resolves,
+  returns `$null` when nothing is invocable, rejects the alias stub that
+  resolves but fails to execute) plus a `Winget Resolution (v2.2.0)` static
+  context. `Update-Winget` behavioral tests now mock the resolver rather than
+  `Get-Command`, so they no longer depend on the test machine's own winget.
+- Retroactive note: script 2.1.0 (commit `d6ce5e6`, 2026-09-06) added the npm
+  global package stage — `Update-NpmGlobal` with `NpmGlobalPackages`,
+  `NpmCommand` and `NpmPrefix` — and shipped without a CHANGELOG entry.
+
 ## [3.0.0] - 2026-06-14
 
 ### Removed (ghost-code cull)
