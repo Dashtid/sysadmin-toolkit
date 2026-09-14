@@ -1,0 +1,28 @@
+# Findings the full-history secret scan raises that are not secrets.
+#
+# Each line is a gitleaks FINGERPRINT - commit:file:rule:line - so it suppresses
+# exactly one finding in exactly one historical commit. No rule is disabled and
+# no forward blind spot is created: the same rule firing on a new commit, or on
+# a different line of the same file, is a new fingerprint and still fails.
+#
+# WHY THERE ARE ENTRIES HERE AT ALL. The CI secret scan was decorative until
+# 2026-09-14 - it ran gitleaks with --staged on a checkout that stages nothing,
+# so it reported "0 commits scanned ... no leaks found" on every run. Its first
+# real pass over 221 commits raised these two. Both are documentation, not
+# credentials.
+#
+# 816d664b (2025-10-18) SECURITY.md:197 and 86f97a0c (2025-10-12)
+# docs/SECURITY.md:157 are the SAME example, before and after the docs/ move: a
+# PowerShell snippet inside a code block headed "[-] BAD: Plain text in
+# variables", showing an api-key assignment as the thing NOT to do. The string
+# is an illustration written for the page; it never authenticated to anything.
+# Neither file carries it today - the example was dropped from the current tree
+# - so these are purely historical and cannot recur.
+#
+# [!] Before adding a line here, check which it is. A fingerprint for a REAL
+# credential is the wrong fix: revoke or rotate it first, per the code-two
+# policy on committed secrets. An entry in this file says "this was never a
+# secret", not "this secret is handled".
+
+816d664b4bf2ec012880957e8601e62c17c6bd1c:SECURITY.md:generic-api-key:197
+86f97a0c9534cf72ce216014d032605569781468:docs/SECURITY.md:generic-api-key:157
