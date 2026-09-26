@@ -6,6 +6,21 @@ not strictly adhere to semantic versioning (it is a personal toolkit, not a
 published library) but minor bumps signal new public surface and patch bumps
 signal bug fixes only.
 
+## [4.0.0] - 2026-09-26
+
+### Removed
+
+- `Windows/maintenance/system-updates.ps1` (script 2.2.0 -> 2.3.0): the
+  `$versionPinned` exclusions (`kubernetes-cli`, `grype`) are gone from
+  `choco upgrade all`. Both served work this machine no longer does: kubectl
+  was held within version skew of a lab cluster, and grype was frozen as a
+  qualified instrument for a validation process. With no consumer left, the pin
+  only kept a vulnerability scanner ageing. The weekly sweep now upgrades both
+  like every other Chocolatey package. The two Pester assertions that guarded
+  the pin (`Excludes grype ...`, `Does not pin syft ...`) went with it.
+  Entries 2.3.1 and 2.3.2 below describe the pin as it was and are left as
+  written.
+
 ## [3.1.0] - 2026-09-07
 
 ### Fixed

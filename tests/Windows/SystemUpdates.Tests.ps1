@@ -35,9 +35,9 @@ Describe "system-updates.ps1 v2.0.0 - Basic Validation" {
     }
 
     Context "Script Metadata" {
-        It "Script has version 2.2.0" {
+        It "Script has version 2.3.0" {
             $content = Get-Content $ScriptPath -Raw
-            $content | Should -Match "Version:\s*2\.2\.0"
+            $content | Should -Match "Version:\s*2\.3\.0"
         }
 
         It "Script has comment-based help" {
@@ -528,23 +528,6 @@ Describe "system-updates.ps1 - Security and Best Practices" {
             $content | Should -Match "choco upgrade all[^\r\n]*--except"
             $content | Should -Match 'powershell-core'
             $content | Should -Match 'notepadplusplus\.install'
-        }
-
-        It "Excludes grype from 'choco upgrade all' (pinned instrument must not drift)" {
-            $content = Get-Content $ScriptPath -Raw
-            # grype is pinned at a specific version because its output feeds records that must
-            # stay reproducible. An unattended upgrade would swap the instrument and invalidate
-            # everything produced afterwards. If this test fails, do not "fix" it by deleting
-            # the assertion - bumping grype is a deliberate re-qualification decision.
-            $content | Should -Match 'versionPinned\s*=\s*"[^"]*\bgrype\b'
-        }
-
-        It "Does not pin syft (version is recorded per run, not frozen)" {
-            $content = Get-Content $ScriptPath -Raw
-            # syft's version is recorded with each run rather than frozen, and every pipeline
-            # command pins the CycloneDX spec version, so syft may float. Guards against someone
-            # pinning it by analogy with grype and then wondering why it never updates.
-            $content | Should -Not -Match 'versionPinned\s*=\s*"[^"]*\bsyft\b'
         }
 
         It "Uses ShouldProcess for destructive operations" {

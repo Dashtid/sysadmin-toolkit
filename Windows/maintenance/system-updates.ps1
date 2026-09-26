@@ -66,10 +66,17 @@
 
 .NOTES
     Author: Windows & Linux Sysadmin Toolkit
-    Version: 2.2.0
+    Version: 2.3.0
     Requires: PowerShell 7.0+ and Administrator privileges
 
 .CHANGELOG
+    2.3.0 - 2026-09-26
+        - Removed the version-pinned exclusions from 'choco upgrade all'.
+          kubernetes-cli and grype were held back for a lab cluster and a
+          validation process that this machine no longer serves; nothing
+          here needs a frozen version, so the weekly sweep now upgrades
+          them like every other package.
+
     2.2.0 - 2026-09-07
         - Winget stage resolves its executable through Resolve-WingetCommand
           instead of a bare PATH lookup. winget reaches PATH via a per-user
@@ -719,27 +726,9 @@ function Update-Chocolatey {
             # package (PowerShell, Azure CLI, Notepad++, Pandoc).
             $wingetOwned = "powershell-core,azure-cli,notepadplusplus,notepadplusplus.install,pandoc"
 
-            # Version-pinned packages: skip the upgrade-all sweep so manual pins hold.
-            # kubernetes-cli is pinned to v1.34.x to stay within +/-1 of the K3s v1.33.5
-            # server on the lab server; bump manually when its K3s upgrades.
-            #
-            # grype is pinned to 0.112.0 because this machine uses it as a qualified
-            # instrument: its output feeds records that must stay reproducible, so the
-            # version is part of the result. An unattended upgrade would silently swap the
-            # instrument and invalidate everything produced afterwards, which makes a bump a
-            # deliberate re-qualification decision rather than a maintenance sweep.
-            # It is deliberately NOT installed via choco: the community feed does not retain
-            # arbitrary old versions (as of 2026-08 it offered 0.114.0 then 0.110.0, with no
-            # 0.112.0), so it cannot host a pinned instrument at all. grype is installed by
-            # hand from the immutable GitHub release and checksum-verified out of band. This
-            # exclusion stays as a guard so a future 'choco install grype' cannot reintroduce
-            # a drifting second copy.
-            # syft is deliberately NOT pinned: its version is recorded at each test
-            # execution rather than frozen, and every pipeline command pins the CycloneDX
-            # spec version (@1.6) so a syft upgrade cannot change the output format.
-            $versionPinned = "kubernetes-cli,grype"
-
-            $chocoExcludes = "$wingetOwned,$versionPinned"
+            # No version pins: nothing on this machine needs a frozen package, so every
+            # Chocolatey-owned package (grype and syft included) floats to latest.
+            $chocoExcludes = $wingetOwned
             $chocoOutput = & choco upgrade all -y --no-progress --except="'$chocoExcludes'" 2>&1
             Write-LogMessage ($chocoOutput | Out-String) -NoConsole
 
