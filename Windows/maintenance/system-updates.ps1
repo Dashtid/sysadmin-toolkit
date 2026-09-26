@@ -72,10 +72,9 @@
 .CHANGELOG
     2.3.0 - 2026-09-26
         - Removed the version-pinned exclusions from 'choco upgrade all'.
-          kubernetes-cli and grype were held back for a lab cluster and a
-          validation process that this machine no longer serves; nothing
-          here needs a frozen version, so the weekly sweep now upgrades
-          them like every other package.
+          kubernetes-cli and grype were held back for work this machine no
+          longer does; nothing here needs a frozen version, so the weekly
+          sweep now upgrades them like every other package.
 
     2.2.0 - 2026-09-07
         - Winget stage resolves its executable through Resolve-WingetCommand

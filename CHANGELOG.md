@@ -12,10 +12,8 @@ signal bug fixes only.
 
 - `Windows/maintenance/system-updates.ps1` (script 2.2.0 -> 2.3.0): the
   `$versionPinned` exclusions (`kubernetes-cli`, `grype`) are gone from
-  `choco upgrade all`. Both served work this machine no longer does: kubectl
-  was held within version skew of a lab cluster, and grype was frozen as a
-  qualified instrument for a validation process. With no consumer left, the pin
-  only kept a vulnerability scanner ageing. The weekly sweep now upgrades both
+  `choco upgrade all`. Both served work this machine no longer does. With no
+  consumer left, the pin only kept a vulnerability scanner ageing. The weekly sweep now upgrades both
   like every other Chocolatey package. The two Pester assertions that guarded
   the pin (`Excludes grype ...`, `Does not pin syft ...`) went with it.
   Entries 2.3.1 and 2.3.2 below describe the pin as it was and are left as
