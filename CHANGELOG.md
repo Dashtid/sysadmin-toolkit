@@ -56,6 +56,11 @@ signal bug fixes only.
 - The labeler drops rules that no path matches any more (`ssh`, `monitoring`,
   `kubernetes`), and its `docker` rule is case-insensitive so
   `Manage-Docker.ps1` finally gets the label.
+- `security-scan.yml` "Check Markdown Links" moves from
+  `gaurav-nelson/github-action-markdown-link-check` 1.0.17, archived upstream
+  and receiving no fixes, to its maintained continuation
+  `tcort/github-action-markdown-link-check` v1.1.2 (SHA-pinned; same inputs and
+  config file).
 
 ### Fixed
 
