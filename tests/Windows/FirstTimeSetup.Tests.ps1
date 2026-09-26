@@ -29,12 +29,11 @@ Describe "First-Time Setup Scripts" {
             Test-Path $ScriptPath | Should -Be $true
         }
 
-        # work-laptop-setup.ps1 and home-desktop-setup.ps1 consolidated into fresh-windows-setup.ps1
-        It "fresh-windows-setup.ps1 supports Work and Home profiles" {
+        It "fresh-windows-setup.ps1 supports the Home profile" {
             $ScriptPath = Join-Path $WindowsScripts "fresh-windows-setup.ps1"
             $Content = Get-Content $ScriptPath -Raw
             $Content | Should -Match 'SetupProfile'
-            $Content | Should -Match 'Work.*Home'
+            $Content | Should -Match "ValidateSet\('Home'\)"
         }
     }
 

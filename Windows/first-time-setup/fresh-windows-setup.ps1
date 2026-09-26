@@ -1,7 +1,7 @@
 # Fresh Windows 11 Setup - Master Script
 # Complete automated setup for a new Windows 11 installation
 # This script orchestrates the entire setup process
-# Supports Work and Home profiles with different package sets
+# Installs either the curated Home profile or a previously exported package list
 # Run as Administrator in PowerShell 7+
 
 #Requires -Version 7.0
@@ -13,8 +13,8 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [ValidateSet('Work', 'Home')]
-    [string]$SetupProfile,               # Setup profile: Work or Home
+    [ValidateSet('Home')]
+    [string]$SetupProfile,               # Setup profile: Home (omit to use exported package lists)
 
     [switch]$UseLatestVersions = $true,  # Install latest versions by default
     [switch]$SkipPackageInstall,         # Skip package installation (config only)
@@ -102,14 +102,9 @@ function Show-SetupSummary {
     if (!$SkipPackageInstall) {
         if ($SetupProfile) {
             Write-InfoMessage "Package source: Profile-based ($SetupProfile)"
-            if ($SetupProfile -eq 'Work') {
-                Write-InfoMessage "  - Includes: Teams, Azure CLI, WatchGuard VPN"
-                Write-InfoMessage "  - Dev directory: $env:USERPROFILE\Development"
-            } else {
-                Write-InfoMessage "  - Includes: Discord, Spotify, ProtonVPN, Ollama"
-                if (-not $SkipGaming) { Write-InfoMessage "  - Includes: Steam" }
-                Write-InfoMessage "  - Dev directory: C:\Code"
-            }
+            Write-InfoMessage "  - Includes: Discord, Spotify, ProtonVPN, Ollama"
+            if (-not $SkipGaming) { Write-InfoMessage "  - Includes: Steam" }
+            Write-InfoMessage "  - Dev directory: C:\Code"
         } else {
             $WingetFile = Join-Path $PSScriptRoot "winget-packages.json"
             $ChocoFile = Join-Path $PSScriptRoot "chocolatey-packages.config"
@@ -202,15 +197,10 @@ function Set-SystemConfiguration {
         Write-WarningMessage "Some Windows settings could not be applied: $($_.Exception.Message)"
     }
 
-    # Setup development directories based on profile
+    # Setup development directories
     Write-InfoMessage "Setting up development directories..."
-    if ($ProfileName -eq 'Work') {
-        $DevDir = "$env:USERPROFILE\Development"
-        $Directories = @("$DevDir\Projects", "$DevDir\Scripts", "$DevDir\Tools", "$DevDir\Documentation")
-    } else {
-        $DevDir = "C:\Code"
-        $Directories = @("$DevDir", "$DevDir\personal", "$DevDir\learning", "$DevDir\projects")
-    }
+    $DevDir = "C:\Code"
+    $Directories = @("$DevDir", "$DevDir\personal", "$DevDir\learning", "$DevDir\projects")
 
     foreach ($Dir in $Directories) {
         if (!(Test-Path $Dir)) {
@@ -231,8 +221,8 @@ function Set-SystemConfiguration {
         Write-WarningMessage "Git not found. Install Git first, then configure manually."
     }
 
-    # WSL2 setup (Work profile or if not skipped)
-    if (-not $SkipWslSetup -and ($ProfileName -eq 'Work' -or [string]::IsNullOrEmpty($ProfileName))) {
+    # WSL2 setup: exported-package runs only (the Home profile leaves it alone), unless skipped
+    if (-not $SkipWslSetup -and [string]::IsNullOrEmpty($ProfileName)) {
         Write-InfoMessage "Setting up WSL2..."
         try {
             Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -ErrorAction SilentlyContinue | Out-Null
@@ -282,31 +272,19 @@ function Install-ProfilePackage {
         'Anthropic.Claude'
     )
 
-    # Profile-specific Winget packages
-    $ProfileWinget = @()
-    if ($ProfileName -eq 'Work') {
-        $ProfileWinget = @(
-            'Microsoft.AzureCLI',
-            'Microsoft.Teams',
-            'Zoom.Zoom.EXE',
-            'WatchGuard.MobileVPNWithSSLClient',
-            'RevoUninstaller.RevoUninstaller'
-        )
-    } else {
-        # Home profile
-        $ProfileWinget = @(
-            'Ollama.Ollama',
-            'Proton.ProtonVPN',
-            'Proton.ProtonMail',
-            'Discord.Discord',
-            'Spotify.Spotify',
-            'OpenVPNTechnologies.OpenVPN',
-            'Logitech.OptionsPlus',
-            'Zoom.Zoom.EXE'
-        )
-        if (-not $SkipGamingPackages) {
-            $ProfileWinget += 'Valve.Steam'
-        }
+    # Home profile Winget packages
+    $ProfileWinget = @(
+        'Ollama.Ollama',
+        'Proton.ProtonVPN',
+        'Proton.ProtonMail',
+        'Discord.Discord',
+        'Spotify.Spotify',
+        'OpenVPNTechnologies.OpenVPN',
+        'Logitech.OptionsPlus',
+        'Zoom.Zoom.EXE'
+    )
+    if (-not $SkipGamingPackages) {
+        $ProfileWinget += 'Valve.Steam'
     }
 
     $AllWinget = $CommonWinget + $ProfileWinget
@@ -342,7 +320,7 @@ function Install-ProfilePackage {
 
     # Common Chocolatey packages with error handling
     if (Get-Command choco -ErrorAction SilentlyContinue) {
-        # Pandoc/PowerShell/Azure CLI/Notepad++ are installed via winget above; keep them out
+        # Pandoc/PowerShell/Notepad++ are installed via winget above; keep them out
         # of this choco list so the two managers do not both manage the same package.
         $ChocoPackages = @('python', 'python3', 'uv', 'bind-toolsonly', 'grype', 'syft')
 
@@ -390,7 +368,7 @@ function Show-PostInstallation {
     Write-InfoMessage ""
     Write-InfoMessage "   [*] Generate SSH Keys"
     Write-InfoMessage "       - Run: ssh-keygen -t ed25519 -C 'your_email@example.com'"
-    Write-InfoMessage "       - Add to GitHub/Gitea"
+    Write-InfoMessage "       - Add to GitHub"
     Write-InfoMessage ""
     Write-InfoMessage "   [*] Configure Git"
     Write-InfoMessage "       - Set global name: git config --global user.name 'Your Name'"
@@ -399,7 +377,6 @@ function Show-PostInstallation {
     Write-InfoMessage "   [*] Sign in to applications"
     Write-InfoMessage "       - Browsers (Chrome, Brave, Edge)"
     Write-InfoMessage "       - VS Code (sync settings)"
-    Write-InfoMessage "       - Microsoft Teams"
     Write-InfoMessage "       - OneDrive"
     Write-InfoMessage "       - ProtonVPN"
     Write-InfoMessage ""

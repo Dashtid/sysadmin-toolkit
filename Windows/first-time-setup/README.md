@@ -8,7 +8,7 @@ Automated package export and installation for fresh Windows 11 machines.
 |--------|---------|
 | [export-current-packages.ps1](export-current-packages.ps1) | Export Winget/Chocolatey packages to JSON/XML |
 | [install-from-exported-packages.ps1](install-from-exported-packages.ps1) | Install from exported package lists |
-| [fresh-windows-setup.ps1](fresh-windows-setup.ps1) | Complete setup with profile support (Work/Home) |
+| [fresh-windows-setup.ps1](fresh-windows-setup.ps1) | Complete setup: the Home profile, or the exported package lists |
 
 ## Package Lists
 
@@ -25,8 +25,8 @@ Automated package export and installation for fresh Windows 11 machines.
 # On new machine: install everything
 .\install-from-exported-packages.ps1 -UseLatestVersions
 
-# Or full setup with profile
-.\fresh-windows-setup.ps1 -Profile Work
+# Or full setup with the Home profile
+.\fresh-windows-setup.ps1 -SetupProfile Home
 ```
 
 ## Script Parameters
@@ -50,8 +50,9 @@ Automated package export and installation for fresh Windows 11 machines.
 
 | Parameter | Description |
 |-----------|-------------|
-| `-Profile Work` | Work profile (dev tools, productivity) |
-| `-Profile Home` | Home profile (includes gaming) |
+| `-SetupProfile Home` | Home profile (includes gaming); omit it to install the exported package lists |
+| `-SkipGaming` | Leave out gaming packages (Home profile) |
+| `-SkipWSL` | Skip WSL2 setup (exported-package runs only) |
 | `-SkipPackageInstall` | Configuration only |
 | `-Minimal` | Essential packages only |
 
@@ -83,4 +84,4 @@ choco upgrade all -y
 ```
 
 ---
-**Last Updated**: 2025-12-26
+**Last Updated**: 2026-09-26

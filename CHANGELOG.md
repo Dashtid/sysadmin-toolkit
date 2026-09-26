@@ -20,6 +20,21 @@ signal bug fixes only.
   the pin (`Excludes grype ...`, `Does not pin syft ...`) went with it.
   Entries 2.3.1 and 2.3.2 below describe the pin as it was and are left as
   written.
+- `Windows/first-time-setup/fresh-windows-setup.ps1`: the `Work` profile. It
+  provisioned a work laptop (Teams, Azure CLI, a corporate VPN client, Revo
+  Uninstaller, a `%USERPROFILE%\Development` tree) and no work machine is set
+  up from this toolkit any more. `-SetupProfile` now accepts only `Home`;
+  leaving it out still installs the exported package lists. WSL2 setup keeps
+  its existing rule (exported-package runs only, `-SkipWSL` opts out), which
+  was previously also triggered by `Work`. The post-install checklist no
+  longer mentions Teams or a Gitea server.
+
+### Fixed
+
+- `Windows/first-time-setup/README.md` and the closing hint of
+  `install-from-exported-packages.ps1` documented `-Profile Work`; the
+  parameter has always been `-SetupProfile`, so the documented command failed
+  to bind. Both now show `-SetupProfile Home`.
 
 ## [3.1.0] - 2026-09-07
 

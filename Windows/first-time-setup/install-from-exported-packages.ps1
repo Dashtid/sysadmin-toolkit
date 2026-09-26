@@ -255,7 +255,7 @@ function Main {
     Write-InfoMessage "  1. Review the log file for any errors"
     Write-InfoMessage "  2. Restart your computer to ensure all changes take effect"
     Write-InfoMessage "  3. Configure installed applications as needed"
-    Write-InfoMessage "  4. Or run fresh-windows-setup.ps1 -Profile Work for complete setup"
+    Write-InfoMessage "  4. Or run fresh-windows-setup.ps1 -SetupProfile Home for complete setup"
 }
 
 # Run Main when invoked as a script. When dot-sourced for testing, skip auto-run

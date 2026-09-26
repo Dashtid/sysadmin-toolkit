@@ -54,33 +54,25 @@ Describe 'fresh-windows-setup.ps1 - Set-SystemConfiguration' {
         }
 
         It 'Applies the five Explorer/dark-mode/Bing registry edits' {
-            Set-SystemConfiguration -Skip $false -ProfileName 'Work' -SkipWslSetup $true
+            Set-SystemConfiguration -Skip $false -ProfileName 'Home' -SkipWslSetup $true
             Should -Invoke Set-ItemProperty -Times 5
-        }
-
-        It 'Uses the Work development directory when -ProfileName is Work' {
-            $script:CreatedPaths = @()
-            Mock New-Item { $script:CreatedPaths += $Path }
-            Mock Test-Path { $false }   # force New-Item to fire
-            Set-SystemConfiguration -Skip $false -ProfileName 'Work' -SkipWslSetup $true
-            ($script:CreatedPaths -join '|') | Should -Match 'Development'
         }
 
         It 'Uses C:\Code directory when -ProfileName is Home' {
             $script:CreatedPaths = @()
             Mock New-Item { $script:CreatedPaths += $Path }
-            Mock Test-Path { $false }
+            Mock Test-Path { $false }   # force New-Item to fire
             Set-SystemConfiguration -Skip $false -ProfileName 'Home' -SkipWslSetup $true
             ($script:CreatedPaths -join '|') | Should -Match 'C:\\Code'
         }
 
-        It 'Enables WSL when -SkipWslSetup is false and Work profile' {
-            Set-SystemConfiguration -Skip $false -ProfileName 'Work' -SkipWslSetup $false
+        It 'Enables WSL when -SkipWslSetup is false and no profile is set' {
+            Set-SystemConfiguration -Skip $false -ProfileName '' -SkipWslSetup $false
             Should -Invoke Enable-WindowsOptionalFeature -Times 2
         }
 
         It 'Skips WSL when -SkipWslSetup is true' {
-            Set-SystemConfiguration -Skip $false -ProfileName 'Work' -SkipWslSetup $true
+            Set-SystemConfiguration -Skip $false -ProfileName '' -SkipWslSetup $true
             Should -Invoke Enable-WindowsOptionalFeature -Times 0
         }
 
@@ -100,7 +92,7 @@ Describe 'fresh-windows-setup.ps1 - Install-ProfilePackage' {
 
     Context 'When -Skip is true' {
         It 'Returns immediately' {
-            Install-ProfilePackage -ProfileName 'Work' -Skip $true
+            Install-ProfilePackage -ProfileName 'Home' -Skip $true
             Should -Invoke winget -Times 0
             Should -Invoke choco -Times 0
         }
@@ -120,16 +112,6 @@ Describe 'fresh-windows-setup.ps1 - Install-ProfilePackage' {
             Mock winget {
                 $script:WingetCalls += , @($args)
             }
-        }
-
-        It 'Installs Microsoft.Teams for Work profile' {
-            Install-ProfilePackage -ProfileName 'Work' -Skip $false
-            ($script:WingetCalls | ForEach-Object { $_ -join ' ' }) -join '|' | Should -Match 'Microsoft\.Teams'
-        }
-
-        It 'Does NOT install Microsoft.Teams for Home profile' {
-            Install-ProfilePackage -ProfileName 'Home' -Skip $false
-            ($script:WingetCalls | ForEach-Object { $_ -join ' ' }) -join '|' | Should -Not -Match 'Microsoft\.Teams'
         }
 
         It 'Installs Discord for Home profile' {
@@ -168,16 +150,16 @@ Describe 'fresh-windows-setup.ps1 - Main' {
     }
 
     It 'Calls Assert-Administrator first (admin gating moved from #Requires)' {
-        Main -ProfileName 'Work' -Interactive $false
+        Main -ProfileName 'Home' -Interactive $false
         Should -Invoke Assert-Administrator -Times 1
     }
 
     It 'Skips the interactive Show-SetupSummary in non-interactive mode' {
-        { Main -ProfileName 'Work' -Interactive $false } | Should -Not -Throw
+        { Main -ProfileName 'Home' -Interactive $false } | Should -Not -Throw
     }
 
     It 'Dispatches to Install-ProfilePackage when -ProfileName is set' {
-        Main -ProfileName 'Work' -Interactive $false
+        Main -ProfileName 'Home' -Interactive $false
         Should -Invoke Install-ProfilePackage -Times 1
         Should -Invoke Install-Package -Times 0
     }
@@ -192,18 +174,18 @@ Describe 'fresh-windows-setup.ps1 - Main' {
         Main -ProfileName '' -Interactive $false
         Should -Invoke Test-RequiredFile -Times 1
 
-        Main -ProfileName 'Work' -Interactive $false
+        Main -ProfileName 'Home' -Interactive $false
         # After both runs: only the first call should have hit Test-RequiredFile
         Should -Invoke Test-RequiredFile -Times 1
     }
 
     It 'Always calls Set-SystemConfiguration' {
-        Main -ProfileName 'Work' -Interactive $false
+        Main -ProfileName 'Home' -Interactive $false
         Should -Invoke Set-SystemConfiguration -Times 1
     }
 
     It 'Always calls Show-PostInstallation at the end' {
-        Main -ProfileName 'Work' -Interactive $false
+        Main -ProfileName 'Home' -Interactive $false
         Should -Invoke Show-PostInstallation -Times 1
     }
 }
