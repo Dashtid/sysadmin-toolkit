@@ -99,7 +99,7 @@
 
 .NOTES
     File Name      : Manage-Docker.ps1
-    Author         : Windows & Linux Sysadmin Toolkit
+    Author         : Windows Sysadmin Toolkit
     Prerequisite   : PowerShell 5.1+ (PowerShell 7+ recommended)
                      Docker Desktop for Windows
     Version        : 1.0.0

@@ -20,14 +20,11 @@ Common issues and solutions.
 | "Must run as Administrator" | Right-click PowerShell → Run as Administrator |
 | "Cannot load CommonFunctions.psm1" | `Test-Path "$PSScriptRoot\..\lib\CommonFunctions.psm1"` |
 
-## Linux
+## Bash (Git Bash / WSL)
 
 | Issue | Solution |
 |-------|----------|
 | "Permission denied" | `chmod +x script.sh` |
-| "common-functions.sh not found" | Check relative path: `source "$SCRIPT_DIR/../lib/bash/common-functions.sh"` |
-| Docker connection refused | `sudo systemctl start docker; sudo usermod -aG docker $USER` |
-| nvidia-smi not found | `sudo apt install nvidia-driver-535` |
 
 ## Package Managers
 
@@ -81,4 +78,4 @@ shellcheck script.sh
 4. Open a new issue with: OS version, script name, full error, steps to reproduce
 
 ---
-**Last Updated**: 2025-12-26
+**Last Updated**: 2026-09-26

@@ -59,7 +59,7 @@
 
 .NOTES
     File Name      : Compare-SoftwareInventory.ps1
-    Author         : Windows & Linux Sysadmin Toolkit
+    Author         : Windows Sysadmin Toolkit
     Prerequisite   : PowerShell 5.1+
     Version        : 1.0.0
 

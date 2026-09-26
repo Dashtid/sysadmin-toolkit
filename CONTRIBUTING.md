@@ -30,9 +30,8 @@ Guidelines for maintaining code quality and consistency.
 | Requirement | Details |
 |-------------|---------|
 | Strict mode | `set -euo pipefail` |
-| Source library | `source "$SCRIPT_DIR/../lib/bash/common-functions.sh"` |
-| Logging | `log_info`, `log_success`, `log_error` |
-| Error handling | `check_command`, `retry_command`, `die` |
+| Self-contained | No shared Bash library since the Linux tier was removed; see [examples/example-bash-script.sh](examples/example-bash-script.sh) |
+| Output markers | ASCII only: `[+]` `[-]` `[!]` `[i]` (no emojis) |
 
 **Naming**: `kebab-case.sh` for scripts, `UPPER_CASE` for globals, `lower_case` for locals
 
@@ -57,8 +56,8 @@ try {
 ```
 
 ```bash
-# Bash - die on error
-[[ -z "$var" ]] && die "Variable required" 1
+# Bash - fail loudly on error
+[[ -z "$var" ]] && { echo "[-] Variable required" >&2; exit 1; }
 ```
 
 ## Testing
@@ -72,8 +71,8 @@ Invoke-Pester -Path .\tests\Windows\CommonFunctions.Tests.ps1
 ```
 
 ```bash
-# Bash syntax check
-shellcheck Linux/**/*.sh
+# Every hook the CI gate runs, shellcheck included
+pre-commit run --all-files
 ```
 
 ## Pull Request Process
@@ -91,7 +90,7 @@ shellcheck Linux/**/*.sh
 5. Commit with conventional format:
 
    ```text
-   feat: add GPU alerting
+   feat: add Docker volume cleanup
    fix: resolve race condition
    docs: update SSH guide
    ```
@@ -117,4 +116,4 @@ Before submitting:
 See [docs/SCRIPT_TEMPLATE.md](docs/SCRIPT_TEMPLATE.md) for full PowerShell and Bash templates.
 
 ---
-**Last Updated**: 2025-12-26
+**Last Updated**: 2026-09-26

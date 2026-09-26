@@ -61,7 +61,7 @@
     Creates restore point then fixes Windows Update issues.
 
 .NOTES
-    Author: Windows & Linux Sysadmin Toolkit
+    Author: Windows Sysadmin Toolkit
     Version: 1.0.0
     Requires: PowerShell 5.1+, Administrator privileges
     Warning: Some fixes require a system restart to take effect.

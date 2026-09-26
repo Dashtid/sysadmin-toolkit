@@ -6,11 +6,12 @@ Automated CI/CD for testing, security scanning, and PR management.
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| [ci.yml](ci.yml) | Push/PR (`main`, `develop`), manual | PSScriptAnalyzer, shellcheck, Pester, BATS tests |
+| [ci.yml](ci.yml) | Push/PR (`main`, `develop`), manual | PSScriptAnalyzer, PowerShell syntax, Pester tests |
 | [pr-checks.yml](pr-checks.yml) | PR (opened, synchronize, reopened) | Secret scan, file size, YAML lint, TODO check |
-| [labeler.yml](labeler.yml) | PR (opened, synchronize) | Auto-apply labels (windows, linux, tests, etc.) |
+| [labeler.yml](labeler.yml) | PR (opened, synchronize) | Auto-apply labels (windows, tests, documentation, etc.) |
 | [security-scan.yml](security-scan.yml) | Push/PR (`main`), weekly (Mon 09:00 UTC), manual | Secret detection, CodeQL, Trivy, dependency review, license, links |
 | [release.yml](release.yml) | Tags `v*.*.*`, manual | Build changelog + GitHub Release |
+| [pre-commit.yml](pre-commit.yml) | Push/PR | The shared pre-commit hooks over the whole tree, plus a full-history secret scan |
 
 ## Status Badges
 
@@ -35,7 +36,7 @@ stays OFF.
 ### Branch Protection (main)
 
 - [x] Require PR before merging
-- [x] Require status checks: `PowerShell Analysis`, `Bash Validation (shellcheck)`, `Windows Pester Tests`, `Linux Tests`, `Test Summary`
+- [x] Require status checks: `Test Summary` (it gates on `PowerShell Analysis` and `Windows Pester Tests`) and `Security Summary`
 - [x] Require branches up to date
 
 ## Viewing Results
@@ -53,12 +54,11 @@ gh run download <run-id> -n windows-test-results
 
 ## Customization
 
-### Shellcheck Exclusions
+### Shellcheck
 
-```bash
-# In ci.yml bash-validation job
-shellcheck -S warning -e SC2034 -e SC2086 -e SC2181 -e SC2155 \n  -e SC2046 -e SC2178 -e SC2128 "$script"
-```
+The few shell scripts left (`examples/`, `scripts/`) are checked by the
+`shellcheck` hook in `.pre-commit-config.yaml`, which
+[pre-commit.yml](pre-commit.yml) runs at `--severity=warning`.
 
 ### PSScriptAnalyzer Exclusions
 
@@ -88,11 +88,11 @@ schedule:
 
 ```text
 feat: add new monitoring script
-fix: resolve shellcheck issues
+fix: resolve PSScriptAnalyzer findings
 docs: update workflow documentation
-test: add tests for GPU monitoring
+test: add tests for the update task
 ci: update GitHub Actions workflow
 ```
 
 ---
-**Last Updated**: 2026-09-01
+**Last Updated**: 2026-09-26

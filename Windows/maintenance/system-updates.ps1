@@ -65,7 +65,7 @@
     Uses settings from a custom configuration file.
 
 .NOTES
-    Author: Windows & Linux Sysadmin Toolkit
+    Author: Windows Sysadmin Toolkit
     Version: 2.3.0
     Requires: PowerShell 7.0+ and Administrator privileges
 

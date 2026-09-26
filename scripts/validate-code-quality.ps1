@@ -173,7 +173,7 @@ function Test-BashScript {
     }
 
     # Find all Bash scripts
-    $bashScripts = Get-ChildItem -Path "$PSScriptRoot\..\Linux" -Recurse -Include *.sh -File |
+    $bashScripts = Get-ChildItem -Path "$PSScriptRoot\.." -Recurse -Include *.sh -File |
         Where-Object { $_.FullName -notmatch '\\\.git\\|\\tests\\' }
 
     Write-Result "Found $($bashScripts.Count) Bash files to validate" -Type Info

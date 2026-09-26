@@ -79,7 +79,7 @@
     alone measured 2h16m and the 3-hour default killed the run before Windows Update.
 
 .NOTES
-    Author: Windows & Linux Sysadmin Toolkit
+    Author: Windows Sysadmin Toolkit
     Version: 1.0.0
     Requires: PowerShell 7.0+ and Administrator privileges (Register-ScheduledTask requires admin)
 #>

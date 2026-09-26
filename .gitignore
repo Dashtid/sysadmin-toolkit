@@ -185,16 +185,7 @@ cython_debug/
 
 # System update script configuration and logs
 Windows/maintenance/config.json
-Linux/maintenance/config.json
 Windows/**/logs/
-Linux/**/logs/
-
-
-# Monitoring script outputs
-/var/log/k8s-monitor/
-/var/log/docker-cleanup/
-/var/log/log-cleanup/
-/var/log/gpu-monitor/
 
 # Local assistant/editor state - never tracked (it was in history once; see CHANGELOG)
 .claude/

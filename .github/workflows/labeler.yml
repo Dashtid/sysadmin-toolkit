@@ -40,20 +40,12 @@ jobs:
               labels.add('windows');
             }
 
-            if (changedFiles.some(f => f.startsWith('Linux/'))) {
-              labels.add('linux');
-            }
-
             if (changedFiles.some(f => f.startsWith('tests/'))) {
               labels.add('tests');
             }
 
             if (changedFiles.some(f => f.startsWith('docs/') || f.endsWith('.md'))) {
               labels.add('documentation');
-            }
-
-            if (changedFiles.some(f => f.includes('ssh'))) {
-              labels.add('ssh');
             }
 
             if (changedFiles.some(f => f.includes('security'))) {
@@ -64,15 +56,7 @@ jobs:
               labels.add('maintenance');
             }
 
-            if (changedFiles.some(f => f.includes('monitoring'))) {
-              labels.add('monitoring');
-            }
-
-            if (changedFiles.some(f => f.includes('kubernetes') || f.includes('k8s'))) {
-              labels.add('kubernetes');
-            }
-
-            if (changedFiles.some(f => f.includes('docker'))) {
+            if (changedFiles.some(f => f.toLowerCase().includes('docker'))) {
               labels.add('docker');
             }
 

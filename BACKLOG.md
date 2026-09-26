@@ -13,6 +13,7 @@ The 2026-06-14 ghost-code audit (driven by web research + git archaeology) cut ~
 - **What survived**: 4 first-time-setup scripts, `system-updates.ps1` + `Install-SystemUpdatesTask.ps1`, `Backup-DeveloperEnvironment.ps1`, `Manage-Docker.ps1`, `remote-development-setup.ps1`, `Set-StaticIP.ps1`, `Repair-CommonIssues.ps1`. Linux: `nvidia-gpu-exporter.sh`, `disk-cleanup.sh`, `headless-server-setup.sh`.
 - **What was killed**: all 5 `Windows/monitoring/*`, `Windows/reporting/Get-SystemReport.ps1`, `Windows/security/Get-UserAccountAudit.ps1`, `Windows/network/Manage-VPN.ps1`, `Windows/development/Test-DevEnvironment.ps1`, `Windows/development/Manage-WSL.ps1`, 5 of 6 `Windows/backup/*` (only Backup-DeveloperEnvironment survives), `Linux/docker/docker-cleanup.sh`, `Linux/kubernetes/pod-health-monitor.sh`, `Linux/monitoring/service-health-monitor.sh`, `Linux/security/security-hardening.sh`, `Linux/maintenance/{log-cleanup,system-update,restore-previous-state}.sh`.
 - **Why**: web research showed these duplicated native tools (Task Manager, Event Viewer, `wsl.exe`, `netsh`, OneDrive, Settings app) or the lab-server stack (Prometheus/Grafana/Velero/k9s). Git history showed 174 commits over 14 months, only ~3 looked like "ran it, broke, fixed". The rest was test backfill and refactor churn — the classic over-engineered-personal-toolkit shape.
+- **2026-09-26 follow-up**: the three Linux survivors and their tests were removed as well. Their only consumer was a lab server this toolkit no longer serves, so the toolkit is now Windows-only. See [CHANGELOG.md](CHANGELOG.md) 4.0.0.
 
 **Policy going forward**: any script that goes 6 months without a `fix:` commit triggered by real failure is a candidate for archival. No more "behavioral coverage" sprints — favor smoke tests for the surviving setup scripts; do not mock-pad scripts you do not invoke.
 
@@ -22,7 +23,7 @@ The 2026-06-14 ghost-code audit (driven by web research + git archaeology) cut ~
 
 **Nothing planned.** This is intentional, not a gap.
 
-The toolkit is in maintenance mode. What survives the cull either has a real consumer (the scheduled `system-updates.ps1` task, the lab-server Prometheus scrape of `nvidia-gpu-exporter.sh`) or sits dormant for occasional lifecycle events (fresh-machine re-image, dev-environment snapshot before a rebuild). Marginal maintenance cost is approximately zero unless something actually breaks.
+The toolkit is in maintenance mode. What survives the cull either has a real consumer (the scheduled `system-updates.ps1` task) or sits dormant for occasional lifecycle events (fresh-machine re-image, dev-environment snapshot before a rebuild). Marginal maintenance cost is approximately zero unless something actually breaks.
 
 The temptation to add to this list — "shrink X", "refactor Y", "add tests for Z" — is the exact ghost-code pattern that drove the 2026-06-14 cull. Resist it.
 
@@ -60,7 +61,7 @@ This section preserves the closeouts from the pre-cull "behavioral coverage" spr
 ## Sprint 6 closeouts (test runner + repo hygiene)
 
 - 2026-06-14: `feat(backup): retry once with 5 s backoff on vscode-extension install` (Sprint 6.3) — added 2-attempt retry loop to `Restore-VsCodeExtension`. **This file was subsequently deleted in the 2026-06-14 cull** (the entire Restore-DeveloperEnvironment.ps1 was removed). Entry retained for historical context only.
-- 2026-06-14: `chore(tests): unify run-tests.ps1 to also invoke BATS (Sprint 6.1)` (commit 2b1c504) — Added `-Linux` switch to `tests/run-tests.ps1` plus auto-detect when no flags are given. BATS files invoked with `bats --tap`. Survives the cull (general test infrastructure).
+- 2026-06-14: `chore(tests): unify run-tests.ps1 to also invoke BATS (Sprint 6.1)` (commit 2b1c504) — Added `-Linux` switch to `tests/run-tests.ps1` plus auto-detect when no flags are given. BATS files invoked with `bats --tap`. Survived the cull (general test infrastructure); the BATS half went with the Linux tier on 2026-09-26.
 
 ## Sprint 5 closeouts (excluded hard scripts, DONE)
 
@@ -95,4 +96,4 @@ Coverage 20.94% -> 28.09% at the time across 75 new tests. **All 4 scripts (Get-
 - 2026-05-25: `feat: add Install-SystemUpdatesTask.ps1` (commit a42ed8e) — survives.
 
 ---
-**Last Updated**: 2026-06-14
+**Last Updated**: 2026-09-26

@@ -28,6 +28,31 @@ signal bug fixes only.
   its existing rule (exported-package runs only, `-SkipWSL` opts out), which
   was previously also triggered by `Work`. The post-install checklist no
   longer mentions Teams or a Gitea server.
+- **The Linux tier, entirely:** `Linux/` (`nvidia-gpu-exporter.sh`,
+  `disk-cleanup.sh`, `headless-server-setup.sh`, the `common-functions.sh`
+  library, three Grafana dashboards and their READMEs/config examples) and
+  `tests/Linux/` (four BATS files and `GPUMonitoring.Tests.ps1`). Every script
+  existed for one lab server that this toolkit no longer serves, and nothing
+  else in use calls any of them. With them go the `Bash Validation
+  (shellcheck)` and `Linux Tests` CI jobs, the `linux` label, the BATS half of
+  `tests/run-tests.ps1` (its `-Windows`/`-Linux` switches with it: Pester is
+  the only runner now, so a missing Pester is an error), the Linux ignore rules
+  and `.env.example` block, and the two example configs for scripts deleted in
+  the 3.0.0 cull (`docker-cleanup`, `monitoring`). The remaining shell scripts
+  (`examples/`, `scripts/`) are still shellchecked by the pre-commit gate. The
+  toolkit is now Windows-only; README, QUICKSTART, ROADMAP, BACKLOG,
+  CONTRIBUTING and the script templates say so. The 3.0.0 entry below still
+  describes the Linux tier as it was.
+
+### Changed
+
+- CI `Test Summary` now gates on `PowerShell Analysis` and `Windows Pester
+  Tests` only. It and `Security Summary` remain the two required checks.
+- `scripts/validate-code-quality.{ps1,sh}` look for shell scripts across the
+  repository instead of the deleted `Linux/` directory.
+- The labeler drops rules that no path matches any more (`ssh`, `monitoring`,
+  `kubernetes`), and its `docker` rule is case-insensitive so
+  `Manage-Docker.ps1` finally gets the label.
 
 ### Fixed
 
@@ -35,6 +60,10 @@ signal bug fixes only.
   `install-from-exported-packages.ps1` documented `-Profile Work`; the
   parameter has always been `-SetupProfile`, so the documented command failed
   to bind. Both now show `-SetupProfile Home`.
+- `docs/SCRIPT_TEMPLATE.md` "Real Examples" linked three scripts deleted in the
+  3.0.0 cull; it now links surviving ones, and its Bash template defines its
+  own log helpers instead of sourcing the removed library.
+  `examples/README.md` linked `.env.example` relative to the wrong directory.
 
 ## [3.1.0] - 2026-09-07
 

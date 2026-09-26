@@ -43,13 +43,6 @@ Start-ScheduledTask -TaskName SystemUpdates
 .\Windows\first-time-setup\install-from-exported-packages.ps1 -Manifest .\Windows\package-lists\my-packages.json
 ```
 
-### Linux: Maintenance on the lab server
-
-```bash
-./Linux/maintenance/disk-cleanup.sh --whatif
-./Linux/server/headless-server-setup.sh
-```
-
 ## 3. Common Commands
 
 | Task | Command |

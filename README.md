@@ -1,14 +1,16 @@
-# Windows & Linux Sysadmin Toolkit
+# Windows Sysadmin Toolkit
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.0+-blue.svg)](https://github.com/PowerShell/PowerShell)
 [![CI Tests](https://github.com/Dashtid/sysadmin-toolkit/workflows/CI%20-%20Automated%20Testing/badge.svg)](https://github.com/Dashtid/sysadmin-toolkit/actions/workflows/ci.yml)
 
-Personal system administration scripts for Windows and Linux. Narrow scope: fresh-machine setup, weekly update automation, a Docker convenience wrapper, and a GPU exporter for the lab server.
+Personal Windows system administration scripts: fresh-machine setup, weekly update automation and a Docker convenience wrapper.
 
-> **Note:** Security hardening lives in `defensive-toolkit` (a separate, private repo). Monitoring and backup happen on the lab server via Prometheus/Grafana and Velero, not here.
+> **Note:** Security hardening lives in `defensive-toolkit` (a separate repo).
 >
-> **2026-06-14:** the toolkit was deliberately culled. Monitoring/reporting/security/most-backup/VPN/WSL/Test-DevEnvironment scripts were removed because they duplicated native tools (Task Manager, Event Viewer, `wsl.exe`, Settings) or the lab-server stack. See [BACKLOG.md](BACKLOG.md) for the new scope and rationale.
+> **2026-06-14:** the toolkit was deliberately culled. Monitoring/reporting/security/most-backup/VPN/WSL/Test-DevEnvironment scripts were removed because they duplicated native tools (Task Manager, Event Viewer, `wsl.exe`, Settings). See [BACKLOG.md](BACKLOG.md) for the new scope and rationale.
+>
+> **2026-09-26:** the Linux tier (GPU exporter, disk cleanup, headless server setup and its tests) was removed; nothing still uses it. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Windows Scripts
 
@@ -26,23 +28,12 @@ Personal system administration scripts for Windows and Linux. Narrow scope: fres
 | **Network** | [Set-StaticIP.ps1](Windows/network/) | One-shot static IP/DNS/gateway helper |
 | **Troubleshooting** | [Repair-CommonIssues.ps1](Windows/troubleshooting/) | DNS, network, and Windows Update fix-it routines |
 
-## Linux Scripts
-
-Scope is narrow on purpose: the lab server covers most operational needs via Prometheus/Grafana/Velero/k9s; the survivors here are the bits those tools don't cover.
-
-| Category | Script | Purpose |
-|----------|--------|---------|
-| **GPU** | [nvidia-gpu-exporter.sh](Linux/gpu/) | NVIDIA GPU metrics for Prometheus (scraped by Grafana) |
-| **Maintenance** | [disk-cleanup.sh](Linux/maintenance/) | APT cache + journal + Docker leftover cleanup |
-| **Server** | [headless-server-setup.sh](Linux/server/) | Ubuntu server provisioning for a fresh headless box |
-
 ## Shared Modules
 
-| Platform | Module | Purpose |
-|----------|--------|---------|
-| Windows | [CommonFunctions.psm1](Windows/lib/) | Logging, admin checks, Prometheus export |
-| Windows | [ErrorHandling.psm1](Windows/lib/) | Contextual errors, retry logic |
-| Linux | [common-functions.sh](Linux/lib/) | Logging, validation, Prometheus export |
+| Module | Purpose |
+|--------|---------|
+| [CommonFunctions.psm1](Windows/lib/CommonFunctions.psm1) | Logging, admin checks, Prometheus export |
+| [ErrorHandling.psm1](Windows/lib/ErrorHandling.psm1) | Contextual errors, retry logic |
 
 ## Documentation
 
@@ -57,14 +48,11 @@ Scope is narrow on purpose: the lab server covers most operational needs via Pro
 
 ## Prerequisites
 
-| Platform | Requirements |
-|----------|--------------|
-| Windows | PowerShell 7+, OpenSSH Client enabled |
-| Linux | Bash 4.0+, sudo access |
+Windows 11 with PowerShell 7+ and the OpenSSH Client enabled.
 
 ## License
 
 MIT License - See [LICENSE](LICENSE)
 
 ---
-**Author**: David Dashti | **Version**: 3.0.0 | **Updated**: 2026-06-14
+**Author**: David Dashti | **Version**: 4.0.0 | **Updated**: 2026-09-26

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Code Quality Validation Script for Linux
+# Code Quality Validation Script (Bash edition, for Git Bash / WSL)
 # ============================================================================
 # Description: Validates Bash and Python code quality
 # Author: David Dashti
@@ -86,7 +86,7 @@ validate_bash() {
     fi
 
     # Find all Bash scripts
-    mapfile -t bash_scripts < <(find "$PROJECT_ROOT/Linux" -name "*.sh" -type f ! -path "*/\.git/*" ! -path "*/tests/*")
+    mapfile -t bash_scripts < <(find "$PROJECT_ROOT" -name "*.sh" -type f ! -path "*/\.git/*" ! -path "*/tests/*")
 
     print_info "Found ${#bash_scripts[@]} Bash files to validate"
     TOTAL_FILES=$((TOTAL_FILES + ${#bash_scripts[@]}))

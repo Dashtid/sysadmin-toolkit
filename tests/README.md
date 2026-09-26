@@ -1,21 +1,12 @@
 # Testing Framework
 
-Comprehensive testing for Windows and Linux system administration scripts.
+Pester tests for the Windows system administration scripts.
 
 ## Quick Start
-
-### Windows (Pester)
 
 ```powershell
 Install-Module -Name Pester -Force -Scope CurrentUser
 Invoke-Pester -Path .\tests\Windows -Output Detailed
-```
-
-### Linux (BATS)
-
-```bash
-sudo apt install bats
-bats tests/Linux/
 ```
 
 ## Test Structure
@@ -27,11 +18,7 @@ tests/
 │   ├── ErrorHandling.Tests.ps1        # Error handling (91% coverage)
 │   ├── Integration.Advanced.Tests.ps1 # Cross-module workflows
 │   ├── Maintenance.Comprehensive.Tests.ps1
-│   └── SSH.Comprehensive.Tests.ps1
-├── Linux/
-│   ├── CommonFunctions.bats           # Bash library (60+ tests)
-│   ├── SecurityHardening.bats         # Security tests (60+ tests)
-│   └── ServiceHealthMonitor.bats      # Monitor tests (50+ tests)
+│   └── *.Behavioral.Tests.ps1         # Per-script behavioral tests
 ├── MockHelpers.psm1                   # Reusable mock configurations
 ├── CodeCoverage.pester.ps1            # Coverage analysis
 └── TestHelpers.psm1                   # Shared utilities
@@ -94,27 +81,14 @@ Describe "Script Tests" {
 }
 ```
 
-### BATS Template
-
-```bash
-@test "script has valid syntax" {
-    bash -n "$SCRIPT_PATH"
-}
-@test "script contains no emojis" {
-    ! grep -P '[\x{1F300}-\x{1F9FF}]' "$SCRIPT_PATH"
-}
-```
-
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
 | Pester not found | `Install-Module -Name Pester -Force` |
-| BATS not found | `sudo apt install bats` |
-| Line ending issues | `git config core.autocrlf true` (Windows) |
-| Permission denied | `chmod +x tests/Linux/*.bats` |
+| Line ending issues | `.gitattributes` owns line endings; run `git add --renormalize .` |
 
 ---
-**Last Updated**: 2025-12-26
+**Last Updated**: 2026-09-26
 **Tests**: 21 files, 1100+ assertions
 **Coverage**: Library modules 83.5%, ErrorHandling 91.35%

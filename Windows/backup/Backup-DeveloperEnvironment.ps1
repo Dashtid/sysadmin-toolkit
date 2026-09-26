@@ -41,7 +41,7 @@
     Shows what would be backed up without making changes.
 
 .NOTES
-    Author: Windows & Linux Sysadmin Toolkit
+    Author: Windows Sysadmin Toolkit
     Version: 1.0.0
     Requires: PowerShell 5.1+
 

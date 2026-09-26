@@ -69,8 +69,10 @@ try {
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../lib/bash/common-functions.sh"
+log_info()    { echo "[i] $*"; }
+log_success() { echo "[+] $*"; }
+log_warning() { echo "[!] $*" >&2; }
+log_error()   { echo "[-] $*" >&2; }
 
 DRY_RUN=false
 VERBOSE=false
@@ -127,7 +129,7 @@ Write-WarningMessage "Warn"   # [!] yellow
 Write-ErrorMessage "Error"    # [-] red
 ```
 
-**Bash** - [common-functions.sh](../Linux/lib/bash/common-functions.sh):
+**Bash** - there is no shared Bash library; define the four helpers at the top of the script, as the template above does:
 
 ```bash
 log_info "Info"      # [i] blue
@@ -154,7 +156,7 @@ try {
 ```bash
 trap 'log_error "Error at line $LINENO"' ERR
 
-command || die "Failed" 1
+command || { log_error "Failed"; exit 1; }
 ```
 
 ## Documentation Checklist
@@ -170,9 +172,9 @@ command || die "Failed" 1
 
 | Script | Type | Features |
 |--------|------|----------|
-| [Get-SystemPerformance.ps1](../Windows/monitoring/Get-SystemPerformance.ps1) | PowerShell | Full validation, multiple outputs |
-| [docker-cleanup.sh](../Linux/docker/docker-cleanup.sh) | Bash | Prometheus export, retry logic |
-| [security-hardening.sh](../Linux/security/security-hardening.sh) | Bash | Audit mode, category filtering |
+| [system-updates.ps1](../Windows/maintenance/system-updates.ps1) | PowerShell | Config file, WhatIf, per-stage summary |
+| [Manage-Docker.ps1](../Windows/development/Manage-Docker.ps1) | PowerShell | ShouldProcess on every destructive action |
+| [example-bash-script.sh](../examples/example-bash-script.sh) | Bash | Strict mode, argument parsing, dry run |
 
 ---
-**Last Updated**: 2025-12-26
+**Last Updated**: 2026-09-26

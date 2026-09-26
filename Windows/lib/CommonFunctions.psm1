@@ -11,7 +11,7 @@
     - Centralized log directory management
 
 .NOTES
-    Author: Windows & Linux Sysadmin Toolkit
+    Author: Windows Sysadmin Toolkit
     Version: 1.2.1
     Requires: PowerShell 5.1+
 
