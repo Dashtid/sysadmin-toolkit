@@ -33,10 +33,10 @@ updates:
       default-days: 7
     groups:
       actions-minor:
-        # applies-to is the load-bearing word. Without it the group also
-        # swallows SECURITY updates, which then wait for the monthly schedule
-        # and the cooldown above - delaying precisely the updates that must
-        # never wait. sysadmin-toolkit's hand-written config omitted it.
+        # applies-to keeps SECURITY updates out of this group, so they never
+        # wait for the monthly schedule and the cooldown above. version-updates
+        # is also GitHub's documented default; it is spelled out anyway because
+        # this is the one line whose absence would matter most if it ever did.
         applies-to: version-updates
         patterns:
           - "*"

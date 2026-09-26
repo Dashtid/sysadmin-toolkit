@@ -1,4 +1,3 @@
-#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Pre-commit gate for PowerShell: parse every staged file, then run
@@ -69,7 +68,7 @@ if ($parseable.Count -eq 0) { exit 0 }
 # hook that fails for a reason the author cannot act on gets bypassed with
 # --no-verify, which costs more than it saves. In CI the calculus inverts: an
 # image without the analyser would wave every finding through and report green,
-# so there the absence is fatal. GitHub and Gitea Actions both set CI=true.
+# so there the absence is fatal. GitHub Actions sets CI=true.
 if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
     if ($env:CI) {
         Write-Host '[-] PSScriptAnalyzer is not installed and CI is set - failing rather'
