@@ -67,6 +67,12 @@ signal bug fixes only.
   3.0.0 cull; it now links surviving ones, and its Bash template defines its
   own log helpers instead of sourcing the removed library.
   `examples/README.md` linked `.env.example` relative to the wrong directory.
+- `QUICKSTART.md` restored packages with
+  `install-from-exported-packages.ps1 -Manifest .\Windows\package-lists\...`, a
+  parameter the script has never had (it takes `-PackageDir`), pointing into a
+  directory the repository never tracked. `fresh-windows-setup.ps1`
+  already runs that restore from the lists beside it, so the quick start now
+  shows that call (or `-SetupProfile Home`).
 
 ## [3.1.0] - 2026-09-07
 

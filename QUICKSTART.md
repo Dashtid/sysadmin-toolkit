@@ -38,9 +38,11 @@ Start-ScheduledTask -TaskName SystemUpdates
 ### Windows: Provision a fresh machine
 
 ```powershell
+# Restores the lists export-current-packages.ps1 wrote next to the scripts
+# (winget-packages.json + chocolatey-packages.config), then applies settings:
 .\Windows\first-time-setup\fresh-windows-setup.ps1
-# Then restore your previously-exported package list:
-.\Windows\first-time-setup\install-from-exported-packages.ps1 -Manifest .\Windows\package-lists\my-packages.json
+# Or install the curated Home profile instead:
+.\Windows\first-time-setup\fresh-windows-setup.ps1 -SetupProfile Home
 ```
 
 ## 3. Common Commands
