@@ -43,6 +43,9 @@ signal bug fixes only.
   toolkit is now Windows-only; README, QUICKSTART, ROADMAP, BACKLOG,
   CONTRIBUTING and the script templates say so. The 3.0.0 entry below still
   describes the Linux tier as it was.
+- `.env.example`: the Gitea SSH-tunnel block (`GITEA_*`, `GIT_REPO_URL`). It
+  configured `Windows/ssh/gitea-tunnel-manager.ps1`, which was pruned as
+  lab-specific on 2026-01-04; nothing has read these variables since.
 
 ### Changed
 
